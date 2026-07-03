@@ -1,0 +1,95 @@
+services:
+  - type: web
+    name: sofia-couture-backend
+    runtime: docker
+    plan: starter
+    region: virginia
+    rootDir: back/backend
+    dockerfilePath: Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - back/backend/**
+        - render.yaml
+    disk:
+      name: uploads
+      mountPath: /var/data
+      sizeGB: 5
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DB_URL
+        fromDatabase:
+          name: sofia-couture-db
+          property: connectionString
+      - key: DB_USERNAME
+        fromDatabase:
+          name: sofia-couture-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: sofia-couture-db
+          property: password
+      - key: APP_UPLOAD_DIR
+        value: /var/data/uploads
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION
+        value: 86400000
+      - key: JWT_REFRESH_EXPIRATION
+        value: 604800000
+      - key: APP_BASE_URL
+        fromService:
+          type: web
+          name: sofia-couture-backend
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: APP_FRONTEND_URL
+        fromService:
+          type: web
+          name: sofia-couture-frontend
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: PAYPHONE_RESPONSE_BASE_URL
+        fromService:
+          type: web
+          name: sofia-couture-frontend
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: APP_MAIL_FROM
+        value: Sofia Couture EC <no-reply@example.com>
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: SPRING_MAIL_USERNAME
+        sync: false
+      - key: SPRING_MAIL_PASSWORD
+        sync: false
+      - key: PAYPHONE_TOKEN
+        sync: false
+      - key: PAYPHONE_STORE_ID
+        sync: false
+
+  - type: web
+    name: sofia-couture-frontend
+    runtime: docker
+    plan: starter
+    region: virginia
+    rootDir: front/frontend
+    dockerfilePath: Dockerfile
+    healthCheckPath: /
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - front/frontend/**
+        - render.yaml
+    envVars:
+      - key: BACKEND_HOSTPORT
+        fromService:
+          type: web
+          name: sofia-couture-backend
+          property: hostport
+
+databases:
+  - name: sofia-couture-db
+    plan: basic-256mb
+    region: virginia
+    databaseName: sofiacouture
+    user: sofiauser

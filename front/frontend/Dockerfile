@@ -21,6 +21,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf.template
 
 # Al iniciar el contenedor, sustituye variables y arranca nginx
 ENV BACKEND_URL=http://backend:8080
-CMD ["/bin/sh", "-c", "envsubst '${BACKEND_URL}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+ENV BACKEND_HOSTPORT=
+CMD ["/bin/sh", "-c", "if [ -n \"$BACKEND_HOSTPORT\" ]; then export BACKEND_URL=\"http://$BACKEND_HOSTPORT\"; fi && envsubst '${BACKEND_URL}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
 
 EXPOSE 80

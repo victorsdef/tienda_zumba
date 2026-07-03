@@ -46,7 +46,6 @@ public class OrdenPdfService {
                 escribirSeccion(content, cursor, "Direccion de entrega");
                 escribirPar(content, cursor, valor(orden.getCalleEnvio(), "No especificada"));
                 escribirPar(content, cursor, construirCiudadProvincia(orden));
-                escribirPar(content, cursor, "Codigo postal: " + valor(orden.getCodigoPostalEnvio(), "No especificado"));
                 escribirEspacio(cursor, 4f);
 
                 escribirSeccion(content, cursor, "Productos");
