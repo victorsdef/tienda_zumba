@@ -9,7 +9,7 @@ Usa `render.yaml`. No uses `docker-compose` para Render.
   - `sofia-couture-backend`
   - `sofia-couture-db`
 - El backend tiene health check en `/api/health`
-- El frontend se conecta al backend por red privada de Render
+- El frontend se conecta al backend usando la URL pública de Render
 - En plan gratis, los archivos subidos se guardan de forma temporal
 
 ## Planes actuales en el blueprint

@@ -77,11 +77,11 @@ services:
         - front/frontend/**
         - render.yaml
     envVars:
-      - key: BACKEND_HOSTPORT
+      - key: BACKEND_URL
         fromService:
           type: web
           name: sofia-couture-backend
-          property: hostport
+          envVarKey: RENDER_EXTERNAL_URL
 
 databases:
   - name: sofia-couture-db
