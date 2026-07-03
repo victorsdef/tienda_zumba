@@ -18,9 +18,15 @@ public class Orden {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true)
+    private String codigoOrden;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id", nullable = false)
+    @JoinColumn(name = "usuario_id", nullable = true)
     private Usuario usuario;
+
+    private String nombreInvitado;
+    private String emailInvitado;
 
     @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
@@ -33,10 +39,22 @@ public class Orden {
     @Column(nullable = false)
     private EstadoOrden estado;
 
-    private String calleEnvio;
-    private String ciudadEnvio;
+    private String nombreEnvio;
+    private String celularEnvio;
     private String provinciaEnvio;
-    private String codigoPostalEnvio;
+    private String cantonEnvio;
+    private String ciudadEnvio;
+    private String calleEnvio;
+    private java.math.BigDecimal costoEnvio;
+
+    // Payphone
+    private String payphoneTransactionId;
+    private String codigoAutorizacion;
+    private String marcaTarjeta;
+
+    // Servientrega
+    private String numeroGuia;
+    private String guiaImagenUrl;
 
     @Column(nullable = false)
     private LocalDateTime fechaCreacion;

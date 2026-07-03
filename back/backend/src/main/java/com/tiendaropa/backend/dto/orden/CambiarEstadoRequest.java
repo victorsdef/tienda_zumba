@@ -8,4 +8,5 @@ import lombok.Data;
 public class CambiarEstadoRequest {
     @NotNull
     private EstadoOrden estado;
+    private String numeroGuia;
 }

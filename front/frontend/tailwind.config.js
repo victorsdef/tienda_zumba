@@ -4,8 +4,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#e02020',
-        'primary-dark': '#b91c1c',
+        primary: '#7d5c48',
+        'primary-dark': '#4a3728',
+        'primary-light': '#9c7a62',
+        cream: '#f5f0e8',
+        'cream-dark': '#ede8df',
+        brand: {
+          brown: '#7d5c48',
+          'brown-dark': '#4a3728',
+          'brown-light': '#9c7a62',
+          cream: '#f5f0e8',
+          'cream-dark': '#ede8df',
+        }
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

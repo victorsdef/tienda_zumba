@@ -1,10 +1,20 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getDashboard } from '../../api/admin'
+import { useAuthStore, type AdminPermission } from '../../store/useAuthStore'
 import {
   IconDollar, IconBarChart, IconPackage, IconUsers, IconGrid,
-  IconHanger, IconAlertTriangle,
+  IconHanger, IconAlertTriangle, IconImage,
 } from '../../components/ui/Icon'
+
+type QuickLink = {
+  label: string
+  value: string
+  Icon: typeof IconDollar
+  link: string
+  color: string
+  permission: AdminPermission
+}
 
 const ESTADO_COLOR: Record<string, string> = {
   PENDIENTE:  'bg-yellow-100 text-yellow-800',
@@ -15,6 +25,7 @@ const ESTADO_COLOR: Record<string, string> = {
 }
 
 export default function AdminDashboard() {
+  const { hasPermission } = useAuthStore()
   const { data: stats, isLoading } = useQuery({ queryKey: ['admin-dashboard'], queryFn: getDashboard })
 
   if (isLoading) return (
@@ -26,6 +37,36 @@ export default function AdminDashboard() {
   )
 
   if (!stats) return null
+
+  const quickLinksBase = [
+    {
+      label: 'Productos activos',
+      value: `${stats.totalProductosActivos ?? 0}/${stats.totalProductos ?? 0}`,
+      Icon: IconHanger, link: '/admin/productos', color: 'text-pink-500', permission: 'productos',
+    },
+    {
+      label: 'Categorías activas',
+      value: `${stats.totalCategoriasActivas ?? 0}/${stats.totalCategorias ?? 0}`,
+      Icon: IconGrid, link: '/admin/categorias', color: 'text-cyan-500', permission: 'categorias',
+    },
+    {
+      label: 'Clientes activos',
+      value: `${stats.totalClientesVerificados ?? 0}/${stats.totalClientes ?? 0}`,
+      Icon: IconUsers, link: '/admin/usuarios', color: 'text-violet-500', permission: 'usuarios',
+    },
+    {
+      label: 'Órdenes pendientes',
+      value: `${stats.totalOrdenesPendientes ?? 0}/${stats.totalOrdenes ?? 0}`,
+      Icon: IconPackage, link: '/admin/ordenes', color: 'text-amber-500', permission: 'ordenes',
+    },
+    {
+      label: 'Banners activos',
+      value: `${stats.totalBannersActivos ?? 0}/${stats.totalBanners ?? 0}`,
+      Icon: IconImage, link: '/admin/banners', color: 'text-rose-500', permission: 'banners',
+    },
+  ] satisfies QuickLink[]
+
+  const quickLinks = quickLinksBase.filter(item => hasPermission(item.permission))
 
   return (
     <div className="p-4 md:p-8 space-y-4 md:space-y-6">
@@ -53,13 +94,8 @@ export default function AdminDashboard() {
       </div>
 
       {/* Count cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        {[
-          { label: 'Productos',      value: stats.totalProductos,  Icon: IconHanger,  link: '/admin/productos',  color: 'text-pink-500'   },
-          { label: 'Categorías',     value: stats.totalCategorias, Icon: IconGrid,    link: '/admin/categorias', color: 'text-cyan-500'   },
-          { label: 'Clientes',       value: stats.totalClientes,   Icon: IconUsers,   link: '/admin/usuarios',   color: 'text-violet-500' },
-          { label: 'Total órdenes',  value: stats.totalOrdenes,    Icon: IconPackage, link: '/admin/ordenes',    color: 'text-amber-500'  },
-        ].map(c => (
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+        {quickLinks.map(c => (
           <Link key={c.label} to={c.link} className="bg-white border rounded-lg p-3 md:p-4 hover:shadow-md transition-shadow flex items-center gap-3 md:flex-col md:items-start">
             <c.Icon size={24} className={c.color} />
             <div>

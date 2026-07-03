@@ -1,14 +1,20 @@
 package com.tiendaropa.backend.dto.orden;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
 public class CrearOrdenRequest {
-    @NotBlank
-    private String calleEnvio;
-    @NotBlank
-    private String ciudadEnvio;
+    // Dirección guardada (opcional — si se envía, se usan sus datos)
+    private Long direccionId;
+
+    // O dirección inline
+    private String nombreEnvio;
+    private String celularEnvio;
     private String provinciaEnvio;
-    private String codigoPostalEnvio;
+    private String cantonEnvio;
+    private String ciudadEnvio;
+    private String calleEnvio;
+
+    // Envío a domicilio ($6) o retiro en tienda ($0)
+    private boolean conEnvio;
 }

@@ -20,6 +20,7 @@ export default function Catalogo() {
   const [filter, setFilter] = useState<ProductoFilter>({
     categoriaId: searchParams.get('categoriaId') ? Number(searchParams.get('categoriaId')) : undefined,
     nombre: searchParams.get('nombre') ?? undefined,
+    genero: searchParams.get('genero') ?? undefined,
     sort: searchParams.get('sort') ?? undefined,
     page: 0, size: 20,
   })

@@ -1,9 +1,7 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { register as registerApi } from '../api/auth'
-import { useAuthStore } from '../store/useAuthStore'
-import { useCartStore } from '../store/useCartStore'
 
 interface FormData {
   nombre: string
@@ -13,19 +11,16 @@ interface FormData {
 }
 
 export default function Registro() {
-  const navigate = useNavigate()
-  const { setUser } = useAuthStore()
-  const { fetchCarrito } = useCartStore()
   const [error, setError] = useState('')
+  const [exito, setExito] = useState('')
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormData>()
 
   const onSubmit = async (data: FormData) => {
     setError('')
+    setExito('')
     try {
-      const res = await registerApi(data.nombre, data.email, data.password)
-      setUser(res)
-      await fetchCarrito()
-      navigate('/')
+      const msg = await registerApi(data.nombre, data.email, data.password)
+      setExito(msg)
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
       setError(msg ?? 'Error al registrarse. Intenta con otro email.')
@@ -33,10 +28,10 @@ export default function Registro() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-[#f5f0e8] px-4">
+      <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-md border border-[#ddd8d0]">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-red-600">MODASTORE</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-[#7d5c48]">sofia couture ec</h1>
           <p className="text-gray-600 mt-2">Crea tu cuenta</p>
         </div>
 
@@ -44,6 +39,16 @@ export default function Registro() {
           <div className="bg-red-50 border border-red-200 text-red-700 rounded px-4 py-3 mb-4 text-sm">{error}</div>
         )}
 
+        {exito ? (
+          <div className="bg-green-50 border border-green-200 text-green-800 rounded-lg px-5 py-6 text-center space-y-3">
+            <div className="text-4xl">📬</div>
+            <p className="font-semibold text-base">¡Cuenta creada!</p>
+            <p className="text-sm leading-relaxed">{exito}</p>
+            <Link to="/login" className="inline-block mt-2 text-sm text-[#7d5c48] font-medium hover:underline">
+              Ir a iniciar sesión →
+            </Link>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
@@ -86,12 +91,12 @@ export default function Registro() {
           <button type="submit" disabled={isSubmitting} className="btn-primary w-full">
             {isSubmitting ? 'Creando cuenta...' : 'Crear cuenta'}
           </button>
+          <p className="text-center text-sm text-gray-600 mt-6">
+            ¿Ya tienes cuenta?{' '}
+            <Link to="/login" className="text-[#7d5c48] font-medium hover:underline">Inicia sesión</Link>
+          </p>
         </form>
-
-        <p className="text-center text-sm text-gray-600 mt-6">
-          ¿Ya tienes cuenta?{' '}
-          <Link to="/login" className="text-red-600 font-medium hover:underline">Inicia sesión</Link>
-        </p>
+        )}
       </div>
     </div>
   )

@@ -12,9 +12,13 @@ public class DashboardStatsDTO {
 
     // Generales
     private Long totalProductos;
+    private Long totalProductosActivos;
     private Long totalCategorias;
+    private Long totalCategoriasActivas;
     private Long totalClientes;
+    private Long totalClientesVerificados;
     private Long totalOrdenes;
+    private Long totalOrdenesPendientes;
     private BigDecimal ventasTotales;
 
     // Órdenes por estado
@@ -27,6 +31,10 @@ public class DashboardStatsDTO {
     private Long ordenesHoy;
     private Long ordenesSemana;
     private Long ordenesMes;
+
+    // Banners
+    private Long totalBanners;
+    private Long totalBannersActivos;
 
     // Alertas
     private List<ProductoStockBajoDTO> productosStockBajo;

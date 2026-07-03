@@ -12,6 +12,9 @@ export const getProductos = (filter: ProductoFilter = {}) => {
 export const getProducto = (id: number) =>
   api.get<Producto>(`/productos/${id}`).then(r => r.data)
 
+export const getProductoPorSlug = (slug: string) =>
+  api.get<Producto>(`/productos/slug/${slug}`).then(r => r.data)
+
 export const crearProducto = (data: Partial<Producto>) =>
   api.post<Producto>('/admin/productos', data).then(r => r.data)
 
@@ -20,3 +23,6 @@ export const actualizarProducto = (id: number, data: Partial<Producto>) =>
 
 export const eliminarProducto = (id: number) =>
   api.delete(`/admin/productos/${id}`)
+
+export const getProductosTrending = (limit = 10) =>
+  api.get<Producto[]>(`/productos/trending?limit=${limit}`).then(r => r.data)

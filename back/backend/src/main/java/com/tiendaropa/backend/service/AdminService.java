@@ -25,8 +25,13 @@ public class AdminService {
     private final UsuarioRepository usuarioRepository;
     private final OrdenRepository ordenRepository;
     private final ItemOrdenRepository itemOrdenRepository;
+    private final BannerRepository bannerRepository;
 
     public DashboardStatsDTO getDashboardStats() {
+        return getDashboardStats(5, 5);
+    }
+
+    public DashboardStatsDTO getDashboardStats(int stockThreshold, int topLimit) {
         LocalDateTime inicioHoy    = LocalDate.now().atStartOfDay();
         LocalDateTime inicioSemana = LocalDate.now().minusDays(6).atStartOfDay();
         LocalDateTime inicioMes    = LocalDate.now().withDayOfMonth(1).atStartOfDay();
@@ -38,13 +43,13 @@ public class AdminService {
         );
 
         // Stock bajo (umbral 5)
-        List<ProductoStockBajoDTO> stockBajo = productoRepository.findByStockBajo(5).stream()
+        List<ProductoStockBajoDTO> stockBajo = productoRepository.findByStockBajo(stockThreshold).stream()
             .map(p -> new ProductoStockBajoDTO(p.getId(), p.getNombre(), p.getStock()))
             .collect(Collectors.toList());
 
-        // Top 5 productos más vendidos
+        // Top productos más vendidos
         List<ProductoTopDTO> topProductos = itemOrdenRepository
-            .findTopProductos(PageRequest.of(0, 5))
+            .findTopProductos(PageRequest.of(0, topLimit))
             .stream()
             .map(row -> new ProductoTopDTO(
                 ((Number) row[0]).longValue(),
@@ -56,9 +61,13 @@ public class AdminService {
 
         return DashboardStatsDTO.builder()
             .totalProductos(productoRepository.count())
+            .totalProductosActivos(productoRepository.countByActivoTrue())
             .totalCategorias(categoriaRepository.count())
+            .totalCategoriasActivas(categoriaRepository.countByActivoTrue())
             .totalClientes(usuarioRepository.count())
+            .totalClientesVerificados(usuarioRepository.countByActivoTrue())
             .totalOrdenes(ordenRepository.count())
+            .totalOrdenesPendientes(ordenRepository.countByEstado(EstadoOrden.PENDIENTE))
             .ventasTotales(safeSum(ordenRepository.sumVentasDesde(LocalDateTime.of(2000, 1, 1, 0, 0))))
             .ventasHoy(safeSum(ordenRepository.sumVentasDesde(inicioHoy)))
             .ventasSemana(safeSum(ordenRepository.sumVentasDesde(inicioSemana)))
@@ -69,6 +78,8 @@ public class AdminService {
             .ordenesPorEstado(porEstado)
             .productosStockBajo(stockBajo)
             .topProductos(topProductos)
+            .totalBanners(bannerRepository.count())
+            .totalBannersActivos(bannerRepository.countByActivoTrue())
             .build();
     }
 

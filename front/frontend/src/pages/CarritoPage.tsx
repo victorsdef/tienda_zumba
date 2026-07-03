@@ -4,19 +4,14 @@ import { useCartStore } from '../store/useCartStore'
 import { useAuthStore } from '../store/useAuthStore'
 
 export default function CarritoPage() {
-  const { carrito, fetchCarrito, actualizarItem, eliminarItem } = useCartStore()
+  const { fetchCarrito, actualizarItem, eliminarItem, getCarritoActivo } = useCartStore()
   const { isAuthenticated } = useAuthStore()
 
   useEffect(() => {
     if (isAuthenticated) fetchCarrito()
   }, [isAuthenticated])
 
-  if (!isAuthenticated) return (
-    <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-      <p className="text-gray-600 mb-4">Inicia sesión para ver tu carrito</p>
-      <Link to="/login" className="btn-primary">Iniciar sesión</Link>
-    </div>
-  )
+  const carrito = getCarritoActivo(isAuthenticated)
 
   if (!carrito || carrito.items.length === 0) return (
     <div className="max-w-7xl mx-auto px-4 py-16 text-center">

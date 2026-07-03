@@ -13,7 +13,7 @@ export default function ProductCard({ producto, compact = false }: Props) {
     : producto.descuentoPorcentaje ?? null
 
   return (
-    <Link to={`/producto/${producto.id}`} className="group block bg-white hover:shadow-md transition-shadow duration-200">
+    <Link to={`/producto/${producto.slug ?? producto.id}`} className="group block bg-white hover:shadow-md transition-shadow duration-200">
       {/* Image */}
       <div className={`relative overflow-hidden bg-gray-50 ${compact ? 'aspect-[3/4]' : 'aspect-[3/4]'}`}>
         <img

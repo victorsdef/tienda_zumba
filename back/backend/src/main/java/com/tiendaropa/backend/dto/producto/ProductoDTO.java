@@ -3,10 +3,13 @@ package com.tiendaropa.backend.dto.producto;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @Data
 public class ProductoDTO {
     private Long id;
+    private String sku;
+    private String slug;
     private String nombre;
     private String descripcion;
     private BigDecimal precio;
@@ -18,6 +21,9 @@ public class ProductoDTO {
     private List<String> imagenes;
     private List<String> tallas;
     private List<String> colores;
+    private Map<String, Integer> stockPorColor;
+    private String caracteristicaTitulo;
+    private String caracteristicaDescripcion;
 
     public Integer getDescuentoPorcentaje() {
         if (precioOriginal == null || precioOriginal.compareTo(BigDecimal.ZERO) == 0) return null;

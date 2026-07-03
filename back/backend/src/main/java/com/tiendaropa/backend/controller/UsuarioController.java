@@ -5,6 +5,7 @@ import com.tiendaropa.backend.dto.direccion.DireccionRequest;
 import com.tiendaropa.backend.dto.usuario.UsuarioDTO;
 import com.tiendaropa.backend.dto.usuario.UsuarioUpdateRequest;
 import com.tiendaropa.backend.entity.Usuario;
+import com.tiendaropa.backend.service.DireccionService;
 import com.tiendaropa.backend.service.UsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import java.util.List;
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
+    private final DireccionService direccionService;
 
     @GetMapping("/perfil")
     public ResponseEntity<UsuarioDTO> perfil(@AuthenticationPrincipal Usuario usuario) {
@@ -36,7 +38,7 @@ public class UsuarioController {
 
     @GetMapping("/direcciones")
     public ResponseEntity<List<DireccionDTO>> listarDirecciones(@AuthenticationPrincipal Usuario usuario) {
-        return ResponseEntity.ok(usuarioService.listarDirecciones(usuario.getId()));
+        return ResponseEntity.ok(direccionService.listar(usuario.getId()));
     }
 
     @PostMapping("/direcciones")
@@ -44,7 +46,7 @@ public class UsuarioController {
         @AuthenticationPrincipal Usuario usuario,
         @Valid @RequestBody DireccionRequest req
     ) {
-        return ResponseEntity.ok(usuarioService.agregarDireccion(usuario.getId(), req));
+        return ResponseEntity.ok(direccionService.crear(usuario.getId(), req));
     }
 
     @PutMapping("/direcciones/{id}")
@@ -53,7 +55,7 @@ public class UsuarioController {
         @PathVariable Long id,
         @Valid @RequestBody DireccionRequest req
     ) {
-        return ResponseEntity.ok(usuarioService.actualizarDireccion(usuario.getId(), id, req));
+        return ResponseEntity.ok(direccionService.actualizar(usuario.getId(), id, req));
     }
 
     @DeleteMapping("/direcciones/{id}")
@@ -61,7 +63,7 @@ public class UsuarioController {
         @AuthenticationPrincipal Usuario usuario,
         @PathVariable Long id
     ) {
-        usuarioService.eliminarDireccion(usuario.getId(), id);
+        direccionService.eliminar(usuario.getId(), id);
         return ResponseEntity.noContent().build();
     }
 }

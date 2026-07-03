@@ -4,12 +4,14 @@ import { useCartStore } from '../../store/useCartStore'
 import { useAuthStore } from '../../store/useAuthStore'
 
 export default function CartDrawer() {
-  const { carrito, isOpen, closeCart, actualizarItem, eliminarItem, fetchCarrito } = useCartStore()
+  const { carrito, isOpen, closeCart, actualizarItem, eliminarItem, fetchCarrito, getCarritoActivo } = useCartStore()
   const { isAuthenticated } = useAuthStore()
 
   useEffect(() => {
     if (isAuthenticated) fetchCarrito()
   }, [isAuthenticated])
+
+  const carritoActivo = getCarritoActivo(isAuthenticated)
 
   if (!isOpen) return null
 
@@ -27,12 +29,7 @@ export default function CartDrawer() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {!isAuthenticated ? (
-            <div className="text-center py-8">
-              <p className="text-gray-600 mb-4">Inicia sesión para ver tu carrito</p>
-              <Link to="/login" onClick={closeCart} className="btn-primary">Iniciar sesión</Link>
-            </div>
-          ) : !carrito || carrito.items.length === 0 ? (
+          {!carritoActivo || carritoActivo.items.length === 0 ? (
             <div className="text-center py-8">
               <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -43,7 +40,7 @@ export default function CartDrawer() {
               </Link>
             </div>
           ) : (
-            carrito.items.map(item => (
+            carritoActivo.items.map(item => (
               <div key={item.id} className="flex gap-3 py-3 border-b last:border-b-0">
                 <img
                   src={item.productoImagen || 'https://placehold.co/80x100/f3f4f6/9ca3af'}
@@ -82,11 +79,11 @@ export default function CartDrawer() {
           )}
         </div>
 
-        {isAuthenticated && carrito && carrito.items.length > 0 && (
+        {carritoActivo && carritoActivo.items.length > 0 && (
           <div className="border-t p-4 space-y-3">
             <div className="flex justify-between font-bold text-lg">
               <span>Total</span>
-              <span>${carrito.total.toFixed(2)}</span>
+              <span>${carritoActivo.total.toFixed(2)}</span>
             </div>
             <Link to="/checkout" onClick={closeCart} className="btn-primary block text-center w-full">
               Proceder al pago

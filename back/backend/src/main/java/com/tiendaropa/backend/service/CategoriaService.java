@@ -16,6 +16,10 @@ public class CategoriaService {
     private final CategoriaRepository categoriaRepository;
 
     public List<CategoriaDTO> listar() {
+        return categoriaRepository.findByActivoTrue().stream().map(this::toDTO).toList();
+    }
+
+    public List<CategoriaDTO> listarTodas() {
         return categoriaRepository.findAll().stream().map(this::toDTO).toList();
     }
 
@@ -34,6 +38,12 @@ public class CategoriaService {
         return toDTO(categoriaRepository.save(toEntity(req, findOrThrow(id))));
     }
 
+    public CategoriaDTO toggleActivo(Long id) {
+        Categoria c = findOrThrow(id);
+        c.setActivo(!c.isActivo());
+        return toDTO(categoriaRepository.save(c));
+    }
+
     public void eliminar(Long id) {
         categoriaRepository.deleteById(id);
     }
@@ -47,6 +57,11 @@ public class CategoriaService {
         c.setNombre(req.getNombre());
         c.setDescripcion(req.getDescripcion());
         c.setImagen(req.getImagen());
+        c.setGenero(req.getGenero());
+        if (req.getTallasDisponibles() != null) {
+            c.getTallasDisponibles().clear();
+            c.getTallasDisponibles().addAll(req.getTallasDisponibles());
+        }
         return c;
     }
 
@@ -56,6 +71,9 @@ public class CategoriaService {
         dto.setNombre(c.getNombre());
         dto.setDescripcion(c.getDescripcion());
         dto.setImagen(c.getImagen());
+        dto.setGenero(c.getGenero());
+        dto.setTallasDisponibles(c.getTallasDisponibles());
+        dto.setActivo(c.isActivo());
         return dto;
     }
 }

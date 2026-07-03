@@ -3,7 +3,7 @@ export interface AuthResponse {
   refreshToken: string
   email: string
   nombre: string
-  rol: 'CLIENTE' | 'ADMIN'
+  rol: 'CLIENTE' | 'VENDEDOR' | 'BODEGUERO' | 'ADMIN'
 }
 
 export interface Usuario {
@@ -18,10 +18,15 @@ export interface Categoria {
   nombre: string
   descripcion?: string
   imagen?: string
+  genero?: string
+  tallasDisponibles?: string[]
+  activo?: boolean
 }
 
 export interface Producto {
   id: number
+  sku?: string
+  slug?: string
   nombre: string
   descripcion?: string
   precio: number
@@ -33,6 +38,9 @@ export interface Producto {
   imagenes: string[]
   tallas: string[]
   colores: string[]
+  stockPorColor?: Record<string, number>
+  caracteristicaTitulo?: string
+  caracteristicaDescripcion?: string
   descuentoPorcentaje?: number
 }
 
@@ -65,29 +73,51 @@ export interface ItemOrden {
   color?: string
 }
 
-export type EstadoOrden = 'PENDIENTE' | 'PAGADO' | 'ENVIADO' | 'ENTREGADO' | 'CANCELADO'
+export type EstadoOrden = 'PENDIENTE' | 'PAGADO' | 'EN_PREPARACION' | 'ENVIADO' | 'ENTREGADO' | 'CANCELADO'
 
 export interface Orden {
   id: number
+  codigoOrden?: string
   usuarioId: number
   usuarioNombre: string
   items: ItemOrden[]
   total: number
   estado: EstadoOrden
-  calleEnvio: string
-  ciudadEnvio: string
+  nombreEnvio?: string
+  celularEnvio?: string
   provinciaEnvio?: string
+  cantonEnvio?: string
+  ciudadEnvio?: string
+  calleEnvio?: string
   codigoPostalEnvio?: string
+  costoEnvio?: number
+  payphoneTransactionId?: string
+  codigoAutorizacion?: string
+  marcaTarjeta?: string
+  numeroGuia?: string
+  guiaImagenUrl?: string
   fechaCreacion: string
 }
 
 export interface Direccion {
   id: number
-  calle: string
+  nombreCompleto: string
+  celular: string
+  provincia: string
+  canton: string
   ciudad: string
-  provincia?: string
-  codigoPostal?: string
-  referencias?: string
+  direccion: string
+  predeterminada: boolean
+}
+
+export interface GuestItem {
+  productoId: number
+  productoNombre: string
+  productoImagen?: string
+  precio: number
+  cantidad: number
+  talla?: string
+  color?: string
 }
 
 export interface Page<T> {
@@ -105,6 +135,7 @@ export interface ProductoFilter {
   nombre?: string
   talla?: string
   color?: string
+  genero?: string
   page?: number
   size?: number
   sort?: string

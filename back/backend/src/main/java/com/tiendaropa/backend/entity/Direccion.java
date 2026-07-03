@@ -17,14 +17,26 @@ public class Direccion {
     private Usuario usuario;
 
     @Column(nullable = false)
-    private String calle;
+    private String nombreCompleto;
+
+    @Column(nullable = false)
+    private String celular;
+
+    @Column(nullable = false)
+    private String cedula;
+
+    @Column(nullable = false)
+    private String provincia;
+
+    @Column(nullable = false)
+    private String canton;
 
     @Column(nullable = false)
     private String ciudad;
 
-    private String provincia;
+    @Column(nullable = false)
+    private String direccion;
 
-    private String codigoPostal;
-
-    private String referencias;
+    @Builder.Default
+    private boolean predeterminada = false;
 }
