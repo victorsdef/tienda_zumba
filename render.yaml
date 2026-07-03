@@ -2,7 +2,7 @@ services:
   - type: web
     name: sofia-couture-backend
     runtime: docker
-    plan: starter
+    plan: free
     region: virginia
     rootDir: back/backend
     dockerfilePath: Dockerfile
@@ -70,7 +70,7 @@ services:
   - type: web
     name: sofia-couture-frontend
     runtime: docker
-    plan: starter
+    plan: free
     region: virginia
     rootDir: front/frontend
     dockerfilePath: Dockerfile
@@ -89,7 +89,7 @@ services:
 
 databases:
   - name: sofia-couture-db
-    plan: basic-256mb
+    plan: free
     region: virginia
     databaseName: sofiacouture
     user: sofiauser

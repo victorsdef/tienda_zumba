@@ -12,6 +12,16 @@ Usa `render.yaml`. No uses `docker-compose` para Render.
 - El frontend se conecta al backend por red privada de Render
 - El backend usa disco persistente para `uploads`
 
+## Planes actuales en el blueprint
+
+El archivo está configurado para pruebas:
+
+- frontend: `free`
+- backend: `free`
+- postgres: `free`
+
+Esto sirve para validar la app en internet mientras sigues desarrollando.
+
 ## Cómo subirlo
 
 1. Sube este repo a GitHub.
@@ -51,6 +61,13 @@ Te conviene:
 - usar datos reales solo si es necesario
 - probar Payphone con cuidado
 - revisar que la URL pública del frontend sea la que debe volver desde Payphone
+
+## Limitaciones del modo gratis
+
+- los servicios web pueden dormirse por inactividad
+- el primer request puede tardar mientras despiertan
+- la base de datos gratis no es para uso serio o estable a largo plazo
+- cuando quieras algo más firme, cambia los planes del `render.yaml`
 
 ## Para local
 
