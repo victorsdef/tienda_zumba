@@ -12,10 +12,6 @@ services:
       paths:
         - back/backend/**
         - render.yaml
-    disk:
-      name: uploads
-      mountPath: /var/data
-      sizeGB: 5
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
@@ -32,7 +28,7 @@ services:
           name: sofia-couture-db
           property: password
       - key: APP_UPLOAD_DIR
-        value: /var/data/uploads
+        value: /tmp/uploads
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRATION

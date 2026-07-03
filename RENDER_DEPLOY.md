@@ -10,7 +10,7 @@ Usa `render.yaml`. No uses `docker-compose` para Render.
   - `sofia-couture-db`
 - El backend tiene health check en `/api/health`
 - El frontend se conecta al backend por red privada de Render
-- El backend usa disco persistente para `uploads`
+- En plan gratis, los archivos subidos se guardan de forma temporal
 
 ## Planes actuales en el blueprint
 
@@ -21,6 +21,11 @@ El archivo está configurado para pruebas:
 - postgres: `free`
 
 Esto sirve para validar la app en internet mientras sigues desarrollando.
+
+En este modo:
+
+- `APP_UPLOAD_DIR` apunta a `/tmp/uploads`
+- los uploads no son persistentes entre reinicios o nuevos deploys
 
 ## Cómo subirlo
 
@@ -67,6 +72,7 @@ Te conviene:
 - los servicios web pueden dormirse por inactividad
 - el primer request puede tardar mientras despiertan
 - la base de datos gratis no es para uso serio o estable a largo plazo
+- los archivos subidos pueden perderse porque no hay disco persistente en `free`
 - cuando quieras algo más firme, cambia los planes del `render.yaml`
 
 ## Para local
