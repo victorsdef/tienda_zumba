@@ -36,6 +36,13 @@ En este modo:
 5. Render detectará `render.yaml`.
 6. Revisa el plan y crea los servicios.
 
+Si ya habías creado los servicios antes con otra configuración:
+
+- entra al frontend en Render
+- revisa la variable `BACKEND_URL`
+- debe apuntar a la URL pública real del backend
+- si sigue teniendo algo como `sofia-couture-backend`, actualízala o vuelve a sincronizar el Blueprint
+
 ## Variables que debes completar en Render
 
 Estas quedan pendientes a propósito y las llenas en el panel de Render:

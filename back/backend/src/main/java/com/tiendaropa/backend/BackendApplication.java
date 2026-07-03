@@ -14,7 +14,19 @@ import org.springframework.web.client.RestTemplate;
 public class BackendApplication {
 
 	public static void main(String[] args) {
+		normalizarDatabaseUrl();
 		SpringApplication.run(BackendApplication.class, args);
+	}
+
+	private static void normalizarDatabaseUrl() {
+		String dbUrl = System.getenv("DB_URL");
+		if (dbUrl == null || dbUrl.isBlank()) {
+			return;
+		}
+
+		if (dbUrl.startsWith("postgresql://") || dbUrl.startsWith("postgres://")) {
+			System.setProperty("spring.datasource.url", "jdbc:" + dbUrl);
+		}
 	}
 
 	@Bean
