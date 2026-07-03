@@ -46,7 +46,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/ordenes/invitado").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/pagos/confirmar").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/pagos/preparar").permitAll()
-                .requestMatchers("/swagger-ui/**", "/api-docs/**", "/h2-console/**").permitAll()
+                .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/api-docs/**", "/v3/api-docs/**", "/h2-console/**").permitAll()
                 .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "VENDEDOR", "BODEGUERO")
                 .anyRequest().authenticated()
             )
