@@ -2,6 +2,8 @@ package com.tiendaropa.backend;
 
 import com.tiendaropa.backend.service.OrdenService;
 import com.tiendaropa.backend.service.ProductoService;
+import java.net.URI;
+import java.net.URISyntaxException;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -25,7 +27,32 @@ public class BackendApplication {
 		}
 
 		if (dbUrl.startsWith("postgresql://") || dbUrl.startsWith("postgres://")) {
-			System.setProperty("spring.datasource.url", "jdbc:" + dbUrl);
+			System.setProperty("spring.datasource.url", convertirJdbcUrl(dbUrl));
+		}
+	}
+
+	private static String convertirJdbcUrl(String dbUrl) {
+		try {
+			String normalizedUrl = dbUrl.startsWith("postgres://")
+				? "postgresql://" + dbUrl.substring("postgres://".length())
+				: dbUrl;
+			URI uri = new URI(normalizedUrl);
+			StringBuilder jdbcUrl = new StringBuilder("jdbc:postgresql://")
+				.append(uri.getHost());
+
+			if (uri.getPort() > 0) {
+				jdbcUrl.append(":").append(uri.getPort());
+			}
+
+			jdbcUrl.append(uri.getPath());
+
+			if (uri.getQuery() != null && !uri.getQuery().isBlank()) {
+				jdbcUrl.append("?").append(uri.getQuery());
+			}
+
+			return jdbcUrl.toString();
+		} catch (URISyntaxException | IllegalArgumentException ex) {
+			return "jdbc:" + dbUrl;
 		}
 	}
 
