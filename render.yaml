@@ -78,10 +78,7 @@ services:
         - render.yaml
     envVars:
       - key: BACKEND_URL
-        fromService:
-          type: web
-          name: sofia-couture-backend
-          envVarKey: RENDER_EXTERNAL_URL
+        value: https://sofia-couture-backend.onrender.com
 
 databases:
   - name: sofia-couture-db
