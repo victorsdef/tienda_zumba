@@ -16,4 +16,4 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
-ENTRYPOINT ["/bin/sh", "-c", "if [ -n \"$DB_URL\" ]; then case \"$DB_URL\" in postgresql://*|postgres://*) export DB_URL=\"jdbc:${DB_URL}\" ;; esac; fi; exec java -jar app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

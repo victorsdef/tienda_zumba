@@ -2,8 +2,6 @@ package com.tiendaropa.backend;
 
 import com.tiendaropa.backend.service.OrdenService;
 import com.tiendaropa.backend.service.ProductoService;
-import java.net.URI;
-import java.net.URISyntaxException;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -26,35 +24,53 @@ public class BackendApplication {
 			return;
 		}
 
-		if (dbUrl.startsWith("postgresql://") || dbUrl.startsWith("postgres://")) {
-			System.setProperty("spring.datasource.url", convertirJdbcUrl(dbUrl));
+		if (dbUrl.startsWith("postgresql://") || dbUrl.startsWith("postgres://")
+			|| dbUrl.startsWith("jdbc:postgresql://") || dbUrl.startsWith("jdbc:postgres://")) {
+			DatosConexion datosConexion = extraerDatosConexion(dbUrl);
+			System.setProperty("spring.datasource.url", datosConexion.jdbcUrl());
+			if (System.getenv("DB_USERNAME") == null || System.getenv("DB_USERNAME").isBlank()) {
+				System.setProperty("spring.datasource.username", datosConexion.username());
+			}
+			if (System.getenv("DB_PASSWORD") == null || System.getenv("DB_PASSWORD").isBlank()) {
+				System.setProperty("spring.datasource.password", datosConexion.password());
+			}
 		}
 	}
 
-	private static String convertirJdbcUrl(String dbUrl) {
-		try {
-			String normalizedUrl = dbUrl.startsWith("postgres://")
-				? "postgresql://" + dbUrl.substring("postgres://".length())
-				: dbUrl;
-			URI uri = new URI(normalizedUrl);
-			StringBuilder jdbcUrl = new StringBuilder("jdbc:postgresql://")
-				.append(uri.getHost());
-
-			if (uri.getPort() > 0) {
-				jdbcUrl.append(":").append(uri.getPort());
-			}
-
-			jdbcUrl.append(uri.getPath());
-
-			if (uri.getQuery() != null && !uri.getQuery().isBlank()) {
-				jdbcUrl.append("?").append(uri.getQuery());
-			}
-
-			return jdbcUrl.toString();
-		} catch (URISyntaxException | IllegalArgumentException ex) {
-			return "jdbc:" + dbUrl;
+	private static DatosConexion extraerDatosConexion(String dbUrl) {
+		String normalizedUrl = dbUrl;
+		if (normalizedUrl.startsWith("jdbc:")) {
+			normalizedUrl = normalizedUrl.substring("jdbc:".length());
 		}
+		if (normalizedUrl.startsWith("postgres://")) {
+			normalizedUrl = "postgresql://" + normalizedUrl.substring("postgres://".length());
+		}
+
+		String sinEsquema = normalizedUrl.substring("postgresql://".length());
+		String[] partesRuta = sinEsquema.split("/", 2);
+		String authority = partesRuta[0];
+		String pathAndQuery = partesRuta.length > 1 ? partesRuta[1] : "";
+
+		String credenciales = "";
+		String hostPort = authority;
+		int indiceArroba = authority.lastIndexOf('@');
+		if (indiceArroba >= 0) {
+			credenciales = authority.substring(0, indiceArroba);
+			hostPort = authority.substring(indiceArroba + 1);
+		}
+
+		String username = "";
+		String password = "";
+		if (!credenciales.isBlank()) {
+			String[] partesCredenciales = credenciales.split(":", 2);
+			username = partesCredenciales[0];
+			password = partesCredenciales.length > 1 ? partesCredenciales[1] : "";
+		}
+
+		return new DatosConexion("jdbc:postgresql://" + hostPort + "/" + pathAndQuery, username, password);
 	}
+
+	private record DatosConexion(String jdbcUrl, String username, String password) {}
 
 	@Bean
 	public RestTemplate restTemplate() {
