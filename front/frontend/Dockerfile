@@ -22,6 +22,6 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf.template
 # Al iniciar el contenedor, sustituye variables y arranca nginx
 ENV BACKEND_URL=https://sofia-couture-backend.onrender.com
 ENV BACKEND_HOSTPORT=
-CMD ["/bin/sh", "-c", "if [ -n \"$BACKEND_HOSTPORT\" ]; then export BACKEND_URL=\"http://$BACKEND_HOSTPORT\"; fi; case \"$BACKEND_URL\" in http://*|https://*) ;; *) export BACKEND_URL=\"https://$BACKEND_URL\" ;; esac; envsubst '${BACKEND_URL}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+CMD ["/bin/sh", "-c", "if [ -n \"$BACKEND_HOSTPORT\" ]; then export BACKEND_URL=\"http://$BACKEND_HOSTPORT\"; fi; if [ \"$BACKEND_URL\" = \"sofia-couture-backend\" ] || [ -z \"$BACKEND_URL\" ]; then export BACKEND_URL=\"https://sofia-couture-backend.onrender.com\"; fi; case \"$BACKEND_URL\" in http://*|https://*) ;; *) export BACKEND_URL=\"https://$BACKEND_URL\" ;; esac; envsubst '${BACKEND_URL}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
 
 EXPOSE 80
