@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import { IconLock, IconCreditCard, IconInstagram, IconTikTok, IconFacebook } from '../ui/Icon'
-import logo from '../../assets/logo.png'
 
 export default function Footer() {
   return (

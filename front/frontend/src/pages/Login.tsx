@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form'
 import { login } from '../api/auth'
 import { useAuthStore } from '../store/useAuthStore'
 import { useCartStore } from '../store/useCartStore'
-import logo from '../assets/logo.png'
 
 interface FormData {
   email: string

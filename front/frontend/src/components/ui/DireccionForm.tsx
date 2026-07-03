@@ -28,7 +28,7 @@ export default function DireccionForm({ initial, onSubmit, onCancel, submitLabel
   }, [initial, reset])
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(data => onSubmit(data))} className="space-y-4">
       {/* Nombre y cédula */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>

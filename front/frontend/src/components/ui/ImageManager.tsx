@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import ReactCrop, { type Crop, type PixelCrop, centerCrop, makeAspectCrop } from 'react-image-crop'
+import ReactCrop, { type Crop, type PixelCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import api from '../../api/axios'
 import { IconTrash, IconX, IconEdit } from './Icon'

@@ -120,31 +120,31 @@ export const IconFacebook = ({ size, className }: IconProps) => (
 )
 
 // ──── Category icons (filled, colored) ────────────────────────────
-interface CatIconProps { size?: number }
+interface CatIconProps { size?: number; className?: string }
 
-export const IconWoman = ({ size = 32 }: CatIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+export const IconWoman = ({ size = 32, className }: CatIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
     <circle cx="16" cy="8" r="5" fill="#f9a8d4" stroke="#ec4899" strokeWidth="1.5"/>
     <path d="M8 30c0-6 3-10 8-10s8 4 8 10" fill="#fce7f3" stroke="#ec4899" strokeWidth="1.5"/>
     <path d="M10 18l6 4 6-4" stroke="#ec4899" strokeWidth="1.5"/>
   </svg>
 )
-export const IconMan = ({ size = 32 }: CatIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+export const IconMan = ({ size = 32, className }: CatIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
     <circle cx="16" cy="8" r="5" fill="#bfdbfe" stroke="#3b82f6" strokeWidth="1.5"/>
     <rect x="9" y="18" width="14" height="12" rx="2" fill="#dbeafe" stroke="#3b82f6" strokeWidth="1.5"/>
     <line x1="16" y1="18" x2="16" y2="30" stroke="#3b82f6" strokeWidth="1.5"/>
   </svg>
 )
-export const IconKid = ({ size = 32 }: CatIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+export const IconKid = ({ size = 32, className }: CatIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
     <circle cx="16" cy="9" r="6" fill="#bbf7d0" stroke="#22c55e" strokeWidth="1.5"/>
     <path d="M9 30c0-5 3-9 7-9s7 4 7 9" fill="#dcfce7" stroke="#22c55e" strokeWidth="1.5"/>
     <path d="M10 14l2 2M22 14l-2 2" stroke="#22c55e" strokeWidth="1.5"/>
   </svg>
 )
-export const IconShoe = ({ size = 32 }: CatIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+export const IconShoe = ({ size = 32, className }: CatIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
     <path d="M4 22c0 0 4-2 8-2s6 2 10 2h4v3H4v-3z" fill="#fde68a" stroke="#f59e0b" strokeWidth="1.5"/>
     <path d="M4 22v-6c0-2 1-4 4-5l4-1 4-2 4 2v6" fill="#fef3c7" stroke="#f59e0b" strokeWidth="1.5"/>
   </svg>
@@ -173,14 +173,14 @@ export const IconToy = ({ size = 32 }: CatIconProps) => (
     <path d="M12 20h8" stroke="#eab308" strokeWidth="1.5" strokeLinecap="round"/>
   </svg>
 )
-export const IconJewelry = ({ size = 32 }: CatIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+export const IconJewelry = ({ size = 32, className }: CatIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
     <polygon points="16,4 20,12 28,13 22,19 24,27 16,23 8,27 10,19 4,13 12,12" fill="#f5d0fe" stroke="#a855f7" strokeWidth="1.5"/>
     <circle cx="16" cy="16" r="4" fill="#e9d5ff" stroke="#a855f7" strokeWidth="1.5"/>
   </svg>
 )
-export const IconLipstick = ({ size = 32 }: CatIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+export const IconLipstick = ({ size = 32, className }: CatIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
     <rect x="12" y="14" width="8" height="14" rx="1" fill="#fecdd3" stroke="#f43f5e" strokeWidth="1.5"/>
     <path d="M12 14V10l4-6 4 6v4" fill="#fed7d7" stroke="#f43f5e" strokeWidth="1.5"/>
     <ellipse cx="16" cy="8" rx="4" ry="2" fill="#f43f5e"/>
@@ -216,8 +216,8 @@ export const IconSport = ({ size = 32 }: CatIconProps) => (
     <path d="M8 24c2-2 4-6 8-8s6-2 8 0" stroke="#16a34a" strokeWidth="1.5"/>
   </svg>
 )
-export const IconHanger = ({ size = 32 }: CatIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+export const IconHanger = ({ size = 32, className }: CatIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
     <path d="M16 6a3 3 0 0 1 3 3h0a3 3 0 0 1-3 3" stroke="#8b5cf6" strokeWidth="1.5" strokeLinecap="round"/>
     <path d="M16 12L4 22h24L16 12z" fill="#ede9fe" stroke="#8b5cf6" strokeWidth="1.5"/>
     <circle cx="16" cy="5" r="2" fill="#ddd6fe" stroke="#8b5cf6" strokeWidth="1.5"/>

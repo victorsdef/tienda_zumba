@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { getProductos, getProductosTrending } from '../api/productos'
+import { getProductos } from '../api/productos'
 import { getBannersPublic, type Banner } from '../api/banners'
 import ProductCard from '../components/products/ProductCard'
 import { ProductGridSkeleton } from '../components/ui/LoadingSkeleton'
@@ -141,10 +141,6 @@ export default function Home() {
   // Mostrar siempre todos los géneros
   const catIcons = ALL_GENEROS
 
-  const { data: trending, isLoading: loadingTrending } = useQuery({
-    queryKey: ['productos', 'trending'],
-    queryFn: () => getProductosTrending(10),
-  })
   const { data: ofertas, isLoading: loadingOfertas } = useQuery({
     queryKey: ['productos', 'ofertas'],
     queryFn: () => getProductos({ size: 6 }),

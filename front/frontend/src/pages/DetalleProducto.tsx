@@ -21,12 +21,6 @@ const TALLA_COLOR: Record<TallaGuia, string> = {
   XS: '#9b8ea0', S: '#7d8ea0', M: '#7d9a8e', L: '#a08e7d', XL: '#a07d7d',
 }
 
-const ZONAS = [
-  { label: 'A', zona: 'Pecho (A)',   color: '#c0392b', bg: '#fdf0ef' },
-  { label: 'B', zona: 'Cintura (B)', color: '#d35400', bg: '#fef3ec' },
-  { label: 'C', zona: 'Cadera (C)',  color: '#6c3483', bg: '#f5eef8' },
-]
-
 // Coordenadas en el viewBox 250x500 (solo mitad izquierda = figura de frente)
 // cx = centro del cuerpo para el punto central de medición
 const LINEAS_MEDIDA = [

@@ -41,6 +41,7 @@ export interface Producto {
   stockPorColor?: Record<string, number>
   caracteristicaTitulo?: string
   caracteristicaDescripcion?: string
+  caracteristicas?: string[]
   descuentoPorcentaje?: number
 }
 
@@ -102,6 +103,7 @@ export interface Orden {
 export interface Direccion {
   id: number
   nombreCompleto: string
+  cedula?: string
   celular: string
   provincia: string
   canton: string

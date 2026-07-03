@@ -3,6 +3,7 @@ import type { Direccion } from '../types'
 
 export type DireccionRequest = {
   nombreCompleto: string
+  cedula?: string
   celular: string
   provincia: string
   canton: string
