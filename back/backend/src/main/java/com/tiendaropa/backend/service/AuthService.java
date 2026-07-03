@@ -16,8 +16,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -34,23 +32,19 @@ public class AuthService {
         if (usuarioRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("El email ya está registrado");
         }
-        String token = UUID.randomUUID().toString();
         Usuario usuario = Usuario.builder()
             .nombre(request.getNombre())
             .email(request.getEmail())
             .password(passwordEncoder.encode(request.getPassword()))
             .rol(Rol.CLIENTE)
-            .emailVerificado(false)
-            .tokenVerificacion(token)
+            .emailVerificado(true)
             .build();
         usuarioRepository.save(usuario);
 
         Carrito carrito = Carrito.builder().usuario(usuario).build();
         carritoRepository.save(carrito);
 
-        emailService.enviarVerificacion(usuario.getEmail(), usuario.getNombre(), token);
-
-        return "Te enviamos un correo a " + usuario.getEmail() + ". Verificá tu cuenta para poder iniciar sesión.";
+        return "Cuenta creada correctamente. Ya podés iniciar sesión.";
     }
 
     @Transactional
