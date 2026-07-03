@@ -3,13 +3,20 @@ package com.tiendaropa.backend.service;
 import com.tiendaropa.backend.entity.ItemOrden;
 import com.tiendaropa.backend.entity.Orden;
 import jakarta.mail.internet.MimeMessage;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +24,7 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
     private final JavaMailSender mailSender;
+    private final RestTemplate restTemplate;
 
     @Value("${app.mail.from}")
     private String from;
@@ -26,6 +34,12 @@ public class EmailService {
 
     @Value("${app.mail.admin}")
     private String adminEmail;
+
+    @Value("${app.mail.resend.api-key:}")
+    private String resendApiKey;
+
+    @Value("${app.mail.resend.api-url:https://api.resend.com/emails}")
+    private String resendApiUrl;
 
     @Async
     public void enviarVerificacion(String destinatario, String nombre, String token) {
@@ -386,16 +400,47 @@ public class EmailService {
 
     private void enviar(String destinatario, String asunto, String html) {
         try {
-            MimeMessage msg = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
-            helper.setFrom(from);
-            helper.setTo(destinatario);
-            helper.setSubject(asunto);
-            helper.setText(html, true);
-            mailSender.send(msg);
+            if (resendApiKey != null && !resendApiKey.isBlank()) {
+                enviarConResend(destinatario, asunto, html);
+            } else {
+                enviarConSmtp(destinatario, asunto, html);
+            }
             log.info("Email enviado a {}: {}", destinatario, asunto);
         } catch (Exception e) {
             log.error("Error enviando email a {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    private void enviarConSmtp(String destinatario, String asunto, String html) throws Exception {
+        MimeMessage msg = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
+        helper.setFrom(from);
+        helper.setTo(destinatario);
+        helper.setSubject(asunto);
+        helper.setText(html, true);
+        mailSender.send(msg);
+    }
+
+    private void enviarConResend(String destinatario, String asunto, String html) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(resendApiKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, Object> payload = Map.of(
+            "from", from,
+            "to", List.of(destinatario),
+            "subject", asunto,
+            "html", html
+        );
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+            resendApiUrl,
+            new HttpEntity<>(payload, headers),
+            String.class
+        );
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new IllegalStateException("Resend devolvio estado " + response.getStatusCode().value());
         }
     }
 }
