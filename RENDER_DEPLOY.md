@@ -1,6 +1,41 @@
-# Deploy temporal en Render
+# Docker local y Render
 
-Usa `render.yaml`. No uses `docker-compose` para Render.
+Tienes dos caminos separados:
+
+- local: `docker-compose.yml`
+- Render: `render.yaml`
+
+No uses `docker-compose` para Render.
+
+## Para local con Docker
+
+1. Crea un archivo `.env` basado en `.env.production.example`
+2. Ajusta al menos:
+   - `POSTGRES_PASSWORD`
+   - `JWT_SECRET`
+   - `PAYPHONE_TOKEN`
+   - `PAYPHONE_STORE_ID`
+3. Levanta todo:
+
+```bash
+docker compose up --build
+```
+
+Queda pensado para que:
+
+- frontend use `http://backend:8080` dentro de Docker
+- backend use Postgres del servicio `db`
+- Payphone vuelva a `http://localhost:${FRONTEND_PORT}`
+
+Puertos por defecto:
+
+- frontend: `http://localhost`
+- backend: `http://localhost:8080`
+- postgres: interno al compose
+
+Si quieres cambiar el backend del frontend local, usa:
+
+- `FRONTEND_BACKEND_URL=http://backend:8080`
 
 ## Lo que ya está preparado
 
@@ -82,9 +117,7 @@ Te conviene:
 - los archivos subidos pueden perderse porque no hay disco persistente en `free`
 - cuando quieras algo más firme, cambia los planes del `render.yaml`
 
-## Para local
+## Resumen rápido
 
-Si quieres levantarlo en tu máquina con contenedores:
-
-- usa `docker-compose.yml`
-- llena antes un `.env` basado en `.env.production.example`
+- desarrollo local con contenedores: `docker-compose.yml`
+- despliegue en Render: `render.yaml`

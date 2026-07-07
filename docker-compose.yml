@@ -6,7 +6,10 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-sofiacouture}
       POSTGRES_USER: ${POSTGRES_USER:-sofiauser}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sofia_dev_password}
+      POSTGRES_INITDB_ARGS: ${POSTGRES_INITDB_ARGS:---auth-host=trust --auth-local=trust}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -23,12 +26,12 @@ services:
       db:
         condition: service_healthy
     environment:
-      SPRING_PROFILES_ACTIVE: prod
+      SPRING_PROFILES_ACTIVE: dev
       PORT: 8080
       DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-sofiacouture}
       DB_USERNAME: ${POSTGRES_USER:-sofiauser}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-sofia_dev_password}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_me_123456789}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
       JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-604800000}
       APP_UPLOAD_DIR: ${APP_UPLOAD_DIR:-/uploads}
@@ -38,13 +41,15 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME}
       SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_API_URL: ${RESEND_API_URL:-https://api.resend.com/emails}
       PAYPHONE_TOKEN: ${PAYPHONE_TOKEN}
       PAYPHONE_STORE_ID: ${PAYPHONE_STORE_ID}
-      PAYPHONE_RESPONSE_BASE_URL: ${PAYPHONE_RESPONSE_BASE_URL:-http://localhost}
+      PAYPHONE_RESPONSE_BASE_URL: ${PAYPHONE_RESPONSE_BASE_URL:-http://localhost:${FRONTEND_PORT:-80}}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     volumes:
-      - uploads_data:/uploads
+      - ./storage/uploads:/uploads
 
   frontend:
     build:
@@ -55,10 +60,9 @@ services:
     depends_on:
       - backend
     environment:
-      BACKEND_URL: http://backend:8080
+      BACKEND_URL: ${FRONTEND_BACKEND_URL:-http://backend:8080}
     ports:
       - "${FRONTEND_PORT:-80}:80"
 
 volumes:
   postgres_data:
-  uploads_data:

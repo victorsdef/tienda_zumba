@@ -6,14 +6,24 @@ import { getDirecciones, crearDireccion } from '../api/direcciones'
 import type { DireccionRequest } from '../api/direcciones'
 import { useCartStore } from '../store/useCartStore'
 import { useAuthStore } from '../store/useAuthStore'
-import DireccionForm from '../components/ui/DireccionForm'
+import DireccionForm from '@shared/DireccionForm'
 import { getRetiroInfo } from '../api/configuracion'
 import type { Direccion, Orden } from '../types'
 
-const COSTO_ENVIO = 6
+type TipoEntrega = 'DOMICILIO' | 'CUENCA' | 'RETIRO'
 
 function codigoVisible(orden: Orden) {
   return orden.codigoOrden || `#${orden.id}`
+}
+
+function errorTexto(error: unknown, fallback: string) {
+  if (typeof error === 'object' && error !== null) {
+    const response = (error as { response?: { data?: { message?: string; error?: string } } }).response
+    if (response?.data?.message) return response.data.message
+    if (response?.data?.error) return response.data.error
+  }
+  if (error instanceof Error && error.message) return error.message
+  return fallback
 }
 
 export default function Checkout() {
@@ -22,13 +32,12 @@ export default function Checkout() {
   const { isAuthenticated } = useAuthStore()
   const { fetchCarrito, getCarritoActivo, guestItems, clearGuest } = useCartStore()
   const [error, setError] = useState('')
-  const [conEnvio, setConEnvio] = useState(true)
+  const [tipoEntrega, setTipoEntrega] = useState<TipoEntrega>('DOMICILIO')
   const [direccionId, setDireccionId] = useState<number | null>(null)
   const [mostrarFormDir, setMostrarFormDir] = useState(false)
   const [procesando, setProcesando] = useState(false)
   const [ordenCreada, setOrdenCreada] = useState<Orden | null>(null)
 
-  // Datos invitado
   const [guestData, setGuestData] = useState({ nombre: '', email: '' })
   const [guestDirForm, setGuestDirForm] = useState<DireccionRequest | null>(null)
 
@@ -54,7 +63,6 @@ export default function Checkout() {
     enabled: isAuthenticated,
   })
 
-  // Seleccionar predeterminada automáticamente
   useEffect(() => {
     if (direcciones.length > 0 && direccionId === null) {
       const pred = direcciones.find(d => d.predeterminada) ?? direcciones[0]
@@ -73,8 +81,12 @@ export default function Checkout() {
 
   if (!carritoActivo || carritoActivo.items.length === 0) return null
 
+  const envioDomicilio = Number(retiro?.costo_envio ?? 6)
+  const envioCuenca = Number(retiro?.costo_envio_cuenca ?? 3)
+  const requiereDireccion = tipoEntrega !== 'RETIRO'
+  const requierePago = tipoEntrega !== 'RETIRO'
   const subtotal = carritoActivo.total
-  const costoEnvio = conEnvio ? COSTO_ENVIO : 0
+  const costoEnvio = tipoEntrega === 'DOMICILIO' ? envioDomicilio : tipoEntrega === 'CUENCA' ? envioCuenca : 0
   const total = subtotal + costoEnvio
 
   const direccionSeleccionada: Direccion | undefined = direcciones.find(d => d.id === direccionId)
@@ -83,18 +95,21 @@ export default function Checkout() {
     setError('')
 
     if (isAuthenticated) {
-      if (conEnvio && !direccionId && !mostrarFormDir) {
-        setError('Seleccioná o agregá una dirección de entrega')
+      if (requiereDireccion && !direccionId && !mostrarFormDir) {
+        setError('Selecciona o agrega una direccion de entrega')
         return
       }
       setProcesando(true)
 
-      // Abrir pestaña en blanco ANTES del await para que el navegador no la bloquee
-      const pagoWindow = conEnvio ? window.open('', '_blank') : null
+      const pagoWindow = requierePago ? window.open('', '_blank') : null
 
       try {
-        const orden = await crearOrden({ direccionId: direccionId ?? undefined, conEnvio })
-        if (!conEnvio) setOrdenCreada(orden)
+        const orden = await crearOrden({
+          direccionId: requiereDireccion ? direccionId ?? undefined : undefined,
+          tipoEntrega,
+          conEnvio: requierePago,
+        })
+        if (!requierePago) setOrdenCreada(orden)
         if (pagoWindow) {
           const params = new URLSearchParams({ ordenId: String(orden.id), total: String(orden.total) })
           if (orden.codigoOrden) params.set('codigoOrden', orden.codigoOrden)
@@ -102,30 +117,31 @@ export default function Checkout() {
           if (cel) params.set('celular', cel)
           pagoWindow.location.href = `/pagar?${params}`
         }
-      } catch {
-        setError('Error al procesar el pedido. Intentá de nuevo.')
+      } catch (e) {
+        setError(errorTexto(e, 'Error al procesar el pedido. Intenta de nuevo.'))
         pagoWindow?.close()
         setProcesando(false)
       }
     } else {
       if (!guestData.nombre || !guestData.email) {
-        setError('Completá tu nombre y email')
+        setError('Completa tu nombre y email')
         return
       }
-      if (!guestDirForm) {
-        setError('Completá la dirección de entrega')
+      if (requiereDireccion && !guestDirForm) {
+        setError('Completa la direccion de entrega')
         return
       }
       setProcesando(true)
 
-      const pagoWindow = conEnvio ? window.open('', '_blank') : null
+      const pagoWindow = requierePago ? window.open('', '_blank') : null
 
       try {
         const orden = await crearOrdenInvitado({
           nombre: guestData.nombre,
           email: guestData.email,
-          ...guestDirForm,
-          conEnvio,
+          ...(guestDirForm ?? {}),
+          tipoEntrega,
+          conEnvio: requierePago,
           items: guestItems.map(gi => ({
             productoId: gi.productoId,
             cantidad: gi.cantidad,
@@ -134,15 +150,15 @@ export default function Checkout() {
           })),
         })
         clearGuest()
-        if (!conEnvio) setOrdenCreada(orden)
+        if (!requierePago) setOrdenCreada(orden)
         if (pagoWindow) {
           const params = new URLSearchParams({ ordenId: String(orden.id), total: String(orden.total), email: guestData.email })
           if (orden.codigoOrden) params.set('codigoOrden', orden.codigoOrden)
-          if (guestDirForm.celular) params.set('celular', guestDirForm.celular)
+          if (guestDirForm?.celular) params.set('celular', guestDirForm.celular)
           pagoWindow.location.href = `/pagar?${params}`
         }
-      } catch {
-        setError('Error al procesar el pedido. Intentá de nuevo.')
+      } catch (e) {
+        setError(errorTexto(e, 'Error al procesar el pedido. Intenta de nuevo.'))
         pagoWindow?.close()
         setProcesando(false)
       }
@@ -154,20 +170,15 @@ export default function Checkout() {
       <h1 className="text-xl md:text-2xl font-bold mb-6 text-[#4a3728]">Finalizar compra</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-
-        {/* ── Columna izquierda ── */}
         <div className="space-y-5">
-
-          {/* Banner login (invitado) */}
           {!isAuthenticated && (
             <div className="bg-[#f5f0e8] border border-[#ddd8d0] rounded-lg p-4 text-sm text-[#7d5c48]">
-              ¿Tenés cuenta?{' '}
-              <Link to="/login" className="font-semibold underline hover:text-[#4a3728]">Iniciá sesión</Link>
+              ¿Tienes cuenta?{' '}
+              <Link to="/login" className="font-semibold underline hover:text-[#4a3728]">Inicia sesion</Link>
               {' '}para guardar tu historial y direcciones.
             </div>
           )}
 
-          {/* Datos del invitado */}
           {!isAuthenticated && (
             <div className="bg-white border border-[#ddd8d0] rounded-lg p-4 space-y-3">
               <h2 className="font-bold text-[#4a3728]">Tus datos</h2>
@@ -177,7 +188,8 @@ export default function Checkout() {
                   <input
                     value={guestData.nombre}
                     onChange={e => setGuestData(p => ({ ...p, nombre: e.target.value }))}
-                    className="input-field" placeholder="Ana García"
+                    className="input-field"
+                    placeholder="Ana Garcia"
                   />
                 </div>
                 <div>
@@ -186,94 +198,53 @@ export default function Checkout() {
                     type="email"
                     value={guestData.email}
                     onChange={e => setGuestData(p => ({ ...p, email: e.target.value }))}
-                    className="input-field" placeholder="tu@email.com"
+                    className="input-field"
+                    placeholder="tu@email.com"
                   />
                 </div>
               </div>
             </div>
           )}
 
-          {/* ── Dirección de entrega ── */}
-          <div className="bg-white border border-[#ddd8d0] rounded-lg p-4">
-            <h2 className="font-bold text-[#4a3728] mb-4">Dirección de entrega</h2>
-
-            {isAuthenticated ? (
-              <div className="space-y-3">
-                {/* Direcciones guardadas */}
-                {direcciones.map(d => (
-                  <label key={d.id} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                    direccionId === d.id ? 'border-[#7d5c48] bg-[#f5f0e8]' : 'border-gray-200 hover:border-gray-300'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="direccion"
-                      checked={direccionId === d.id}
-                      onChange={() => { setDireccionId(d.id); setMostrarFormDir(false) }}
-                      className="mt-0.5 accent-[#7d5c48]"
-                    />
-                    <div className="text-sm min-w-0">
-                      <p className="font-semibold text-[#4a3728]">{d.nombreCompleto}
-                        {d.predeterminada && <span className="ml-2 text-[10px] bg-[#7d5c48] text-white px-1.5 py-0.5 rounded-full">predeterminada</span>}
-                      </p>
-                      <p className="text-gray-500 text-xs">{d.celular}</p>
-                      <p className="text-gray-600 text-xs mt-0.5">{d.direccion}, {d.ciudad}, {d.canton}, {d.provincia}</p>
-                    </div>
-                  </label>
-                ))}
-
-                {/* Agregar nueva */}
-                {!mostrarFormDir ? (
-                  <button
-                    onClick={() => { setMostrarFormDir(true); setDireccionId(null) }}
-                    className="w-full border-2 border-dashed border-gray-200 rounded-lg py-3 text-sm text-gray-400 hover:border-[#7d5c48] hover:text-[#7d5c48] transition-colors"
-                  >
-                    + Agregar nueva dirección
-                  </button>
-                ) : (
-                  <div className="border border-[#ddd8d0] rounded-lg p-4 bg-[#f5f0e8]">
-                    <p className="text-xs font-semibold text-gray-600 uppercase mb-3">Nueva dirección</p>
-                    <DireccionForm
-                      onSubmit={async data => { await crearDirMut.mutateAsync(data) }}
-                      onCancel={() => { setMostrarFormDir(false); if (direcciones.length > 0) setDireccionId(direcciones[0].id) }}
-                      loading={crearDirMut.isPending}
-                      submitLabel="Guardar y usar"
-                    />
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* Invitado — formulario directo */
-              <DireccionForm
-                      onSubmit={data => { setGuestDirForm(data) }}
-                submitLabel={guestDirForm ? 'Direccion guardada' : 'Confirmar direccion'}
-              />
-            )}
-          </div>
-
-          {/* ── Tipo de entrega ── */}
           <div className="bg-white border border-[#ddd8d0] rounded-lg p-4">
             <h2 className="font-bold text-[#4a3728] mb-3">Tipo de entrega</h2>
             <div className="space-y-2">
-              <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${conEnvio ? 'border-[#7d5c48] bg-[#f5f0e8]' : 'border-gray-200 hover:border-gray-300'}`}>
-                <input type="radio" name="envio" checked={conEnvio} onChange={() => setConEnvio(true)} className="accent-[#7d5c48]" />
+              <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${tipoEntrega === 'DOMICILIO' ? 'border-[#7d5c48] bg-[#f5f0e8]' : 'border-gray-200 hover:border-gray-300'}`}>
+                <input type="radio" name="envio" checked={tipoEntrega === 'DOMICILIO'} onChange={() => setTipoEntrega('DOMICILIO')} className="accent-[#7d5c48]" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-[#4a3728]">Envío a domicilio</p>
-                  <p className="text-xs text-gray-500">Recibís en tu dirección</p>
+                  <p className="text-sm font-semibold text-[#4a3728]">Envio a domicilio</p>
+                  <p className="text-xs text-gray-500">Entrega normal a tu direccion</p>
                 </div>
-                <span className="text-sm font-bold text-[#7d5c48]">$6.00</span>
+                <span className="text-sm font-bold text-[#7d5c48]">${envioDomicilio.toFixed(2)}</span>
               </label>
-              <label className={`flex flex-col gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${!conEnvio ? 'border-[#7d5c48] bg-[#f5f0e8]' : 'border-gray-200 hover:border-gray-300'}`}>
+
+              <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${tipoEntrega === 'CUENCA' ? 'border-[#7d5c48] bg-[#f5f0e8]' : 'border-gray-200 hover:border-gray-300'}`}>
+                <input type="radio" name="envio" checked={tipoEntrega === 'CUENCA'} onChange={() => setTipoEntrega('CUENCA')} className="accent-[#7d5c48]" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[#4a3728]">Envio dentro de Cuenca</p>
+                  <p className="text-xs text-gray-500">Tarifa especial para direcciones en Cuenca</p>
+                </div>
+                <span className="text-sm font-bold text-[#7d5c48]">${envioCuenca.toFixed(2)}</span>
+              </label>
+              {tipoEntrega === 'CUENCA' && (
+                <div className="ml-6 bg-white border border-[#ddd8d0] rounded-lg p-3 text-xs text-[#4a3728] space-y-1">
+                  <p className="font-semibold">Envio dentro de Cuenca</p>
+                  <p className="text-gray-500">Asegurate de ingresar una direccion ubicada en Cuenca para acceder a esta tarifa.</p>
+                </div>
+              )}
+
+              <label className={`flex flex-col gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${tipoEntrega === 'RETIRO' ? 'border-[#7d5c48] bg-[#f5f0e8]' : 'border-gray-200 hover:border-gray-300'}`}>
                 <div className="flex items-center gap-3">
-                  <input type="radio" name="envio" checked={!conEnvio} onChange={() => setConEnvio(false)} className="accent-[#7d5c48]" />
+                  <input type="radio" name="envio" checked={tipoEntrega === 'RETIRO'} onChange={() => setTipoEntrega('RETIRO')} className="accent-[#7d5c48]" />
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-[#4a3728]">Retiro en tienda</p>
-                    <p className="text-xs text-gray-500">Cuenca, Ecuador — coordinamos por WhatsApp</p>
+                    <p className="text-xs text-gray-500">Cuenca, Ecuador - coordinamos por WhatsApp</p>
                   </div>
                   <span className="text-sm font-bold text-green-600">Gratis</span>
                 </div>
-                {!conEnvio && (
+                {tipoEntrega === 'RETIRO' && (
                   <div className="ml-6 bg-white border border-[#ddd8d0] rounded-lg p-3 text-xs text-[#4a3728] space-y-1">
-                    <p className="font-semibold">Punto de retiro — Cuenca</p>
+                    <p className="font-semibold">Punto de retiro - Cuenca</p>
                     <p className="text-gray-600">{retiro?.retiro_direccion ?? '...'}</p>
                     <p className="text-gray-500">{retiro?.retiro_horario ?? ''}</p>
                     <p className="text-gray-500 mt-1">Una vez confirmado tu pedido te contactaremos por <span className="font-semibold text-green-700">WhatsApp</span> para coordinar el retiro.</p>
@@ -283,13 +254,71 @@ export default function Checkout() {
             </div>
           </div>
 
-          {/* Error */}
+          {requiereDireccion && (
+            <div className="bg-white border border-[#ddd8d0] rounded-lg p-4">
+              <h2 className="font-bold text-[#4a3728] mb-1">Direccion de entrega</h2>
+              <p className="text-xs text-gray-500 mb-4">
+                {tipoEntrega === 'CUENCA'
+                  ? 'Esta opcion solo aplica para direcciones en Cuenca.'
+                  : 'Completa o selecciona la direccion donde recibiras el pedido.'}
+              </p>
+
+              {isAuthenticated ? (
+                <div className="space-y-3">
+                  {direcciones.map(d => (
+                    <label key={d.id} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                      direccionId === d.id ? 'border-[#7d5c48] bg-[#f5f0e8]' : 'border-gray-200 hover:border-gray-300'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="direccion"
+                        checked={direccionId === d.id}
+                        onChange={() => { setDireccionId(d.id); setMostrarFormDir(false) }}
+                        className="mt-0.5 accent-[#7d5c48]"
+                      />
+                      <div className="text-sm min-w-0">
+                        <p className="font-semibold text-[#4a3728]">{d.nombreCompleto}
+                          {d.predeterminada && <span className="ml-2 text-[10px] bg-[#7d5c48] text-white px-1.5 py-0.5 rounded-full">predeterminada</span>}
+                        </p>
+                        <p className="text-gray-500 text-xs">{d.celular}</p>
+                        <p className="text-gray-600 text-xs mt-0.5">{d.direccion}, {d.ciudad}, {d.canton}, {d.provincia}</p>
+                      </div>
+                    </label>
+                  ))}
+
+                  {!mostrarFormDir ? (
+                    <button
+                      onClick={() => { setMostrarFormDir(true); setDireccionId(null) }}
+                      className="w-full border-2 border-dashed border-gray-200 rounded-lg py-3 text-sm text-gray-400 hover:border-[#7d5c48] hover:text-[#7d5c48] transition-colors"
+                    >
+                      + Agregar nueva direccion
+                    </button>
+                  ) : (
+                    <div className="border border-[#ddd8d0] rounded-lg p-4 bg-[#f5f0e8]">
+                      <p className="text-xs font-semibold text-gray-600 uppercase mb-3">Nueva direccion</p>
+                      <DireccionForm
+                        onSubmit={async data => { await crearDirMut.mutateAsync(data) }}
+                        onCancel={() => { setMostrarFormDir(false); if (direcciones.length > 0) setDireccionId(direcciones[0].id) }}
+                        loading={crearDirMut.isPending}
+                        submitLabel="Guardar y usar"
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <DireccionForm
+                  onSubmit={data => { setGuestDirForm(data) }}
+                  submitLabel={guestDirForm ? 'Direccion guardada' : 'Confirmar direccion'}
+                />
+              )}
+            </div>
+          )}
+
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 rounded px-4 py-3 text-sm">{error}</div>
           )}
 
           {ordenCreada ? (
-            /* Retiro en tienda: confirmación + WhatsApp */
             <div className="bg-green-50 border border-green-200 rounded-lg p-5 text-center space-y-3">
               <p className="font-bold text-green-800 text-base">¡Pedido {codigoVisible(ordenCreada)} confirmado!</p>
               <p className="text-sm text-green-700">Te contactaremos por WhatsApp para coordinar el retiro en Cuenca.</p>
@@ -308,16 +337,17 @@ export default function Checkout() {
                 disabled={procesando}
                 className="btn-primary w-full text-base py-3"
               >
-                {procesando ? 'Procesando...' : `Confirmar y pagar — $${total.toFixed(2)}`}
+                {procesando ? 'Procesando...' : `${requierePago ? 'Confirmar y pagar' : 'Confirmar pedido'} - $${total.toFixed(2)}`}
               </button>
-              <p className="text-xs text-center text-gray-400">
-                Pagá con tarjeta de forma segura a través de Payphone
-              </p>
+              {requierePago && (
+                <p className="text-xs text-center text-gray-400">
+                  Paga con tarjeta de forma segura a traves de Payphone
+                </p>
+              )}
             </>
           )}
         </div>
 
-        {/* ── Columna derecha — Resumen ── */}
         <div>
           <h2 className="font-bold text-lg mb-4 text-[#4a3728]">Resumen del pedido</h2>
           <div className="bg-white border border-[#ddd8d0] rounded-lg overflow-hidden sticky top-4">
@@ -350,7 +380,7 @@ export default function Checkout() {
                 <span>${subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm text-gray-600">
-                <span>Envío</span>
+                <span>{tipoEntrega === 'RETIRO' ? 'Retiro' : tipoEntrega === 'CUENCA' ? 'Envio Cuenca' : 'Envio'}</span>
                 <span className={costoEnvio === 0 ? 'text-green-600 font-medium' : ''}>
                   {costoEnvio === 0 ? 'Gratis' : `$${costoEnvio.toFixed(2)}`}
                 </span>
@@ -361,8 +391,7 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* Dirección seleccionada (resumen) */}
-            {direccionSeleccionada && (
+            {requiereDireccion && direccionSeleccionada && (
               <div className="px-4 pb-4 text-xs text-gray-500">
                 <p className="font-medium text-gray-700 mb-0.5">Entrega para:</p>
                 <p>{direccionSeleccionada.nombreCompleto} · {direccionSeleccionada.celular}</p>

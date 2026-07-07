@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getUsuariosAdmin, cambiarRolUsuario, toggleUsuario, crearUsuarioAdmin } from '../../api/admin'
-import { IconSearch } from '../../components/ui/Icon'
+import { IconSearch } from '@shared/Icon'
 
 interface UsuarioAdmin {
   id: number

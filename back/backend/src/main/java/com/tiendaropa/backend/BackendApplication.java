@@ -1,8 +1,5 @@
 package com.tiendaropa.backend;
 
-import com.tiendaropa.backend.service.OrdenService;
-import com.tiendaropa.backend.service.ProductoService;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -75,13 +72,5 @@ public class BackendApplication {
 	@Bean
 	public RestTemplate restTemplate() {
 		return new RestTemplate();
-	}
-
-	@Bean
-	CommandLineRunner migrarDatosComerciales(ProductoService productoService, OrdenService ordenService) {
-		return args -> {
-			productoService.generarSlugsExistentes();
-			ordenService.generarCodigosOrdenesExistentes();
-		};
 	}
 }

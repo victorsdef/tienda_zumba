@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getDirecciones, crearDireccion, actualizarDireccion, eliminarDireccion, setPredeterminada } from '../api/direcciones'
 import type { DireccionRequest } from '../api/direcciones'
-import DireccionForm from '../components/ui/DireccionForm'
+import DireccionForm from '@shared/DireccionForm'
 import type { Direccion } from '../types'
-import { IconEdit, IconTrash } from '../components/ui/Icon'
+import { IconEdit, IconTrash } from '@shared/Icon'
 
 export default function MisDirecciones() {
   const qc = useQueryClient()

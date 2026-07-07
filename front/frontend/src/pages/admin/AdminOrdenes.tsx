@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getOrdenesAdmin } from '../../api/admin'
 import { actualizarGuiaOrden, cambiarEstadoOrden } from '../../api/ordenes'
 import api from '../../api/axios'
-import { IconChevronDown, IconChevronRight, IconSearch } from '../../components/ui/Icon'
+import { IconChevronDown, IconChevronRight, IconSearch } from '@shared/Icon'
 import type { EstadoOrden, Orden } from '../../types'
 
 const ESTADOS: EstadoOrden[] = ['PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'ENVIADO', 'ENTREGADO', 'CANCELADO']

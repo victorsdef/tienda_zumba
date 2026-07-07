@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { exportarReporteExcel, getDashboard, type ExportarReportePayload } from '../../api/admin'
-import { IconAlertTriangle, IconBarChart, IconDollar, IconPackage, IconUsers } from '../../components/ui/Icon'
+import { IconAlertTriangle, IconBarChart, IconDollar, IconPackage, IconUsers } from '@shared/Icon'
 
 function formatMoney(value: number) {
   return `$${value.toFixed(2)}`

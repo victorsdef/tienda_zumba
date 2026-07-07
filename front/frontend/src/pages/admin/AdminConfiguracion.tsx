@@ -14,9 +14,9 @@ const LABELS: Record<string, ConfigMeta> = {
     tipo: 'numero', label: 'Costo de envío a domicilio', prefix: '$',
     hint: 'Se suma al total del pedido cuando el cliente elige envío a domicilio.',
   },
-  iva_porcentaje: {
-    tipo: 'numero', label: 'IVA Ecuador', suffix: '%',
-    hint: 'Solo referencia para calcular tus precios. Payphone no cobra IVA aparte.',
+  costo_envio_cuenca: {
+    tipo: 'numero', label: 'Costo de envio dentro de Cuenca', prefix: '$',
+    hint: 'Se suma al total del pedido cuando el cliente elige envio dentro de Cuenca.',
   },
   retiro_direccion: {
     tipo: 'texto', label: 'Dirección de retiro (Cuenca)',
@@ -72,7 +72,6 @@ export default function AdminConfiguracion() {
   // Calcular ejemplo con comisión Payphone
   const comision = Number(items.find(i => i.clave === 'comision_payphone')?.valor ?? 5.75)
   const costoEnvio = Number(items.find(i => i.clave === 'costo_envio')?.valor ?? 6)
-  const iva = Number(items.find(i => i.clave === 'iva_porcentaje')?.valor ?? 15)
 
   if (isLoading) return <div className="p-6 text-gray-400">Cargando configuración...</div>
 
@@ -80,7 +79,7 @@ export default function AdminConfiguracion() {
     <div className="p-4 md:p-6 space-y-6 max-w-3xl">
       <div>
         <h1 className="text-xl md:text-2xl font-bold text-gray-900">Configuración</h1>
-        <p className="text-sm text-gray-500 mt-1">Valores actualizables sin tocar código. Afectan precios, comisiones y envíos en tiempo real.</p>
+        <p className="text-sm text-gray-500 mt-1">Valores actualizables sin tocar código. Afectan comisiones y envíos en tiempo real.</p>
       </div>
 
       {/* Tarjetas numéricas */}
@@ -178,7 +177,13 @@ export default function AdminConfiguracion() {
         <p className="text-xs text-gray-500 mb-4">
           Calculá cuánto recibirás realmente por un producto según los valores actuales.
         </p>
-        <SimuladorPrecios comision={comision} costoEnvio={costoEnvio} iva={iva} />
+        <SimuladorPrecios comision={comision} costoEnvio={costoEnvio} />
+      </div>
+
+      <div className="bg-white border border-[#ede8df] rounded-lg p-4">
+        <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+          El precio de cada producto ya debe ser definido por la dueña con el IVA considerado dentro del valor final de venta. Payphone no suma IVA aparte; lo único que descuenta del cobro es la <strong>comisión por transacción</strong> configurada arriba.
+        </div>
       </div>
 
       <div className="text-xs text-gray-400 bg-gray-50 rounded p-3 border border-gray-100">
@@ -190,7 +195,7 @@ export default function AdminConfiguracion() {
   )
 }
 
-function SimuladorPrecios({ comision, costoEnvio, iva }: { comision: number; costoEnvio: number; iva: number }) {
+function SimuladorPrecios({ comision, costoEnvio }: { comision: number; costoEnvio: number }) {
   const [precio, setPrecio] = useState('100')
   const [incluyeEnvio, setIncluyeEnvio] = useState(false)
 
@@ -198,7 +203,6 @@ function SimuladorPrecios({ comision, costoEnvio, iva }: { comision: number; cos
   const comisionMonto = precioNum * (comision / 100)
   const envioMonto = incluyeEnvio ? costoEnvio : 0
   const recibes = precioNum - comisionMonto + envioMonto
-  const precioConIva = precioNum * (1 + iva / 100)
 
   return (
     <div className="space-y-3">
@@ -240,10 +244,6 @@ function SimuladorPrecios({ comision, costoEnvio, iva }: { comision: number; cos
           <div className="flex justify-between px-3 py-2 font-bold text-[#4a3728] bg-[#f5f0e8]">
             <span>Recibirás</span>
             <span>${recibes.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between px-3 py-2 text-xs text-gray-400">
-            <span>Precio con IVA ({iva}%) — referencia</span>
-            <span>${precioConIva.toFixed(2)}</span>
           </div>
         </div>
       )}

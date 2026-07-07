@@ -3,14 +3,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getMisOrdenes } from '../api/ordenes'
 import { useAuthStore } from '../store/useAuthStore'
-import OrderStatus from '../components/orders/OrderStatus'
+import OrderStatus from '@entities/order/OrderStatus'
 import {
   IconChevronRight,
   IconPackage,
   IconRefresh,
   IconSearch,
   IconTruck,
-} from '../components/ui/Icon'
+} from '@shared/Icon'
 import type { EstadoOrden, Orden } from '../types'
 
 const ESTADOS: Array<{ value: 'TODOS' | EstadoOrden; label: string }> = [

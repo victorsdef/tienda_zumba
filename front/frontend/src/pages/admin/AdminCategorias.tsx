@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { getCategoriasAdmin, crearCategoria, actualizarCategoria, eliminarCategoria, toggleCategoria } from '../../api/categorias'
-import ImageManager from '../../components/ui/ImageManager'
-import TallasSelector from '../../components/ui/TallasSelector'
-import { IconEdit, IconSearch, IconTrash } from '../../components/ui/Icon'
+import ImageManager from '@shared/ImageManager'
+import TallasSelector from '@shared/TallasSelector'
+import { IconEdit, IconSearch, IconTrash } from '@shared/Icon'
 import type { Categoria } from '../../types'
 
 type FormData = { nombre: string; descripcion: string }

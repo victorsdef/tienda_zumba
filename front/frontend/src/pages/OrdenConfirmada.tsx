@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom'
-import { IconShield } from '../components/ui/Icon'
+import { IconShield } from '@shared/Icon'
 
 export default function OrdenConfirmada() {
   const { id } = useParams()

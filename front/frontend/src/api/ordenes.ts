@@ -9,6 +9,7 @@ export const crearOrden = (data: {
   cantonEnvio?: string
   ciudadEnvio?: string
   calleEnvio?: string
+  tipoEntrega?: 'DOMICILIO' | 'CUENCA' | 'RETIRO'
   conEnvio: boolean
 }) => api.post<Orden>('/ordenes', data).then(r => r.data)
 
@@ -21,6 +22,7 @@ export const crearOrdenInvitado = (data: {
   canton?: string
   ciudad?: string
   direccion?: string
+  tipoEntrega?: 'DOMICILIO' | 'CUENCA' | 'RETIRO'
   conEnvio: boolean
   items: { productoId: number; cantidad: number; talla?: string; color?: string }[]
 }) => api.post<Orden>('/ordenes/invitado', data).then(r => r.data)

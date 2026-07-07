@@ -5,7 +5,7 @@ import { useAuthStore, type AdminPermission } from '../../store/useAuthStore'
 import {
   IconDollar, IconBarChart, IconPackage, IconUsers, IconGrid,
   IconHanger, IconAlertTriangle, IconImage,
-} from '../../components/ui/Icon'
+} from '@shared/Icon'
 
 type QuickLink = {
   label: string

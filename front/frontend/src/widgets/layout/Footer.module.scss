@@ -1,0 +1,146 @@
+.footer {
+  margin-top: 1.5rem;
+  background: var(--color-brand-800);
+  color: #a8998a;
+}
+
+.inner {
+  width: min(100%, 1400px);
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  font-size: 0.75rem;
+}
+
+.brandBlock {
+  grid-column: span 2;
+}
+
+.brandTitle {
+  margin-bottom: 0.75rem;
+  color: var(--color-brand-050);
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.brandCopy {
+  max-width: 18rem;
+  color: #8a7a6a;
+  font-size: 0.69rem;
+  line-height: 1.65;
+}
+
+.contactLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  color: #a8998a;
+  font-size: 0.69rem;
+  transition: color 160ms ease;
+
+  &:hover {
+    color: var(--color-brand-050);
+  }
+}
+
+.socials {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.socialLink {
+  color: #8a7a6a;
+  transition: color 160ms ease;
+
+  &:hover {
+    color: var(--color-brand-050);
+  }
+}
+
+.columnTitle {
+  margin-bottom: 0.75rem;
+  color: var(--color-brand-050);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.linkList {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.columnLink {
+  transition: color 160ms ease;
+
+  &:hover {
+    color: var(--color-brand-050);
+  }
+}
+
+.bottomBar {
+  border-top: 1px solid #7d5c48;
+}
+
+.bottomInner {
+  width: min(100%, 1400px);
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: #6b5a4a;
+  font-size: 0.69rem;
+}
+
+.payments {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.paymentItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.secureIcon {
+  color: #22c55e;
+}
+
+.cardIcon {
+  color: #60a5fa;
+}
+
+@media (min-width: 768px) {
+  .inner {
+    padding: 2.5rem 1rem;
+  }
+
+  .grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2rem;
+  }
+
+  .brandBlock {
+    grid-column: span 1;
+  }
+
+  .bottomInner {
+    flex-direction: row;
+    gap: 1rem;
+  }
+}

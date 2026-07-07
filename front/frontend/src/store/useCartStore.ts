@@ -50,6 +50,8 @@ function guestToCarrito(items: GuestItem[]): Carrito {
 }
 
 const isAuth = () => !!localStorage.getItem('accessToken')
+const sameVariant = (item: GuestItem, productoId: number, talla?: string, color?: string) =>
+  item.productoId === productoId && item.talla === talla && item.color === color
 
 export const useCartStore = create<CartState>()(
   persist(
@@ -83,11 +85,11 @@ export const useCartStore = create<CartState>()(
           } else {
             if (!productoData) return
             set(state => {
-              const existing = state.guestItems.find(i => i.productoId === productoId)
+              const existing = state.guestItems.find(i => sameVariant(i, productoId, talla, color))
               let guestItems: GuestItem[]
               if (existing) {
                 guestItems = state.guestItems.map(i =>
-                  i.productoId === productoId
+                  sameVariant(i, productoId, talla, color)
                     ? { ...i, cantidad: i.cantidad + cantidad, talla: talla ?? i.talla, color: color ?? i.color }
                     : i
                 )

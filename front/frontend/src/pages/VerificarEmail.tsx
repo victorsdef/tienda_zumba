@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { verificarEmail } from '../api/auth'
-import { IconAlertTriangle, IconShield } from '../components/ui/Icon'
+import { IconAlertTriangle, IconShield } from '@shared/Icon'
 
 export default function VerificarEmail() {
   const [params] = useSearchParams()

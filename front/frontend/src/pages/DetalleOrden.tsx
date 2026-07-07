@@ -3,8 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { cancelarOrden, descargarPedidoPdf, getOrden, getOrdenPorCodigo } from '../api/ordenes'
 import { getRetiroInfo } from '../api/configuracion'
-import OrderStatus from '../components/orders/OrderStatus'
-import PayphoneWidget from '../components/ui/PayphoneWidget'
+import OrderStatus from '@entities/order/OrderStatus'
+import PayphoneWidget from '@shared/PayphoneWidget'
 import {
   IconChevronLeft,
   IconCreditCard,
@@ -13,7 +13,7 @@ import {
   IconPhone,
   IconTruck,
   IconUser,
-} from '../components/ui/Icon'
+} from '@shared/Icon'
 import type { EstadoOrden, Orden } from '../types'
 
 function codigoVisible(orden: { codigoOrden?: string; id: number }) {
@@ -70,6 +70,17 @@ function direccionCompleta(orden: Orden) {
   ]
     .filter(Boolean)
     .join(', ')
+}
+
+function tipoEntregaTexto(tipoEntrega?: Orden['tipoEntrega']) {
+  switch (tipoEntrega) {
+    case 'CUENCA':
+      return 'Envio dentro de Cuenca'
+    case 'RETIRO':
+      return 'Retiro en tienda'
+    default:
+      return 'Envio a domicilio'
+  }
 }
 
 function descargarBlob(nombre: string, blob: Blob) {
@@ -264,11 +275,13 @@ export default function DetalleOrden() {
               <div className="space-y-3 text-sm">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Método</p>
-                  <p className="font-medium text-[#4a3728]">Envío a domicilio</p>
+                  <p className="font-medium text-[#4a3728]">{tipoEntregaTexto(orden.tipoEntrega)}</p>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Guía</p>
-                  <p className="font-medium text-[#4a3728]">{orden.numeroGuia || 'Aún no asignada'}</p>
+                  <p className="font-medium text-[#4a3728]">
+                    {orden.tipoEntrega === 'RETIRO' ? 'No aplica' : orden.numeroGuia || 'Aun no asignada'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -278,43 +291,56 @@ export default function DetalleOrden() {
             <div className="flex items-center gap-2 mb-5">
               <IconMapPin size={18} className="text-[#7d5c48]" />
               <div>
-                <h2 className="font-bold text-[#4a3728]">Dirección de envío</h2>
-                <p className="text-sm text-gray-500">Te mostramos la dirección exacta registrada para esta orden.</p>
+                <h2 className="font-bold text-[#4a3728]">{orden.tipoEntrega === 'RETIRO' ? 'Punto de retiro' : 'Direccion de envio'}</h2>
+                <p className="text-sm text-gray-500">
+                  {orden.tipoEntrega === 'RETIRO'
+                    ? 'Aqui ves el punto de retiro coordinado para esta orden.'
+                    : 'Te mostramos la direccion exacta registrada para esta orden.'}
+                </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="rounded-xl border border-[#ece5dd] bg-[#faf8f5] p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">Dirección principal</p>
-                <p className="text-base font-semibold text-[#4a3728] leading-relaxed">
-                  {orden.calleEnvio || 'No especificada'}
-                </p>
-                <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-                  {direccionCompleta(orden) || 'No hay una dirección completa registrada.'}
-                </p>
+            {orden.tipoEntrega === 'RETIRO' ? (
+              <div className="rounded-xl border border-[#ece5dd] bg-[#faf8f5] p-4 space-y-2">
+                <p className="text-xs uppercase tracking-wide text-gray-400">Retiro en tienda</p>
+                <p className="text-base font-semibold text-[#4a3728]">{retiro?.retiro_direccion || 'Direccion no configurada'}</p>
+                <p className="text-sm text-gray-500">{retiro?.retiro_horario || 'Horario no configurado'}</p>
+                <p className="text-sm text-gray-500">Te contactaremos por WhatsApp para coordinar la entrega.</p>
               </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="rounded-xl border border-[#ece5dd] bg-[#faf8f5] p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">Direccion principal</p>
+                  <p className="text-base font-semibold text-[#4a3728] leading-relaxed">
+                    {orden.calleEnvio || 'No especificada'}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                    {direccionCompleta(orden) || 'No hay una direccion completa registrada.'}
+                  </p>
+                </div>
 
-              <div className="rounded-xl border border-[#ece5dd] p-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Ciudad</p>
-                    <p className="font-medium text-[#4a3728]">{orden.ciudadEnvio || 'No especificada'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Cantón</p>
-                    <p className="font-medium text-[#4a3728]">{orden.cantonEnvio || 'No especificado'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Provincia</p>
-                    <p className="font-medium text-[#4a3728]">{orden.provinciaEnvio || 'No especificada'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Código postal</p>
-                    <p className="font-medium text-[#4a3728]">{orden.codigoPostalEnvio || 'No especificado'}</p>
+                <div className="rounded-xl border border-[#ece5dd] p-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Ciudad</p>
+                      <p className="font-medium text-[#4a3728]">{orden.ciudadEnvio || 'No especificada'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Canton</p>
+                      <p className="font-medium text-[#4a3728]">{orden.cantonEnvio || 'No especificado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Provincia</p>
+                      <p className="font-medium text-[#4a3728]">{orden.provinciaEnvio || 'No especificada'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Codigo postal</p>
+                      <p className="font-medium text-[#4a3728]">{orden.codigoPostalEnvio || 'No especificado'}</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {(orden.estado === 'ENVIADO' || orden.estado === 'ENTREGADO') && (orden.numeroGuia || orden.guiaImagenUrl) && (

@@ -1,0 +1,119 @@
+.btn-primary,
+.btn-outline,
+.input-field,
+.section-title {
+  transition: all 160ms ease;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.7rem 1.35rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-brand-600);
+  color: var(--color-brand-050);
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-brand-800);
+  }
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.7rem 1.35rem;
+  border: 1px solid var(--color-brand-600);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-brand-600);
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-brand-100);
+  }
+}
+
+.input-field {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid #c9bfb4;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 0.92rem;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-brand-600);
+    box-shadow: 0 0 0 3px rgba(125, 92, 72, 0.12);
+  }
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-brand-800);
+}
+
+.page-shell {
+  width: min(100%, var(--container-page));
+  margin: 0 auto;
+}
+
+.page-shell--narrow {
+  width: min(100%, var(--container-narrow));
+  margin: 0 auto;
+}
+
+.surface-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.surface-card--muted {
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.status-note {
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.status-note--info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+.status-note--success {
+  background: var(--color-success-soft);
+  border: 1px solid #86efac;
+  color: #166534;
+}
+
+.status-note--danger {
+  background: var(--color-danger-soft);
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}

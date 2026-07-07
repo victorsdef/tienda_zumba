@@ -16,6 +16,8 @@ export interface RetiroInfo {
   retiro_direccion: string
   retiro_horario: string
   retiro_whatsapp: string
+  costo_envio: string
+  costo_envio_cuenca: string
 }
 
 export const getRetiroInfo = () =>

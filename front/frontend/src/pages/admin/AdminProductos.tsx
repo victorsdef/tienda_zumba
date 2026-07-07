@@ -1,14 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { getProductosAdmin, toggleActivo, actualizarStock } from '../../api/admin'
 import { crearProducto, actualizarProducto, eliminarProducto } from '../../api/productos'
 import { getCategorias } from '../../api/categorias'
-import { IconSearch, IconEdit, IconTrash, IconHanger } from '../../components/ui/Icon'
-import ImageManager from '../../components/ui/ImageManager'
-import TallasSelector from '../../components/ui/TallasSelector'
-import ColoresSelector from '../../components/ui/ColoresSelector'
-import PrecioDescuento from '../../components/ui/PrecioDescuento'
+import { IconSearch, IconEdit, IconTrash, IconHanger } from '@shared/Icon'
+import ImageManager from '@shared/ImageManager'
+import TallasSelector from '@shared/TallasSelector'
+import ColoresSelector from '@shared/ColoresSelector'
+import PrecioDescuento from '@shared/PrecioDescuento'
 import { useAuthStore } from '../../store/useAuthStore'
 import type { Producto } from '../../types'
 
@@ -48,9 +48,11 @@ export default function AdminProductos() {
   const [tallas, setTallas] = useState<string[]>([])
   const [colores, setColores] = useState<string[]>([])
   const [stockPorColor, setStockPorColor] = useState<Record<string, number>>({})
+  const [stockPorColorTalla, setStockPorColorTalla] = useState<Record<string, Record<string, number>>>({})
   const [precioFinal, setPrecioFinal] = useState<number | undefined>(undefined)
   const [precioOriginal, setPrecioOriginal] = useState<number | undefined>(undefined)
   const [activo, setActivo] = useState(true)
+  const [aplicaIva, setAplicaIva] = useState(true)
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-productos', page],
@@ -89,9 +91,11 @@ export default function AdminProductos() {
     setTallas(p?.tallas ?? [])
     setColores(p?.colores ?? [])
     setStockPorColor(p?.stockPorColor ?? {})
+    setStockPorColorTalla(p?.stockPorColorTalla ?? {})
     setPrecioFinal(p?.precio)
     setPrecioOriginal(p?.precioOriginal ?? undefined)
     setActivo(p?.activo ?? true)
+    setAplicaIva(p?.aplicaIva ?? true)
     // Detectar género de la categoría al editar
     if (p?.categoriaId && cats) {
       const cat = cats.find(c => c.id === p.categoriaId)
@@ -118,15 +122,55 @@ export default function AdminProductos() {
     setTallas([])
     setColores([])
     setStockPorColor({})
+    setStockPorColorTalla({})
     setPrecioFinal(undefined)
     setPrecioOriginal(undefined)
     setActivo(true)
+    setAplicaIva(true)
     setGenero('')
     reset({})
   }
 
+  useEffect(() => {
+    if (tallas.length === 0) {
+      setStockPorColorTalla({})
+      return
+    }
+
+    setStockPorColorTalla(prev => {
+      const next: Record<string, Record<string, number>> = {}
+      colores.forEach(color => {
+        const actual = prev[color] ?? {}
+        next[color] = {}
+        tallas.forEach(talla => {
+          next[color][talla] = Math.max(0, actual[talla] ?? 0)
+        })
+      })
+      return next
+    })
+  }, [tallas, colores])
+
+  useEffect(() => {
+    if (tallas.length === 0) return
+    setStockPorColor(prev => {
+      const next: Record<string, number> = { ...prev }
+      colores.forEach(color => {
+        next[color] = Object.values(stockPorColorTalla[color] ?? {}).reduce((a, b) => a + b, 0)
+      })
+      return next
+    })
+  }, [stockPorColorTalla, tallas, colores])
+
   const onSubmit = (d: FormData) => {
     const precioBase = d.precio ? Number(d.precio) : 0
+    const stockTotal = tallas.length > 0
+      ? Object.values(stockPorColorTalla).reduce(
+          (acc, porTalla) => acc + Object.values(porTalla).reduce((a, b) => a + b, 0),
+          0
+        )
+      : colores.length > 0
+        ? Object.values(stockPorColor).reduce((a, b) => a + b, 0)
+        : Number(d.stock)
     const payload: Partial<Producto> = {
       nombre: d.nombre,
       descripcion: d.descripcion,
@@ -135,14 +179,14 @@ export default function AdminProductos() {
       precio: precioFinal ?? precioBase,
       precioOriginal: precioOriginal ?? undefined,
       activo,
-      stock: colores.length > 0
-        ? Object.values(stockPorColor).reduce((a, b) => a + b, 0)
-        : Number(d.stock),
+      aplicaIva,
+      stock: stockTotal,
       categoriaId: d.categoriaId ? Number(d.categoriaId) : undefined,
       imagenes,
       tallas,
       colores,
       stockPorColor: colores.length > 0 ? stockPorColor : undefined,
+      stockPorColorTalla: tallas.length > 0 ? stockPorColorTalla : undefined,
     }
     editando ? updateMut.mutate({ id: editando.id, data: payload }) : createMut.mutate(payload)
   }
@@ -292,9 +336,14 @@ export default function AdminProductos() {
                 </label>
                 {colores.length > 0 ? (
                   <div className="input-field bg-gray-50 text-gray-500 flex items-center justify-between">
-                    <span className="text-xs">Se define por color</span>
+                    <span className="text-xs">{tallas.length > 0 ? 'Se define por color y talla' : 'Se define por color'}</span>
                     <span className="font-bold text-gray-700">
-                      {Object.values(stockPorColor).reduce((a, b) => a + b, 0)} uds
+                      {tallas.length > 0
+                        ? Object.values(stockPorColorTalla).reduce(
+                            (acc, porTalla) => acc + Object.values(porTalla).reduce((a, b) => a + b, 0),
+                            0
+                          )
+                        : Object.values(stockPorColor).reduce((a, b) => a + b, 0)} uds
                     </span>
                   </div>
                 ) : (
@@ -321,6 +370,27 @@ export default function AdminProductos() {
               onChange={(final, original) => { setPrecioFinal(final); setPrecioOriginal(original) }}
             />
 
+            <div className="rounded-lg border border-gray-100 bg-gray-50 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">Impuesto del producto</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Si está activo, Payphone separa automáticamente la base gravada y el IVA en el cobro.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAplicaIva(v => !v)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${aplicaIva ? 'bg-[#7d5c48]' : 'bg-gray-300'}`}
+                >
+                  <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${aplicaIva ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </div>
+              <div className="mt-3 inline-flex rounded-full border border-[#d9ccbb] bg-white px-3 py-1 text-xs font-medium text-[#5d473b]">
+                {aplicaIva ? 'Precio gravado con IVA' : 'Precio sin IVA'}
+              </div>
+            </div>
+
             <hr className="border-gray-100" />
 
             {/* Imágenes */}
@@ -338,11 +408,24 @@ export default function AdminProductos() {
             <hr className="border-gray-100" />
 
             {/* Colores */}
+            {tallas.length > 0 && (
+              <div className="rounded-lg border border-[#ede8df] bg-[#faf7f2] px-4 py-3 text-sm text-gray-600">
+                <p className="font-semibold text-gray-700">Relación actual entre tallas y colores</p>
+                <p className="mt-1">
+                  Aquí ya puedes definir inventario por variante. Ejemplo:
+                  <span className="font-medium"> rosa → S: 5, M: 12</span>.
+                  Cada color tendrá sus propias tallas y cantidades.
+                </p>
+              </div>
+            )}
             <ColoresSelector
               value={colores}
+              tallas={tallas}
               stockPorColor={stockPorColor}
+              stockPorColorTalla={stockPorColorTalla}
               onChange={setColores}
               onStockChange={setStockPorColor}
+              onStockMatrixChange={setStockPorColorTalla}
             />
 
             <hr className="border-gray-100" />
@@ -422,6 +505,11 @@ export default function AdminProductos() {
                             <span key={c} className="w-3 h-3 rounded-full border border-gray-200 flex-shrink-0" style={{ backgroundColor: c }} />
                           ))}
                         </div>
+                        <div className="mt-1">
+                          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${p.aplicaIva !== false ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+                            {p.aplicaIva !== false ? 'Con IVA' : 'Sin IVA'}
+                          </span>
+                        </div>
                         {/* Info + acciones visibles solo en móvil */}
                         <div className="flex items-center gap-2 mt-1 md:hidden flex-wrap">
                           {p.categoriaNombre && (
@@ -446,7 +534,14 @@ export default function AdminProductos() {
                     {p.precioOriginal && <p className="text-xs text-gray-400 line-through">${p.precioOriginal.toFixed(2)}</p>}
                   </td>
                   <td className="px-4 py-3">
-                    {editStock?.id === p.id ? (
+                    {p.stockPorColorTalla && Object.keys(p.stockPorColorTalla).length > 0 ? (
+                      <div>
+                        <p className={`font-mono text-sm font-bold ${p.stock === 0 ? 'text-red-600' : p.stock <= 5 ? 'text-orange-500' : 'text-gray-700'}`}>
+                          {p.stock}
+                        </p>
+                        <p className="text-[11px] text-gray-400">por variantes</p>
+                      </div>
+                    ) : editStock?.id === p.id ? (
                       <div className="flex items-center gap-1">
                         <input
                           type="number" min="0" value={editStock.stock}

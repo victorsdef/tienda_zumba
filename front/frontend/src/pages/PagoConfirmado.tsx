@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { confirmarPago } from '../api/payphone'
 import type { Orden } from '../types'
-import { IconAlertTriangle, IconShield, IconX } from '../components/ui/Icon'
+import { IconAlertTriangle, IconShield, IconX } from '@shared/Icon'
 
 type Estado = 'cargando' | 'aprobado' | 'rechazado' | 'error'
 

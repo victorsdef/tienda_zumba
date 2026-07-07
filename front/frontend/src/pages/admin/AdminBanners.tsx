@@ -6,10 +6,11 @@ import {
   eliminarBanner, toggleBanner,
   type Banner, type BannerRequest,
 } from '../../api/banners'
-import { IconEdit, IconSearch, IconTrash } from '../../components/ui/Icon'
+import HeroBannerPreview from '@widgets/banners/HeroBannerPreview'
+import { IconEdit, IconSearch, IconTrash } from '@shared/Icon'
 import { getCategorias } from '../../api/categorias'
 import { getProductosAdmin } from '../../api/admin'
-import ImageManager from '../../components/ui/ImageManager'
+import ImageManager from '@shared/ImageManager'
 
 type FormData = {
   tag: string
@@ -38,6 +39,13 @@ const GENEROS = [
   { value: 'CALZADO',    label: 'Calzado' },
   { value: 'ACCESORIOS', label: 'Accesorios' },
   { value: 'BELLEZA',    label: 'Belleza' },
+]
+
+const HERO_TIPS = [
+  'Usa una foto editorial vertical o 4:5, con la modelo hacia la derecha.',
+  'Deja el lado izquierdo más limpio para que el texto respire.',
+  'Mantén el título corto y elegante; evita frases largas en mayúsculas.',
+  'Prefiere tonos café, beige, negro o vino para que combine con la portada.',
 ]
 
 function buildLink(tipo: string, valor: string): string {
@@ -74,6 +82,10 @@ export default function AdminBanners() {
     defaultValues: { tag: '', titulo: '', subtitulo: '', ctaTexto: 'VER AHORA', tipoDestino: 'CATALOGO', destinoValor: '', colorDesde: '#7d5c48', colorHasta: '#6b5040', orden: 0 }
   })
   const tipoActual = watch('tipoDestino')
+  const tagPreview = watch('tag') || 'Sofia Couture EC'
+  const tituloPreview = watch('titulo') || 'Pantalones que realzan tu esencia'
+  const subtituloPreview = watch('subtitulo') || 'Disenos elegantes con una presencia mas cuidada.'
+  const ctaPreview = watch('ctaTexto') || 'Comprar ahora'
 
   const bannersFiltrados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase()
@@ -201,213 +213,232 @@ export default function AdminBanners() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Preview portada</label>
+                  <HeroBannerPreview
+                    tag={tagPreview}
+                    titulo={tituloPreview}
+                    subtitulo={subtituloPreview}
+                    ctaTexto={ctaPreview}
+                    imagen={imagen}
+                    colorDesde={watch('colorDesde') || '#2f1f17'}
+                    colorHasta={watch('colorHasta') || '#7d5c48'}
+                    compact
+                    previewMode
+                  />
+                </div>
 
-            {/* Preview del gradiente */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Preview</label>
-              <div
-                className="rounded-lg h-24 flex items-center px-6 transition-all relative overflow-hidden"
-                style={{ background: `linear-gradient(to right, ${watch('colorDesde') || '#7d5c48'}, ${watch('colorHasta') || '#6b5040'})` }}
-              >
-                {imagen && (
-                  <div className="absolute inset-y-0 right-0 w-1/2">
-                    <img src={imagen} alt="" className="w-full h-full object-cover"
-                      style={{ maskImage: 'linear-gradient(to right, transparent, black 30%)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 30%)' }} />
+                <div className="rounded-lg border border-[#ede8df] bg-[#faf7f2] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-3">Guia para este hero</p>
+                  <div className="space-y-3">
+                    {HERO_TIPS.map(tip => (
+                      <div key={tip} className="flex gap-2 text-sm text-gray-600">
+                        <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#7d5c48]" />
+                        <p>{tip}</p>
+                      </div>
+                    ))}
                   </div>
-                )}
-                <div className="text-white relative z-10">
-                  <p className="text-xs opacity-75">{watch('tag') || 'Etiqueta'}</p>
-                  <p className="font-bold text-sm">{watch('titulo') || 'Título del banner'}</p>
-                  <p className="text-xs opacity-75 mt-0.5">{watch('subtitulo') || 'Subtítulo'}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Colores */}
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Color desde</label>
-                  <input
-                    type="color"
-                    value={watch('colorDesde') || '#7d5c48'}
-                    onChange={e => setValue('colorDesde', e.target.value)}
-                    className="w-full h-10 rounded cursor-pointer border border-gray-200 p-0.5"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Color hasta</label>
-                  <input
-                    type="color"
-                    value={watch('colorHasta') || '#6b5040'}
-                    onChange={e => setValue('colorHasta', e.target.value)}
-                    className="w-full h-10 rounded cursor-pointer border border-gray-200 p-0.5"
-                  />
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-lg border border-[#e4d8cb] bg-white p-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Imagen ideal</p>
+                      <p className="mt-1 text-sm text-gray-700">2000 x 2400 px o similar, enfoque limpio y tonos cálidos.</p>
+                    </div>
+                    <div className="rounded-lg border border-[#e4d8cb] bg-white p-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Texto ideal</p>
+                      <p className="mt-1 text-sm text-gray-700">Título de 1 a 2 líneas, subtítulo corto y un solo CTA.</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Paleta rápida */}
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Combinaciones rápidas</p>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { desde: '#7d5c48', hasta: '#8b6f5e', label: 'Café' },
-                    { desde: '#1a1a2e', hasta: '#16213e', label: 'Marino' },
-                    { desde: '#2d3436', hasta: '#636e72', label: 'Carbón' },
-                    { desde: '#6c1b1b', hasta: '#c0392b', label: 'Rojo' },
-                    { desde: '#1b4332', hasta: '#52b788', label: 'Verde' },
-                    { desde: '#0d3b6e', hasta: '#1a6eb5', label: 'Azul' },
-                    { desde: '#4a0e8f', hasta: '#9b59b6', label: 'Violeta' },
-                    { desde: '#7d3c98', hasta: '#e91e8c', label: 'Rosa' },
-                    { desde: '#b7410e', hasta: '#f39c12', label: 'Naranja' },
-                    { desde: '#1a1a1a', hasta: '#4a4a4a', label: 'Negro' },
-                  ].map(p => (
-                    <button
-                      key={p.label}
-                      type="button"
-                      title={p.label}
-                      onClick={() => { setValue('colorDesde', p.desde); setValue('colorHasta', p.hasta) }}
-                      className="w-8 h-8 rounded-lg border-2 border-white shadow hover:scale-110 transition-transform"
-                      style={{ background: `linear-gradient(135deg, ${p.desde}, ${p.hasta})` }}
+              <div className="space-y-5">
+
+                {/* Textos */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Etiqueta pequeña</label>
+                    <input {...register('tag')} className="input-field" placeholder="Ej: Sofia Couture EC" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
+                      Título <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      {...register('titulo', { required: 'El título es obligatorio' })}
+                      className={`input-field ${errors.titulo ? 'border-red-400' : ''}`}
+                      placeholder="Ej: Pantalones que realzan tu esencia"
                     />
-                  ))}
+                    {errors.titulo && <p className="text-xs text-red-500 mt-1">{errors.titulo.message}</p>}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Subtítulo</label>
+                    <textarea
+                      {...register('subtitulo')}
+                      className="input-field min-h-[96px] resize-y"
+                      placeholder="Ej: Diseños elegantes con una presencia más cuidada."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Texto del botón</label>
+                    <input {...register('ctaTexto')} className="input-field" placeholder="Ej: COMPRAR AHORA" />
+                    <p className="mt-2 text-xs text-gray-400">Usa una sola llamada a la acción clara.</p>
+                  </div>
+                </div>
+
+                {/* Imagen hero */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
+                    Imagen hero <span className="font-normal text-gray-400 normal-case">(recomendada para la nueva portada)</span>
+                  </label>
+                  <ImageManager
+                    value={imagen ? [imagen] : []}
+                    onChange={urls => setImagen(urls[urls.length - 1] ?? '')}
+                    renderCropPreview={(url) => (
+                      <HeroBannerPreview
+                        tag={tagPreview}
+                        titulo={tituloPreview}
+                        subtitulo={subtituloPreview}
+                        ctaTexto={ctaPreview}
+                        imagen={url}
+                        colorDesde={watch('colorDesde') || '#2f1f17'}
+                        colorHasta={watch('colorHasta') || '#7d5c48'}
+                        compact
+                        previewMode
+                      />
+                    )}
+                  />
+                  {imagen && (
+                    <button type="button" onClick={() => setImagen('')} className="text-xs text-red-400 hover:underline mt-1">
+                      Quitar imagen
+                    </button>
+                  )}
+                </div>
+
+                {/* Colores */}
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Color desde</label>
+                      <input
+                        type="color"
+                        value={watch('colorDesde') || '#7d5c48'}
+                        onChange={e => setValue('colorDesde', e.target.value)}
+                        className="w-full h-10 rounded cursor-pointer border border-gray-200 p-0.5"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Color hasta</label>
+                      <input
+                        type="color"
+                        value={watch('colorHasta') || '#6b5040'}
+                        onChange={e => setValue('colorHasta', e.target.value)}
+                        className="w-full h-10 rounded cursor-pointer border border-gray-200 p-0.5"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Paleta rápida</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { desde: '#2f1f17', hasta: '#7d5c48', label: 'Cafe editorial' },
+                        { desde: '#3c2419', hasta: '#9a7357', label: 'Chocolate' },
+                        { desde: '#231a16', hasta: '#685246', label: 'Cafe profundo' },
+                        { desde: '#473127', hasta: '#c3a487', label: 'Beige calido' },
+                        { desde: '#1f1a18', hasta: '#554844', label: 'Carbon' },
+                        { desde: '#4d272a', hasta: '#91615e', label: 'Vino suave' },
+                      ].map(p => (
+                        <button
+                          key={p.label}
+                          type="button"
+                          title={p.label}
+                          onClick={() => { setValue('colorDesde', p.desde); setValue('colorHasta', p.hasta) }}
+                          className="h-9 w-9 rounded-lg border-2 border-white shadow transition-transform hover:scale-110"
+                          style={{ background: `linear-gradient(135deg, ${p.desde}, ${p.hasta})` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Destino */}
+                <div className="border border-[#ede8df] rounded-lg p-4 space-y-3">
+                  <label className="block text-xs font-semibold text-gray-600 uppercase">¿A dónde lleva el botón?</label>
+
+                  <select {...register('tipoDestino', { required: true })} className="input-field">
+                    {TIPOS_DESTINO.map(t => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </select>
+
+                  {tipoActual === 'GENERO' && (
+                    <select {...register('destinoValor')} className="input-field">
+                      <option value="">— Elegí un género —</option>
+                      {GENEROS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                    </select>
+                  )}
+
+                  {tipoActual === 'CATEGORIA' && (
+                    <select {...register('destinoValor')} className="input-field">
+                      <option value="">— Elegí una categoría —</option>
+                      {cats.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                    </select>
+                  )}
+
+                  {tipoActual === 'PRODUCTO' && (
+                    <select {...register('destinoValor')} className="input-field">
+                      <option value="">— Elegí un producto —</option>
+                      {productos.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                    </select>
+                  )}
+
+                  {tipoActual === 'URL' && (
+                    <input
+                      {...register('destinoValor')}
+                      className="input-field"
+                      placeholder="Ej: /catalogo?sort=precio,asc"
+                    />
+                  )}
+
+                  {tipoActual && (
+                    <p className="text-xs text-gray-400">
+                      Destino: <span className="font-mono text-gray-600">{buildLink(tipoActual, watch('destinoValor') || '')}</span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Orden + activo */}
+                <div className="flex items-center gap-4">
+                  <div className="w-28">
+                    <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Orden</label>
+                    <input type="number" min={0} {...register('orden')} className="input-field" />
+                  </div>
+                  <div className="flex items-center gap-2 pt-5">
+                    <button
+                      type="button"
+                      onClick={() => setActivo(v => !v)}
+                      className={`relative inline-flex h-6 w-11 rounded-full transition-colors ${activo ? 'bg-[#7d5c48]' : 'bg-gray-300'}`}
+                    >
+                      <span className={`inline-block w-5 h-5 bg-white rounded-full shadow transform transition-transform mt-0.5 ${activo ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                    </button>
+                    <span className="text-sm text-gray-600">{activo ? 'Activo' : 'Inactivo'}</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button type="submit" disabled={isSubmitting} className="btn-primary">
+                    {isSubmitting ? 'Guardando...' : editando ? 'Guardar cambios' : 'Crear banner'}
+                  </button>
+                  <button type="button" onClick={cerrar} className="btn-outline">Cancelar</button>
                 </div>
               </div>
             </div>
 
-            {/* Imagen derecha (opcional) */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
-                Imagen <span className="font-normal text-gray-400 normal-case">(opcional — aparece a la derecha del texto)</span>
-              </label>
-              <ImageManager
-                value={imagen ? [imagen] : []}
-                onChange={urls => setImagen(urls[urls.length - 1] ?? '')}
-                renderCropPreview={(url) => (
-                  <div
-                    className="rounded-lg h-20 flex items-center px-5 relative overflow-hidden"
-                    style={{ background: `linear-gradient(to right, ${watch('colorDesde') || '#7d5c48'}, ${watch('colorHasta') || '#6b5040'})` }}
-                  >
-                    <div className="absolute inset-y-0 right-0 w-1/2">
-                      <img src={url} alt="" className="w-full h-full object-cover"
-                        style={{ maskImage: 'linear-gradient(to right, transparent, black 30%)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 30%)' }} />
-                    </div>
-                    <div className="text-white relative z-10">
-                      <p className="text-[10px] opacity-75">{watch('tag') || 'Etiqueta'}</p>
-                      <p className="font-bold text-sm">{watch('titulo') || 'Título del banner'}</p>
-                      <p className="text-[10px] opacity-75 mt-0.5">{watch('subtitulo') || 'Subtítulo'}</p>
-                    </div>
-                  </div>
-                )}
-              />
-              {imagen && (
-                <button type="button" onClick={() => setImagen('')} className="text-xs text-red-400 hover:underline mt-1">
-                  Quitar imagen
-                </button>
-              )}
-            </div>
-
-            {/* Textos */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Etiqueta pequeña</label>
-                <input {...register('tag')} className="input-field" placeholder="Ej: Nueva Colección" />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
-                  Título <span className="text-red-500">*</span>
-                </label>
-                <input
-                  {...register('titulo', { required: 'El título es obligatorio' })}
-                  className={`input-field ${errors.titulo ? 'border-red-400' : ''}`}
-                  placeholder="Ej: ESTILO QUE TE DEFINE"
-                />
-                {errors.titulo && <p className="text-xs text-red-500 mt-1">{errors.titulo.message}</p>}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Subtítulo</label>
-                <input {...register('subtitulo')} className="input-field" placeholder="Ej: Descubre las tendencias" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Texto del botón</label>
-                <input {...register('ctaTexto')} className="input-field" placeholder="Ej: VER COLECCIÓN" />
-              </div>
-            </div>
-
-            {/* Destino */}
-            <div className="border border-[#ede8df] rounded-lg p-4 space-y-3">
-              <label className="block text-xs font-semibold text-gray-600 uppercase">¿A dónde lleva el botón?</label>
-
-              <select {...register('tipoDestino', { required: true })} className="input-field">
-                {TIPOS_DESTINO.map(t => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
-                ))}
-              </select>
-
-              {/* Selector dinámico según tipo */}
-              {tipoActual === 'GENERO' && (
-                <select {...register('destinoValor')} className="input-field">
-                  <option value="">— Elegí un género —</option>
-                  {GENEROS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
-                </select>
-              )}
-
-              {tipoActual === 'CATEGORIA' && (
-                <select {...register('destinoValor')} className="input-field">
-                  <option value="">— Elegí una categoría —</option>
-                  {cats.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                </select>
-              )}
-
-              {tipoActual === 'PRODUCTO' && (
-                <select {...register('destinoValor')} className="input-field">
-                  <option value="">— Elegí un producto —</option>
-                  {productos.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-                </select>
-              )}
-
-              {tipoActual === 'URL' && (
-                <input
-                  {...register('destinoValor')}
-                  className="input-field"
-                  placeholder="Ej: /catalogo?sort=precio,asc"
-                />
-              )}
-
-              {tipoActual && (
-                <p className="text-xs text-gray-400">
-                  Destino: <span className="font-mono text-gray-600">{buildLink(tipoActual, watch('destinoValor') || '')}</span>
-                </p>
-              )}
-            </div>
-
-            {/* Orden + activo */}
-            <div className="flex items-center gap-4">
-              <div className="w-28">
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Orden</label>
-                <input type="number" min={0} {...register('orden')} className="input-field" />
-              </div>
-              <div className="flex items-center gap-2 pt-5">
-                <button
-                  type="button"
-                  onClick={() => setActivo(v => !v)}
-                  className={`relative inline-flex h-6 w-11 rounded-full transition-colors ${activo ? 'bg-[#7d5c48]' : 'bg-gray-300'}`}
-                >
-                  <span className={`inline-block w-5 h-5 bg-white rounded-full shadow transform transition-transform mt-0.5 ${activo ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                </button>
-                <span className="text-sm text-gray-600">{activo ? 'Activo' : 'Inactivo'}</span>
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button type="submit" disabled={isSubmitting} className="btn-primary">
-                {isSubmitting ? 'Guardando...' : editando ? 'Guardar cambios' : 'Crear banner'}
-              </button>
-              <button type="button" onClick={cerrar} className="btn-outline">Cancelar</button>
-            </div>
           </form>
         </div>
       )}
@@ -429,24 +460,19 @@ export default function AdminBanners() {
         <div className="space-y-3">
           {bannersFiltrados.map((b, i) => (
             <div key={b.id} className="bg-white border border-[#ede8df] rounded-lg overflow-hidden">
-              {/* Preview banner completo */}
-              <div
-                className="relative h-28 flex items-center px-6"
-                style={{ background: `linear-gradient(to right, ${b.colorDesde}, ${b.colorHasta})` }}
-              >
-                {b.imagen && (
-                  <div className="absolute inset-y-0 right-0 w-1/2">
-                    <img src={b.imagen} alt="" className="w-full h-full object-cover"
-                      style={{ maskImage: 'linear-gradient(to right, transparent, black 30%)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 30%)' }} />
-                  </div>
-                )}
-                <div className="text-white relative z-10">
-                  {b.tag && <p className="text-[10px] font-bold opacity-80 uppercase tracking-wider">{b.tag}</p>}
-                  <p className="font-black text-base leading-tight">{b.titulo}</p>
-                  {b.subtitulo && <p className="text-xs opacity-75 mt-0.5">{b.subtitulo}</p>}
-                </div>
-                {/* Badge activo */}
-                <span className={`absolute top-2 right-2 text-[10px] font-semibold px-2 py-0.5 rounded-full z-10 ${b.activo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+              <div className="relative">
+                <HeroBannerPreview
+                  tag={b.tag}
+                  titulo={b.titulo}
+                  subtitulo={b.subtitulo}
+                  ctaTexto={b.ctaTexto}
+                  imagen={b.imagen}
+                  colorDesde={b.colorDesde}
+                  colorHasta={b.colorHasta}
+                  compact
+                  previewMode
+                />
+                <span className={`absolute right-3 top-8 z-10 rounded-full px-2 py-0.5 text-[10px] font-semibold ${b.activo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                   {b.activo ? 'Activo' : 'Inactivo'}
                 </span>
               </div>

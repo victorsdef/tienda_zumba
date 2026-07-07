@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore, type AdminPermission } from '../../store/useAuthStore'
-import { IconBarChart, IconHanger, IconGrid, IconPackage, IconUsers, IconX, IconMenu, IconArrowRight, IconImage, IconSettings } from '../../components/ui/Icon'
+import { IconBarChart, IconHanger, IconGrid, IconPackage, IconUsers, IconX, IconMenu, IconArrowRight, IconImage, IconSettings } from '@shared/Icon'
 
 const NAV: Array<{
   to: string

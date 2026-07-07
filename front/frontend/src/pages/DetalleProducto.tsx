@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getProductoPorSlug, getProductos, getProductosTrending } from '../api/productos'
-import ImageGallery from '../components/products/ImageGallery'
-import SizeSelector from '../components/products/SizeSelector'
-import ColorSelector from '../components/products/ColorSelector'
-import ProductCard from '../components/products/ProductCard'
+import ImageGallery from '@entities/product/ImageGallery'
+import SizeSelector from '@entities/product/SizeSelector'
+import ColorSelector from '@entities/product/ColorSelector'
+import ProductCard from '@entities/product/ProductCard'
 import { useCartStore } from '../store/useCartStore'
 import womanSvg from '../assets/woman.svg'
 
@@ -232,12 +232,20 @@ export default function DetalleProducto() {
 
   const necesitaTalla = (producto?.tallas?.length ?? 0) > 0
   const necesitaColor = (producto?.colores?.length ?? 0) > 0
+  const stockPorColorTalla = producto?.stockPorColorTalla ?? {}
+  const stockColorTalla =
+    color && talla ? stockPorColorTalla[color]?.[talla] : undefined
 
   // Stock del color seleccionado (si hay stockPorColor), si no usa stock total
   const stockColor = color && producto?.stockPorColor?.[color] !== undefined
     ? producto.stockPorColor[color]
     : producto?.stock ?? 0
-  const stockDisponible = necesitaColor && color ? stockColor : (producto?.stock ?? 0)
+  const stockDisponible =
+    stockColorTalla !== undefined
+      ? stockColorTalla
+      : necesitaColor && color
+        ? stockColor
+        : (producto?.stock ?? 0)
 
   const puedeAgregar = (!necesitaTalla || !!talla) && (!necesitaColor || !!color) && stockDisponible > 0
 
@@ -346,6 +354,13 @@ export default function DetalleProducto() {
                   </button>
                 </div>
                 <SizeSelector tallas={producto.tallas} selected={talla} onSelect={setTalla} />
+                {color && producto.stockPorColorTalla?.[color] && (
+                  <p className="mt-2 text-xs text-gray-500">
+                    {talla
+                      ? `Disponibles para este color y talla: ${stockDisponible}`
+                      : 'Selecciona una talla para ver el stock exacto de ese color.'}
+                  </p>
+                )}
               </div>
             )}
             <ColorSelector colores={producto.colores} selected={color} onSelect={c => { setColor(c); setCantidad(1) }} />

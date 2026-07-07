@@ -80,7 +80,7 @@ function CropModal({ src, filename, onConfirm, onClose, renderCropPreview }: Cro
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-6xl mx-4 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b">
           <h3 className="font-bold text-gray-800">Recortar imagen</h3>
@@ -99,39 +99,51 @@ function CropModal({ src, filename, onConfirm, onClose, renderCropPreview }: Cro
           ))}
         </div>
 
-        {/* Crop area */}
-        <div className="flex items-center justify-center bg-gray-900 p-4" style={{ maxHeight: '55vh', overflow: 'auto' }}>
-          <ReactCrop
-            crop={crop}
-            onChange={c => setCrop(c)}
-            onComplete={c => { setCompletedCrop(c); updatePreview(c) }}
-            aspect={aspect}
-            minWidth={20}
-            minHeight={20}
-          >
-            <img
-              ref={imgRef}
-              src={src}
-              crossOrigin="anonymous"
-              onLoad={onLoad}
-              style={{ maxHeight: '50vh', maxWidth: '100%' }}
-              alt="crop"
-            />
-          </ReactCrop>
+        <div className={`grid ${renderCropPreview ? 'lg:grid-cols-[1.1fr_0.9fr]' : 'grid-cols-1'}`}>
+          {/* Crop area */}
+          <div className="flex items-center justify-center bg-gray-900 p-4" style={{ maxHeight: '65vh', overflow: 'auto' }}>
+            <ReactCrop
+              crop={crop}
+              onChange={c => setCrop(c)}
+              onComplete={c => { setCompletedCrop(c); updatePreview(c) }}
+              aspect={aspect}
+              minWidth={20}
+              minHeight={20}
+            >
+              <img
+                ref={imgRef}
+                src={src}
+                crossOrigin="anonymous"
+                onLoad={onLoad}
+                style={{ maxHeight: '58vh', maxWidth: '100%' }}
+                alt="crop"
+              />
+            </ReactCrop>
+          </div>
+
+          {/* Preview del banner */}
+          {renderCropPreview && (
+            <div className="border-t lg:border-t-0 lg:border-l bg-white">
+              <div className="px-5 py-3 border-b bg-white">
+                <p className="text-xs font-semibold text-gray-500 uppercase">Así se verá en el banner</p>
+              </div>
+              <div className="p-4 bg-[#faf7f2] max-h-[65vh] overflow-auto">
+                {previewUrl ? (
+                  renderCropPreview(previewUrl)
+                ) : (
+                  <div className="flex min-h-[220px] items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white px-4 text-center text-sm text-gray-400">
+                    Mueve o redimensiona el recorte para ver la vista previa aquí.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Preview del banner (solo cuando se pasa renderCropPreview) */}
-        {renderCropPreview && previewUrl && (
-          <div className="px-5 py-3 border-t bg-white">
-            <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Así se verá en el banner</p>
-            {renderCropPreview(previewUrl)}
-          </div>
-        )}
-
         {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-4 border-t bg-gray-50">
-          <p className="text-xs text-gray-400">Arrastrá para seleccionar el área • Los esquinas redimensionan</p>
-          <div className="flex gap-3">
+        <div className="flex flex-col gap-3 px-5 py-4 border-t bg-gray-50 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-gray-400">Arrastrá para seleccionar el área • Las esquinas redimensionan</p>
+          <div className="flex gap-3 self-end sm:self-auto">
             <button type="button" onClick={onClose} className="btn-outline text-sm py-2">Cancelar</button>
             <button type="button" onClick={handleConfirm} className="btn-primary text-sm py-2">
               Usar imagen recortada

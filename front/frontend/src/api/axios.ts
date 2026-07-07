@@ -1,7 +1,22 @@
 import axios from 'axios'
 
+const DEFAULT_API_BASE = '/api/nueva-arquitectura'
+
+function normalizeApiBaseUrl(rawBaseUrl?: string) {
+  const value = rawBaseUrl?.trim()
+
+  if (!value) return DEFAULT_API_BASE
+  if (value.endsWith('/api/nueva-arquitectura')) return value
+  if (value.endsWith('/api')) return `${value}/nueva-arquitectura`
+  if (value.includes('/api/nueva-arquitectura/')) return value.replace(/\/+$/, '')
+
+  return `${value.replace(/\/+$/, '')}/api/nueva-arquitectura`
+}
+
+export const API_BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL)
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? '/api',
+  baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -20,7 +35,7 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem('refreshToken')
       if (refreshToken) {
         try {
-          const { data } = await axios.post('/api/auth/refresh', { refreshToken })
+          const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken })
           localStorage.setItem('accessToken', data.accessToken)
           localStorage.setItem('refreshToken', data.refreshToken)
           original.headers.Authorization = `Bearer ${data.accessToken}`

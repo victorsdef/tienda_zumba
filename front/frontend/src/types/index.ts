@@ -33,12 +33,14 @@ export interface Producto {
   precioOriginal?: number
   stock: number
   activo: boolean
+  aplicaIva?: boolean
   categoriaId?: number
   categoriaNombre?: string
   imagenes: string[]
   tallas: string[]
   colores: string[]
   stockPorColor?: Record<string, number>
+  stockPorColorTalla?: Record<string, Record<string, number>>
   caracteristicaTitulo?: string
   caracteristicaDescripcion?: string
   caracteristicas?: string[]
@@ -91,6 +93,7 @@ export interface Orden {
   ciudadEnvio?: string
   calleEnvio?: string
   codigoPostalEnvio?: string
+  tipoEntrega?: 'DOMICILIO' | 'CUENCA' | 'RETIRO'
   costoEnvio?: number
   payphoneTransactionId?: string
   codigoAutorizacion?: string

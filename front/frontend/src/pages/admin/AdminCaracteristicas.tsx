@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProductosAdmin } from '../../api/admin'
 import { actualizarProducto } from '../../api/productos'
-import { IconSearch, IconTrash } from '../../components/ui/Icon'
+import { IconSearch, IconTrash } from '@shared/Icon'
 import type { Producto } from '../../types'
 
 export default function AdminCaracteristicas() {

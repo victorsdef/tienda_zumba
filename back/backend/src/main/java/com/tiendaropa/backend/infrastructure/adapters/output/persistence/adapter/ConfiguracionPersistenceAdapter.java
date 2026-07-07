@@ -1,0 +1,43 @@
+package com.tiendaropa.backend.infrastructure.adapters.output.persistence.adapter;
+
+import com.tiendaropa.backend.application.ports.output.ConfiguracionRepositoryPort;
+import com.tiendaropa.backend.domain.model.Configuracion;
+import com.tiendaropa.backend.infrastructure.adapters.output.persistence.mapper.ConfiguracionEntityMapper;
+import com.tiendaropa.backend.infrastructure.adapters.output.persistence.repository.ConfiguracionJpaRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Optional;
+
+@Component
+@RequiredArgsConstructor
+public class ConfiguracionPersistenceAdapter implements ConfiguracionRepositoryPort {
+
+    private final ConfiguracionJpaRepository repository;
+
+    @Override
+    public List<Configuracion> findAll() {
+        return repository.findAll().stream().map(ConfiguracionEntityMapper::toDomain).toList();
+    }
+
+    @Override
+    public Optional<Configuracion> findById(String clave) {
+        return repository.findById(clave).map(ConfiguracionEntityMapper::toDomain);
+    }
+
+    @Override
+    public Configuracion save(Configuracion configuracion) {
+        return ConfiguracionEntityMapper.toDomain(repository.save(ConfiguracionEntityMapper.toEntity(configuracion)));
+    }
+
+    @Override
+    public void deleteById(String clave) {
+        repository.deleteById(clave);
+    }
+
+    @Override
+    public boolean existsById(String clave) {
+        return repository.existsById(clave);
+    }
+}
