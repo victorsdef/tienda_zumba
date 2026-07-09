@@ -19,25 +19,26 @@ public class DireccionPersistenceAdapter implements DireccionRepositoryPort {
 
     private final DireccionJpaRepository repository;
     private final UsuarioJpaRepository usuarioRepository;
+    private final DireccionEntityMapper mapper;
 
     @Override
     public List<Direccion> findAll() {
-        return repository.findAll().stream().map(DireccionEntityMapper::toDomain).toList();
+        return repository.findAll().stream().map(mapper::toDomain).toList();
     }
 
     @Override
     public Optional<Direccion> findById(Long id) {
-        return repository.findById(id).map(DireccionEntityMapper::toDomain);
+        return repository.findById(id).map(mapper::toDomain);
     }
 
     @Override
     public Direccion save(Direccion direccion) {
-        DireccionEntity entity = DireccionEntityMapper.toEntity(direccion);
+        DireccionEntity entity = mapper.toEntity(direccion);
         if (direccion.getUsuario() != null && direccion.getUsuario().getId() != null) {
             UsuarioEntity usuario = usuarioRepository.findById(direccion.getUsuario().getId()).orElse(null);
             entity.setUsuario(usuario);
         }
-        return DireccionEntityMapper.toDomain(repository.save(entity));
+        return mapper.toDomain(repository.save(entity));
     }
 
     @Override

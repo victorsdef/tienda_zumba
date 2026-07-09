@@ -15,25 +15,26 @@ import java.util.Optional;
 public class OrdenPersistenceAdapter implements OrdenRepositoryPort {
 
     private final OrdenJpaRepository repository;
+    private final OrdenEntityMapper mapper;
 
     @Override
     public Orden save(Orden orden) {
-        return OrdenEntityMapper.toDomain(repository.save(OrdenEntityMapper.toEntity(orden)));
+        return mapper.toDomain(repository.save(mapper.toEntity(orden)));
     }
 
     @Override
     public Optional<Orden> findById(Long id) {
-        return repository.findById(id).map(OrdenEntityMapper::toDomain);
+        return repository.findById(id).map(mapper::toDomain);
     }
 
     @Override
     public List<Orden> findAll() {
-        return repository.findAll().stream().map(OrdenEntityMapper::toDomain).toList();
+        return repository.findAll().stream().map(mapper::toDomain).toList();
     }
 
     @Override
     public List<Orden> findByUsuarioId(Long usuarioId) {
-        return repository.findByUsuarioId(usuarioId).stream().map(OrdenEntityMapper::toDomain).toList();
+        return repository.findByUsuarioId(usuarioId).stream().map(mapper::toDomain).toList();
     }
 
     @Override

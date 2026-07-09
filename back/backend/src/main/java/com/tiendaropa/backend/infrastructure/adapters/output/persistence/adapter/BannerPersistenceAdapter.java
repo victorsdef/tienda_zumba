@@ -17,22 +17,23 @@ import java.util.Optional;
 public class BannerPersistenceAdapter implements BannerRepositoryPort {
 
     private final BannerJpaRepository repository;
+    private final BannerEntityMapper mapper;
 
     @Override
     public Banner save(Banner banner) {
-        return BannerEntityMapper.toDomain(repository.save(BannerEntityMapper.toEntity(banner)));
+        return mapper.toDomain(repository.save(mapper.toEntity(banner)));
     }
 
     @Override
     public Optional<Banner> findById(Long id) {
-        return repository.findById(id).map(BannerEntityMapper::toDomain);
+        return repository.findById(id).map(mapper::toDomain);
     }
 
     @Override
     public List<Banner> findActivos() {
         LocalDateTime now = LocalDateTime.now();
         return repository.findAll().stream()
-            .map(BannerEntityMapper::toDomain)
+            .map(mapper::toDomain)
             .filter(Banner::isActivo)
             .filter(b -> (b.getFechaInicio() == null || !b.getFechaInicio().isAfter(now))
                 && (b.getFechaFin() == null || !b.getFechaFin().isBefore(now)))

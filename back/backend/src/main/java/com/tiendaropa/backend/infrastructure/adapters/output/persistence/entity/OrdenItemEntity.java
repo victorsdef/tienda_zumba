@@ -22,6 +22,7 @@ public class OrdenItemEntity {
 
     private Long productoId;
     private String nombreProducto;
+    private String productoImagen;
     private Integer cantidad;
 
     @Column(precision = 12, scale = 2)

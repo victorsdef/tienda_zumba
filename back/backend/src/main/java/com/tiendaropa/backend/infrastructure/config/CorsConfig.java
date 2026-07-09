@@ -9,7 +9,9 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Configuration
 public class CorsConfig {
@@ -21,20 +23,28 @@ public class CorsConfig {
     ) {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        List<String> origins = StringUtils.hasText(allowedOrigins)
-            ? Arrays.stream(allowedOrigins.split(","))
+        Set<String> origins = new LinkedHashSet<>();
+
+        if (StringUtils.hasText(allowedOrigins)) {
+            Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(StringUtils::hasText)
-                .distinct()
-                .toList()
-            : List.of(
-                frontendUrl,
-                "http://localhost:5173",
-                "http://127.0.0.1:5173",
-                "https://sofia-couture-frontend.onrender.com"
-            );
+                .forEach(origins::add);
+        }
 
-        configuration.setAllowedOrigins(origins);
+        if (StringUtils.hasText(frontendUrl)) {
+            origins.add(frontendUrl.trim());
+        }
+
+        origins.add("http://localhost");
+        origins.add("http://127.0.0.1");
+        origins.add("http://localhost:80");
+        origins.add("http://127.0.0.1:80");
+        origins.add("http://localhost:5173");
+        origins.add("http://127.0.0.1:5173");
+        origins.add("https://sofia-couture-frontend.onrender.com");
+
+        configuration.setAllowedOrigins(List.copyOf(origins));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization", "Content-Disposition"));

@@ -15,20 +15,21 @@ import java.util.Optional;
 public class ConfiguracionPersistenceAdapter implements ConfiguracionRepositoryPort {
 
     private final ConfiguracionJpaRepository repository;
+    private final ConfiguracionEntityMapper mapper;
 
     @Override
     public List<Configuracion> findAll() {
-        return repository.findAll().stream().map(ConfiguracionEntityMapper::toDomain).toList();
+        return repository.findAll().stream().map(mapper::toDomain).toList();
     }
 
     @Override
     public Optional<Configuracion> findById(String clave) {
-        return repository.findById(clave).map(ConfiguracionEntityMapper::toDomain);
+        return repository.findById(clave).map(mapper::toDomain);
     }
 
     @Override
     public Configuracion save(Configuracion configuracion) {
-        return ConfiguracionEntityMapper.toDomain(repository.save(ConfiguracionEntityMapper.toEntity(configuracion)));
+        return mapper.toDomain(repository.save(mapper.toEntity(configuracion)));
     }
 
     @Override

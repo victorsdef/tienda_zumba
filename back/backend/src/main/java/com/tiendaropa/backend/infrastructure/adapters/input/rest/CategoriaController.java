@@ -1,7 +1,9 @@
 package com.tiendaropa.backend.infrastructure.adapters.input.rest;
 
 import com.tiendaropa.backend.application.ports.input.CategoriaUseCase;
-import com.tiendaropa.backend.domain.model.Categoria;
+import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.categoria.CategoriaDTO;
+import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.categoria.CategoriaRequest;
+import com.tiendaropa.backend.infrastructure.adapters.input.rest.mapper.CategoriaRestMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,25 +15,26 @@ import java.util.List;
 public class CategoriaController {
 
     private final CategoriaUseCase categoriaUseCase;
+    private final CategoriaRestMapper categoriaRestMapper;
 
     @GetMapping
-    public List<Categoria> listar() {
-        return categoriaUseCase.listarTodas();
+    public List<CategoriaDTO> listar() {
+        return categoriaRestMapper.toDtoList(categoriaUseCase.listarTodas());
     }
 
     @GetMapping("/{id}")
-    public Categoria obtener(@PathVariable Long id) {
-        return categoriaUseCase.obtenerPorId(id);
+    public CategoriaDTO obtener(@PathVariable Long id) {
+        return categoriaRestMapper.toDto(categoriaUseCase.obtenerPorId(id));
     }
 
     @PostMapping
-    public Categoria crear(@RequestBody Categoria categoria) {
-        return categoriaUseCase.crear(categoria);
+    public CategoriaDTO crear(@RequestBody CategoriaRequest categoria) {
+        return categoriaRestMapper.toDto(categoriaUseCase.crear(categoriaRestMapper.toDomain(categoria)));
     }
 
     @PutMapping("/{id}")
-    public Categoria actualizar(@PathVariable Long id, @RequestBody Categoria categoria) {
-        return categoriaUseCase.actualizar(id, categoria);
+    public CategoriaDTO actualizar(@PathVariable Long id, @RequestBody CategoriaRequest categoria) {
+        return categoriaRestMapper.toDto(categoriaUseCase.actualizar(id, categoriaRestMapper.toDomain(categoria)));
     }
 
     @DeleteMapping("/{id}")

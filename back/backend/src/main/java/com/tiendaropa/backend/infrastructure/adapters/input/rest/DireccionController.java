@@ -1,7 +1,9 @@
 package com.tiendaropa.backend.infrastructure.adapters.input.rest;
 
 import com.tiendaropa.backend.application.ports.input.DireccionUseCase;
-import com.tiendaropa.backend.domain.model.Direccion;
+import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.direccion.DireccionDTO;
+import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.direccion.DireccionRequest;
+import com.tiendaropa.backend.infrastructure.adapters.input.rest.mapper.DireccionRestMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,18 +15,19 @@ import java.util.List;
 public class DireccionController {
 
     private final DireccionUseCase direccionUseCase;
+    private final DireccionRestMapper direccionRestMapper;
 
     @GetMapping
-    public List<Direccion> listar() { return direccionUseCase.listarTodas(); }
+    public List<DireccionDTO> listar() { return direccionRestMapper.toDtoList(direccionUseCase.listarTodas()); }
 
     @GetMapping("/{id}")
-    public Direccion obtener(@PathVariable Long id) { return direccionUseCase.obtenerPorId(id); }
+    public DireccionDTO obtener(@PathVariable Long id) { return direccionRestMapper.toDto(direccionUseCase.obtenerPorId(id)); }
 
     @PostMapping
-    public Direccion crear(@RequestBody Direccion direccion) { return direccionUseCase.crear(direccion); }
+    public DireccionDTO crear(@RequestBody DireccionRequest direccion) { return direccionRestMapper.toDto(direccionUseCase.crear(direccionRestMapper.toDomain(direccion))); }
 
     @PutMapping("/{id}")
-    public Direccion actualizar(@PathVariable Long id, @RequestBody Direccion direccion) { return direccionUseCase.actualizar(id, direccion); }
+    public DireccionDTO actualizar(@PathVariable Long id, @RequestBody DireccionRequest direccion) { return direccionRestMapper.toDto(direccionUseCase.actualizar(id, direccionRestMapper.toDomain(direccion))); }
 
     @DeleteMapping("/{id}")
     public void eliminar(@PathVariable Long id) { direccionUseCase.eliminar(id); }

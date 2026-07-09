@@ -15,25 +15,26 @@ import java.util.Optional;
 public class UsuarioPersistenceAdapter implements UsuarioRepositoryPort {
 
     private final UsuarioJpaRepository repository;
+    private final UsuarioEntityMapper mapper;
 
     @Override
     public List<Usuario> findAll() {
-        return repository.findAll().stream().map(UsuarioEntityMapper::toDomain).toList();
+        return repository.findAll().stream().map(mapper::toDomain).toList();
     }
 
     @Override
     public Optional<Usuario> findById(Long id) {
-        return repository.findById(id).map(UsuarioEntityMapper::toDomain);
+        return repository.findById(id).map(mapper::toDomain);
     }
 
     @Override
     public Optional<Usuario> findByEmail(String email) {
-        return repository.findByEmailIgnoreCase(email).map(UsuarioEntityMapper::toDomain);
+        return repository.findByEmailIgnoreCase(email).map(mapper::toDomain);
     }
 
     @Override
     public Usuario save(Usuario usuario) {
-        return UsuarioEntityMapper.toDomain(repository.save(UsuarioEntityMapper.toEntity(usuario)));
+        return mapper.toDomain(repository.save(mapper.toEntity(usuario)));
     }
 
     @Override

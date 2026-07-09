@@ -19,10 +19,26 @@ export default function Registro() {
     setError('')
     setExito('')
     try {
-      const msg = await registerApi(data.nombre, data.email, data.password)
-      setExito(msg)
+      const response = await registerApi(data.nombre, data.email, data.password)
+      setExito(response.mensaje)
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+      const response = (err as {
+        response?: { status?: number; data?: { error?: string; mensaje?: string } | string }
+      })?.response
+
+      const rawData = response?.data
+      const msg = typeof rawData === 'string'
+        ? rawData
+        : rawData?.error ?? rawData?.mensaje
+
+      const normalized = msg?.toLowerCase() ?? ''
+      const alreadyExists = response?.status === 409 || normalized.includes('ya está registrado')
+
+      if (alreadyExists) {
+        setExito('Ese correo ya tiene una cuenta. Puedes iniciar sesión directamente.')
+        return
+      }
+
       setError(msg ?? 'Error al registrarse. Intenta con otro email.')
     }
   }

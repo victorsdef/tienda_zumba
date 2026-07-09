@@ -2,6 +2,8 @@ package com.tiendaropa.backend.infrastructure.adapters.input.rest;
 
 import com.tiendaropa.backend.application.ports.input.CarritoUseCase;
 import com.tiendaropa.backend.domain.model.Carrito;
+import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.carrito.CarritoDTO;
+import com.tiendaropa.backend.infrastructure.adapters.input.rest.mapper.CarritoRestMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,25 +15,26 @@ import java.util.List;
 public class CarritoController {
 
     private final CarritoUseCase carritoUseCase;
+    private final CarritoRestMapper carritoRestMapper;
 
     @GetMapping
-    public List<Carrito> listar() {
-        return carritoUseCase.listarTodos();
+    public List<CarritoDTO> listar() {
+        return carritoRestMapper.toDtoList(carritoUseCase.listarTodos());
     }
 
     @GetMapping("/{id}")
-    public Carrito obtener(@PathVariable Long id) {
-        return carritoUseCase.obtenerPorId(id);
+    public CarritoDTO obtener(@PathVariable Long id) {
+        return carritoRestMapper.toDto(carritoUseCase.obtenerPorId(id));
     }
 
     @PostMapping
-    public Carrito crear(@RequestBody Carrito carrito) {
-        return carritoUseCase.crear(carrito);
+    public CarritoDTO crear(@RequestBody Carrito carrito) {
+        return carritoRestMapper.toDto(carritoUseCase.crear(carrito));
     }
 
     @PutMapping("/{id}")
-    public Carrito actualizar(@PathVariable Long id, @RequestBody Carrito carrito) {
-        return carritoUseCase.actualizar(id, carrito);
+    public CarritoDTO actualizar(@PathVariable Long id, @RequestBody Carrito carrito) {
+        return carritoRestMapper.toDto(carritoUseCase.actualizar(id, carrito));
     }
 
     @DeleteMapping("/{id}")

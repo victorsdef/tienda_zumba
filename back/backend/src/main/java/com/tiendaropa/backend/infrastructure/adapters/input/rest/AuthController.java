@@ -1,7 +1,12 @@
 package com.tiendaropa.backend.infrastructure.adapters.input.rest;
 
 import com.tiendaropa.backend.application.ports.input.AuthUseCase;
-import com.tiendaropa.backend.domain.model.Usuario;
+import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.auth.AuthResponse;
+import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.auth.LoginRequest;
+import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.auth.RegisterRequest;
+import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.auth.RegisterResponse;
+import com.tiendaropa.backend.infrastructure.adapters.input.rest.mapper.AuthRestMapper;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,27 +14,30 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping({"/api/nueva-arquitectura/auth", "/api/auth"})
+@RequestMapping({ "/api/nueva-arquitectura/auth", "/api/auth" })
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthUseCase authUseCase;
+    private final AuthRestMapper authRestMapper;
 
     @PostMapping("/login")
-public ResponseEntity<Map<String, String>> login(@RequestBody Map<String, String> body) {
-    Map<String, String> tokens = authUseCase.login(
-        body.get("email"),
-        body.get("password")
-    );
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
 
-    if (tokens.isEmpty()) return ResponseEntity.status(401).build();
-    return ResponseEntity.ok(tokens);
-}
+        Map<String, String> tokens = authUseCase.login(
+                request.getEmail(),
+                request.getPassword());
 
-   @PostMapping("/register")
-    public ResponseEntity<Usuario> register(@RequestBody Usuario usuario) {
-    String rawPassword = usuario.getPassword();
-    Usuario created = authUseCase.register(usuario, rawPassword);
-    return ResponseEntity.ok(created);
-}
+        if (tokens.isEmpty()) {
+            return ResponseEntity.status(401).build();
+        }
+
+        return ResponseEntity.ok(authRestMapper.toAuthResponse(tokens));
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<RegisterResponse> register(@RequestBody RegisterRequest request) {
+        var created = authUseCase.register(authRestMapper.toDomain(request), request.getPassword());
+        return ResponseEntity.ok(authRestMapper.toRegisterResponse(created));
+    }
 }

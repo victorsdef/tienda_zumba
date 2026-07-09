@@ -19,25 +19,26 @@ public class ProductoPersistenceAdapter implements ProductoRepositoryPort {
 
     private final ProductoJpaRepository repository;
     private final CategoriaJpaRepository categoriaRepository;
+    private final ProductoEntityMapper mapper;
 
     @Override
     public List<Producto> findAll() {
-        return repository.findAll().stream().map(ProductoEntityMapper::toDomain).toList();
+        return repository.findAll().stream().map(mapper::toDomain).toList();
     }
 
     @Override
     public Optional<Producto> findById(Long id) {
-        return repository.findById(id).map(ProductoEntityMapper::toDomain);
+        return repository.findById(id).map(mapper::toDomain);
     }
 
     @Override
     public Producto save(Producto producto) {
-        ProductoEntity entity = ProductoEntityMapper.toEntity(producto);
+        ProductoEntity entity = mapper.toEntity(producto);
         if (producto.getCategoria() != null && producto.getCategoria().getId() != null) {
             CategoriaEntity categoria = categoriaRepository.findById(producto.getCategoria().getId()).orElse(null);
             entity.setCategoria(categoria);
         }
-        return ProductoEntityMapper.toDomain(repository.save(entity));
+        return mapper.toDomain(repository.save(entity));
     }
 
     @Override
@@ -47,7 +48,7 @@ public class ProductoPersistenceAdapter implements ProductoRepositoryPort {
 
     @Override
     public Optional<Producto> findBySlug(String slug) {
-        return repository.findBySlug(slug).map(ProductoEntityMapper::toDomain);
+        return repository.findBySlug(slug).map(mapper::toDomain);
     }
 
     @Override

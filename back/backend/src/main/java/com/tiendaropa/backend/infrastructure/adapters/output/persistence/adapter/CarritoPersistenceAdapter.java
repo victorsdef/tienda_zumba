@@ -19,25 +19,26 @@ public class CarritoPersistenceAdapter implements CarritoRepositoryPort {
 
     private final CarritoJpaRepository repository;
     private final UsuarioJpaRepository usuarioRepository;
+    private final CarritoEntityMapper mapper;
 
     @Override
     public List<Carrito> findAll() {
-        return repository.findAll().stream().map(CarritoEntityMapper::toDomain).toList();
+        return repository.findAll().stream().map(mapper::toDomain).toList();
     }
 
     @Override
     public Optional<Carrito> findById(Long id) {
-        return repository.findById(id).map(CarritoEntityMapper::toDomain);
+        return repository.findById(id).map(mapper::toDomain);
     }
 
     @Override
     public Carrito save(Carrito carrito) {
-        CarritoEntity entity = CarritoEntityMapper.toEntity(carrito);
+        CarritoEntity entity = mapper.toEntity(carrito);
         if (carrito.getUsuario() != null && carrito.getUsuario().getId() != null) {
             UsuarioEntity usuario = usuarioRepository.findById(carrito.getUsuario().getId()).orElse(null);
             entity.setUsuario(usuario);
         }
-        return CarritoEntityMapper.toDomain(repository.save(entity));
+        return mapper.toDomain(repository.save(entity));
     }
 
     @Override

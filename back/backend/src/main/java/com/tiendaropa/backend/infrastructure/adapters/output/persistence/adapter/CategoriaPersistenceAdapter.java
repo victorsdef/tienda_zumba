@@ -15,20 +15,21 @@ import java.util.Optional;
 public class CategoriaPersistenceAdapter implements CategoriaRepositoryPort {
 
     private final CategoriaJpaRepository repository;
+    private final CategoriaEntityMapper mapper;
 
     @Override
     public List<Categoria> findAll() {
-        return repository.findAll().stream().map(CategoriaEntityMapper::toDomain).toList();
+        return repository.findAll().stream().map(mapper::toDomain).toList();
     }
 
     @Override
     public Optional<Categoria> findById(Long id) {
-        return repository.findById(id).map(CategoriaEntityMapper::toDomain);
+        return repository.findById(id).map(mapper::toDomain);
     }
 
     @Override
     public Categoria save(Categoria categoria) {
-        return CategoriaEntityMapper.toDomain(repository.save(CategoriaEntityMapper.toEntity(categoria)));
+        return mapper.toDomain(repository.save(mapper.toEntity(categoria)));
     }
 
     @Override

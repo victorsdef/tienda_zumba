@@ -1,43 +1,28 @@
 package com.tiendaropa.backend.infrastructure.adapters.output.persistence.mapper;
 
 import com.tiendaropa.backend.domain.model.Carrito;
-import com.tiendaropa.backend.domain.model.ItemCarrito;
 import com.tiendaropa.backend.infrastructure.adapters.output.persistence.entity.CarritoEntity;
 import com.tiendaropa.backend.infrastructure.adapters.output.persistence.entity.ItemCarritoEntity;
+import org.mapstruct.AfterMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
-import java.util.ArrayList;
-import java.util.List;
+@Mapper(componentModel = "spring", uses = {UsuarioEntityMapper.class, ItemCarritoEntityMapper.class})
+public interface CarritoEntityMapper {
 
-public final class CarritoEntityMapper {
-    private CarritoEntityMapper() {
-    }
+    Carrito toDomain(CarritoEntity entity);
 
-    public static Carrito toDomain(CarritoEntity entity) {
-        if (entity == null) return null;
-        Carrito domain = new Carrito();
-        domain.setId(entity.getId());
-        domain.setUsuario(UsuarioEntityMapper.toDomain(entity.getUsuario()));
-        List<ItemCarrito> items = new ArrayList<>();
-        for (ItemCarritoEntity ignored : entity.getItems()) {
-            items.add(new ItemCarrito());
+    @Mapping(target = "usuario", ignore = true)
+    CarritoEntity toEntity(Carrito domain);
+
+    @AfterMapping
+    default void attachParent(@MappingTarget CarritoEntity entity) {
+        if (entity.getItems() == null) {
+            return;
         }
-        domain.setItems(items);
-        return domain;
-    }
-
-    public static CarritoEntity toEntity(Carrito domain) {
-        if (domain == null) return null;
-        CarritoEntity entity = new CarritoEntity();
-        entity.setId(domain.getId());
-        List<ItemCarritoEntity> items = new ArrayList<>();
-        if (domain.getItems() != null) {
-            for (ItemCarrito ignored : domain.getItems()) {
-                ItemCarritoEntity itemEntity = new ItemCarritoEntity();
-                itemEntity.setCarrito(entity);
-                items.add(itemEntity);
-            }
+        for (ItemCarritoEntity item : entity.getItems()) {
+            item.setCarrito(entity);
         }
-        entity.setItems(items);
-        return entity;
     }
 }
