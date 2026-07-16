@@ -201,7 +201,7 @@ export default function DetalleProducto() {
   const { slug } = useParams<{ slug: string }>()
   const [searchParams] = useSearchParams()
   const colorParam = searchParams.get('color') ?? undefined
-  const { agregarItem, loading, getCarritoActivo, guestItems, carrito } = useCartStore()
+  const { agregarItem, loading, getCarritoActivo } = useCartStore()
   const { isAuthenticated } = useAuthStore()
   const [talla, setTalla] = useState<string>()
   const [color, setColor] = useState<string>(colorParam)
