@@ -11,20 +11,23 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping({
-    "/api/nueva-arquitectura/categorias",
-    "/api/categorias",
-    "/api/nueva-arquitectura/admin/categorias",
-    "/api/admin/categorias"
-})
 @RequiredArgsConstructor
 public class CategoriaController {
 
     private final CategoriaUseCase categoriaUseCase;
     private final CategoriaRestMapper categoriaRestMapper;
 
-    @GetMapping
+    /** Endpoint público — solo categorías activas, siempre */
+    @GetMapping({"/api/categorias", "/api/nueva-arquitectura/categorias"})
     public List<CategoriaDTO> listar() {
+        return categoriaRestMapper.toDtoList(categoriaUseCase.listarTodas())
+            .stream().filter(CategoriaDTO::isActivo).toList();
+    }
+
+    /** Endpoint admin — todas las categorías */
+    @GetMapping({"/api/admin/categorias", "/api/nueva-arquitectura/admin/categorias"})
+    @PreAuthorize("hasAnyRole('ADMIN','VENDEDOR','BODEGUERO')")
+    public List<CategoriaDTO> listarAdmin() {
         return categoriaRestMapper.toDtoList(categoriaUseCase.listarTodas());
     }
 

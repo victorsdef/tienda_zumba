@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getProductos, getProductosTrending } from '@api/productos'
 import { getBannersPublic, type Banner } from '@api/banners'
+import { getCategorias } from '../api/categorias'
 import HeroBannerPreview from '@widgets/banners/HeroBannerPreview'
 import ProductCard from '@entities/product/ProductCard'
 import { ProductGridSkeleton } from '@shared/LoadingSkeleton'
@@ -34,13 +35,13 @@ const BANNERS_DEFAULT: Banner[] = [
   },
 ]
 
-const CATEGORY_LINKS = [
-  { label: 'Mujer', Icon: IconWoman, to: '/catalogo?genero=MUJER' },
-  { label: 'Hombre', Icon: IconMan, to: '/catalogo?genero=HOMBRE' },
-  { label: 'Niño/a', Icon: IconKid, to: '/catalogo?genero=NINO' },
-  { label: 'Calzado', Icon: IconShoe, to: '/catalogo?genero=CALZADO' },
-  { label: 'Accesorios', Icon: IconJewelry, to: '/catalogo?genero=ACCESORIOS' },
-  { label: 'Belleza', Icon: IconLipstick, to: '/catalogo?genero=BELLEZA' },
+const ALL_CATEGORY_LINKS = [
+  { genero: 'MUJER',      label: 'Mujer',      Icon: IconWoman,    to: '/catalogo?genero=MUJER'      },
+  { genero: 'HOMBRE',     label: 'Hombre',     Icon: IconMan,      to: '/catalogo?genero=HOMBRE'     },
+  { genero: 'NINO',       label: 'Niño/a',     Icon: IconKid,      to: '/catalogo?genero=NINO'       },
+  { genero: 'CALZADO',    label: 'Calzado',    Icon: IconShoe,     to: '/catalogo?genero=CALZADO'    },
+  { genero: 'ACCESORIOS', label: 'Accesorios', Icon: IconJewelry,  to: '/catalogo?genero=ACCESORIOS' },
+  { genero: 'BELLEZA',    label: 'Belleza',    Icon: IconLipstick, to: '/catalogo?genero=BELLEZA'    },
 ]
 
 function buildLink(tipo: string, valor: string): string {
@@ -172,6 +173,13 @@ export default function Home() {
     queryFn: getBannersPublic,
   })
 
+  const { data: cats = [] } = useQuery({
+    queryKey: ['categorias'],
+    queryFn: getCategorias,
+  })
+  const generosActivos = new Set(cats.map(c => c.genero).filter(Boolean))
+  const categoryLinks = ALL_CATEGORY_LINKS.filter(c => generosActivos.has(c.genero))
+
   const { data: coleccionData, isLoading: loadingColeccion } = useQuery({
     queryKey: ['home', 'coleccion'],
     queryFn: () => getProductos({ size: 4, sort: 'id,desc' }),
@@ -205,7 +213,7 @@ export default function Home() {
       <section className={styles.categoriesSection}>
         <div className={styles.pageContainer}>
           <div className={styles.categoryGrid}>
-            {CATEGORY_LINKS.map(({ label, Icon, to }) => (
+            {categoryLinks.map(({ label, Icon, to }) => (
               <Link
                 key={label}
                 to={to}

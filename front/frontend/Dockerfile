@@ -2,8 +2,14 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-ARG VITE_API_URL=/api
+# Build args — Render los inyecta desde envVars del render.yaml
+ARG VITE_API_URL=/api/nueva-arquitectura
+ARG VITE_PAYPHONE_TOKEN
+ARG VITE_PAYPHONE_STORE_ID
+
 ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_PAYPHONE_TOKEN=$VITE_PAYPHONE_TOKEN
+ENV VITE_PAYPHONE_STORE_ID=$VITE_PAYPHONE_STORE_ID
 
 COPY package*.json ./
 RUN npm ci

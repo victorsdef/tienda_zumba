@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { getProductosAdmin, toggleActivo, actualizarStock } from '../../api/admin'
 import { crearProducto, actualizarProducto, eliminarProducto } from '../../api/productos'
-import { getCategorias } from '../../api/categorias'
+import { getCategoriasAdmin } from '../../api/categorias'
 import { IconSearch, IconEdit, IconTrash, IconHanger, IconX, IconChevronDown } from '@shared/Icon'
 import ImageManager from '@shared/ImageManager'
 import TallasSelector from '@shared/TallasSelector'
@@ -79,10 +79,10 @@ export default function AdminProductos() {
   })
   const { data: cats = [] } = useQuery({
     queryKey: ['categorias'],
-    queryFn: getCategorias,
+    queryFn: getCategoriasAdmin,
     enabled: isAdmin,
   })
-  const generosActivos = new Set(cats.map(c => c.genero).filter(Boolean))
+  const generosActivos = new Set(cats.filter(c => c.activo).map(c => c.genero).filter(Boolean))
   const generoOpts = GENERO_OPTS.filter(g => generosActivos.has(g.value))
 
   const { register, handleSubmit, reset, watch, trigger, formState: { isSubmitting, errors } } = useForm<FormData>()
@@ -236,7 +236,7 @@ export default function AdminProductos() {
     editando ? updateMut.mutate({ id: editando.id, data: payload }) : createMut.mutate(payload)
   }
 
-  const catsFiltradas = cats?.filter(c => genero === '' ? true : c.genero === genero) ?? []
+  const catsFiltradas = cats?.filter(c => c.activo && (genero === '' ? true : c.genero === genero)) ?? []
   const categoriaNombreActual = cats?.find(c => c.id === Number(categoriaIdActual))?.nombre ?? ''
   const productos = data?.content.filter(p =>
     !filtroNombre || p.nombre.toLowerCase().includes(filtroNombre.toLowerCase())

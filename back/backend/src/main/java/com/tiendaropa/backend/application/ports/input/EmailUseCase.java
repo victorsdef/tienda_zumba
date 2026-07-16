@@ -12,4 +12,5 @@ public interface EmailUseCase {
     void enviarEnPreparacion(String destinatario, String nombre, String codigoOrden);
     void enviarEnviado(String destinatario, String nombre, String codigoOrden, String numeroGuia);
     void enviarEntregado(String destinatario, String nombre, String codigoOrden);
+    void enviarRecuperacionPassword(String destinatario, String nombre, String token);
 }

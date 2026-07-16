@@ -3,6 +3,7 @@ package com.tiendaropa.backend.infrastructure.adapters.input.rest;
 import com.tiendaropa.backend.application.ports.input.AdminUseCase;
 import com.tiendaropa.backend.application.ports.input.BannerUseCase;
 import com.tiendaropa.backend.application.ports.input.CategoriaUseCase;
+import com.tiendaropa.backend.application.ports.input.EmailUseCase;
 import com.tiendaropa.backend.application.ports.input.OrdenUseCase;
 import com.tiendaropa.backend.application.ports.input.ProductoUseCase;
 import com.tiendaropa.backend.application.ports.input.UsuarioUseCase;
@@ -76,6 +77,7 @@ public class AdminController {
     private final UsuarioRepositoryPort usuarioRepositoryPort;
     private final PasswordEncoder passwordEncoder;
     private final BannerJpaRepository bannerJpaRepository;
+    private final EmailUseCase emailUseCase;
     private final ObjectMapper objectMapper;
 
     @GetMapping("/dashboard")
@@ -256,11 +258,43 @@ public class AdminController {
     @PreAuthorize("hasAnyRole('ADMIN','VENDEDOR')")
     public ResponseEntity<OrdenDTO> cambiarEstado(@PathVariable Long id, @RequestBody CambiarEstadoRequest request) {
         Orden orden = ordenUseCase.obtenerPorId(id).orElseThrow(() -> new RuntimeException("Orden no encontrada"));
-        orden.setEstado(request.getEstado() == null ? orden.getEstado() : request.getEstado().trim().toUpperCase(Locale.ROOT));
+        String nuevoEstado = request.getEstado() == null ? orden.getEstado() : request.getEstado().trim().toUpperCase(Locale.ROOT);
+        orden.setEstado(nuevoEstado);
         if (request.getNumeroGuia() != null && !request.getNumeroGuia().isBlank()) {
             orden.setNumeroGuia(request.getNumeroGuia().trim());
         }
-        return ResponseEntity.ok(toOrdenDto(ordenUseCase.actualizar(orden)));
+        Orden actualizada = ordenUseCase.actualizar(orden);
+        notificarCambioEstado(actualizada, nuevoEstado);
+        return ResponseEntity.ok(toOrdenDto(actualizada));
+    }
+
+    private void notificarCambioEstado(Orden orden, String estado) {
+        String email  = resolverEmailCliente(orden);
+        String nombre = resolverNombreCliente(orden);
+        if (email == null || email.isBlank()) return;
+        String codigo = orden.getCodigoOrden() != null ? orden.getCodigoOrden() : "#" + orden.getId();
+        switch (estado) {
+            case "EN_PREPARACION" -> emailUseCase.enviarEnPreparacion(email, nombre, codigo);
+            case "ENVIADO"        -> emailUseCase.enviarEnviado(email, nombre, codigo, orden.getNumeroGuia());
+            case "ENTREGADO"      -> emailUseCase.enviarEntregado(email, nombre, codigo);
+            case "CANCELADO"      -> emailUseCase.enviarPagoCancelado(email, nombre, codigo);
+        }
+    }
+
+    private String resolverEmailCliente(Orden orden) {
+        if (orden.getEmailInvitado() != null && !orden.getEmailInvitado().isBlank())
+            return orden.getEmailInvitado();
+        if (orden.getUsuarioId() != null)
+            return usuarioRepositoryPort.findById(orden.getUsuarioId()).map(u -> u.getEmail()).orElse(null);
+        return null;
+    }
+
+    private String resolverNombreCliente(Orden orden) {
+        if (orden.getNombreInvitado() != null && !orden.getNombreInvitado().isBlank())
+            return orden.getNombreInvitado();
+        if (orden.getUsuarioId() != null)
+            return usuarioRepositoryPort.findById(orden.getUsuarioId()).map(u -> u.getNombre()).orElse("Cliente");
+        return "Cliente";
     }
 
     @PatchMapping("/ordenes/{id}/guia")
@@ -419,7 +453,7 @@ public class AdminController {
         List<Orden> ordenes = ordenUseCase.listarTodas();
 
         LocalDateTime inicioHoy = LocalDate.now().atStartOfDay();
-        LocalDateTime inicioSemana = LocalDate.now().minusDays(6).atStartOfDay();
+        LocalDateTime inicioSemana = LocalDate.now().with(java.time.DayOfWeek.MONDAY).atStartOfDay();
         LocalDateTime inicioMes = LocalDate.now().withDayOfMonth(1).atStartOfDay();
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         int limite = req.getLimiteTopProductos() != null ? req.getLimiteTopProductos() : 10;

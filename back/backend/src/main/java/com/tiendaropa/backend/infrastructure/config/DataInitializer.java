@@ -361,7 +361,7 @@ public class DataInitializer {
 
         categoria.setNombre(nombre);
         categoria.setGenero(genero);
-        categoria.setActivo(true);
+        categoria.setActivo("MUJER".equals(genero));
         categoria.setTallasDisponibles(new ArrayList<>(tallas));
 
         categoriaRepositoryPort.save(categoria);

@@ -61,6 +61,9 @@ export default function Login() {
               placeholder="••••••••"
             />
             {errors.password && <p className="text-red-600 text-xs mt-1">{errors.password.message}</p>}
+            <div className="text-right mt-1">
+              <a href="/olvide-password" className="text-xs text-[#7d5c48] hover:underline">¿Olvidaste tu contraseña?</a>
+            </div>
           </div>
           <button type="submit" disabled={isSubmitting} className="btn-primary w-full">
             {isSubmitting ? 'Ingresando...' : 'Iniciar sesión'}

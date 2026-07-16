@@ -1,4 +1,5 @@
 services:
+  # ── BACKEND ────────────────────────────────────────────────────
   - type: web
     name: sofia-couture-backend
     runtime: docker
@@ -15,6 +16,10 @@ services:
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
+      - key: PORT
+        value: 8080
+
+      # Base de datos (inyectada automáticamente desde el servicio DB de Render)
       - key: DB_URL
         fromDatabase:
           name: sofia-couture-db
@@ -27,14 +32,18 @@ services:
         fromDatabase:
           name: sofia-couture-db
           property: password
-      - key: APP_UPLOAD_DIR
-        value: /tmp/uploads
+
+      # JWT
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRATION
         value: 86400000
       - key: JWT_REFRESH_EXPIRATION
         value: 604800000
+
+      # URLs — Render las inyecta automáticamente
+      - key: APP_UPLOAD_DIR
+        value: /tmp/uploads
       - key: APP_BASE_URL
         fromService:
           type: web
@@ -50,23 +59,24 @@ services:
           type: web
           name: sofia-couture-frontend
           envVarKey: RENDER_EXTERNAL_URL
-      - key: APP_MAIL_FROM
-        value: Sofia Couture EC <no-reply@example.com>
-      - key: ADMIN_EMAIL
-        sync: false
+
+      # Email Gmail — ponlos en el dashboard de Render después del primer deploy
       - key: SPRING_MAIL_USERNAME
         sync: false
       - key: SPRING_MAIL_PASSWORD
         sync: false
-      - key: RESEND_API_KEY
+      - key: APP_MAIL_FROM
         sync: false
-      - key: RESEND_API_URL
-        value: https://api.resend.com/emails
+      - key: ADMIN_EMAIL
+        sync: false
+
+      # Payphone — ponlos en el dashboard de Render
       - key: PAYPHONE_TOKEN
         sync: false
       - key: PAYPHONE_STORE_ID
         sync: false
 
+  # ── FRONTEND ───────────────────────────────────────────────────
   - type: web
     name: sofia-couture-frontend
     runtime: docker
@@ -81,9 +91,22 @@ services:
         - front/frontend/**
         - render.yaml
     envVars:
+      # Esta var se usa como build arg en el Dockerfile para que Vite la embeba
+      - key: VITE_API_URL
+        value: /api/nueva-arquitectura
+      # Payphone — ponlos en el dashboard de Render
+      - key: VITE_PAYPHONE_TOKEN
+        sync: false
+      - key: VITE_PAYPHONE_STORE_ID
+        sync: false
+      # URL interna del backend para que nginx haga proxy
       - key: BACKEND_URL
-        value: https://sofia-couture-backend.onrender.com
+        fromService:
+          type: web
+          name: sofia-couture-backend
+          envVarKey: RENDER_EXTERNAL_URL
 
+# ── BASE DE DATOS ──────────────────────────────────────────────
 databases:
   - name: sofia-couture-db
     plan: free

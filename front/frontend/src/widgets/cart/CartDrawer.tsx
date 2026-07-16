@@ -49,7 +49,9 @@ export default function CartDrawer() {
                   className={styles.itemImage}
                 />
                 <div className={styles.itemBody}>
-                  <p className={styles.itemName}>{item.productoNombre}</p>
+                  <Link to={`/producto/${item.productoId}`} onClick={closeCart} className={styles.itemName}>
+                    {item.productoNombre}
+                  </Link>
                   {(item.talla || item.color) && (
                     <p className={styles.itemMeta}>
                       {item.talla && `Talla: ${item.talla}`}

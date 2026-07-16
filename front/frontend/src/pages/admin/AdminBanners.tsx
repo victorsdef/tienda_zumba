@@ -185,17 +185,23 @@ export default function AdminBanners() {
     updateMut.mutate({ id: b.id, data: req })
   }
 
-  // ── Minipreview siempre visible en el header del modal ────────────────────
-  const MiniPreview = () => (
-    <div className="w-full overflow-hidden rounded-lg" style={{ maxHeight: 90 }}>
-      <HeroBannerPreview
-        tag={tagPreview} titulo={tituloPreview} subtitulo={subtituloPreview}
-        ctaTexto={ctaPreview} imagen={imagen}
-        colorDesde={colorDesde} colorHasta={colorHasta}
-        compact previewMode
-      />
-    </div>
-  )
+  // ── Minipreview siempre visible en el modal ───────────────────────────────
+  const MiniPreview = ({ height = 320 }: { height?: number }) => {
+    const REF = 700
+    const scale = height / REF
+    return (
+      <div className="w-full overflow-hidden rounded-xl border border-[#ede8df] shadow-sm bg-gray-50" style={{ height }}>
+        <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: `${100 / scale}%`, height: REF, pointerEvents: 'none' }}>
+          <HeroBannerPreview
+            tag={tagPreview} titulo={tituloPreview} subtitulo={subtituloPreview}
+            ctaTexto={ctaPreview} imagen={imagen}
+            colorDesde={colorDesde} colorHasta={colorHasta}
+            compact previewMode
+          />
+        </div>
+      </div>
+    )
+  }
 
   // ── Contenido por paso ────────────────────────────────────────────────────
   const renderPaso = () => {
@@ -263,31 +269,18 @@ export default function AdminBanners() {
 
       // PASO 2 — Textos ────────────────────────────────────────────────────
       case 2: return (
-        <div className="space-y-5">
-          <div className="flex items-start justify-between gap-3">
+        <div className="flex gap-6">
+          {/* Columna izquierda — campos */}
+          <div className="flex-1 min-w-0 space-y-4">
             <div>
               <p className="text-sm font-semibold text-gray-800 mb-0.5">Textos del banner</p>
               <p className="text-xs text-gray-400">Lo que ven los clientes sobre la imagen.</p>
             </div>
-            <button
-              type="button"
-              onClick={() => setVerPreview(true)}
-              className="lg:hidden flex-shrink-0 flex items-center gap-1.5 text-xs font-medium text-[#7d5c48] border border-[#d9ccbb] rounded-lg px-3 py-1.5 hover:bg-[#faf7f2] transition-colors"
-            >
-              <span>👁</span> Ver banner
-            </button>
-          </div>
 
-          {/* Preview live — solo desktop */}
-          <div className="hidden lg:block">
-            <MiniPreview />
-          </div>
-
-          <div className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
                 Etiqueta pequeña
-                <span className="ml-1 font-normal normal-case text-gray-400">— aparece arriba del título</span>
+                <span className="ml-1 font-normal normal-case text-gray-400">— arriba del título</span>
               </label>
               <input
                 {...register('tag')}
@@ -329,6 +322,15 @@ export default function AdminBanners() {
               <p className="text-[11px] text-gray-400 mt-1">Una sola llamada a la acción, corta y directa.</p>
             </div>
           </div>
+
+          {/* Columna derecha — preview en tiempo real */}
+          <div className="hidden sm:flex flex-col gap-2 w-64 flex-shrink-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Vista previa</p>
+            <div className="sticky top-0">
+              <MiniPreview height={400} />
+            </div>
+            <p className="text-[10px] text-gray-400 text-center">Se actualiza mientras escribís</p>
+          </div>
         </div>
       )
 
@@ -341,7 +343,7 @@ export default function AdminBanners() {
           </div>
 
           {/* Preview live */}
-          <MiniPreview />
+          <MiniPreview height={220} />
 
           {/* Paleta rápida */}
           <div>
@@ -627,7 +629,7 @@ export default function AdminBanners() {
       {mostrarForm && (
         <div className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:p-4">
           <div className="absolute inset-0 bg-black/60" onClick={cerrar} />
-          <div className="relative bg-white w-full h-full sm:h-auto sm:max-w-lg sm:max-h-[90vh] sm:rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+          <div className={`relative bg-white w-full h-full sm:h-auto sm:max-h-[90vh] sm:rounded-2xl flex flex-col shadow-2xl overflow-hidden ${paso === 2 ? 'sm:max-w-3xl' : 'sm:max-w-lg'}`}>
 
             {/* Header */}
             <div className="flex-shrink-0 bg-white border-b px-4 pt-4 pb-3">

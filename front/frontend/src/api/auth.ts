@@ -17,3 +17,9 @@ export const register = (nombre: string, email: string, password: string) =>
 
 export const verificarEmail = (token: string) =>
   api.get<string>(`/auth/verificar?token=${token}`).then(r => r.data)
+
+export const forgotPassword = (email: string) =>
+  api.post<{ mensaje: string }>('/auth/forgot-password', { email }).then(r => r.data)
+
+export const resetPassword = (token: string, password: string) =>
+  api.post<{ mensaje: string }>('/auth/reset-password', { token, password }).then(r => r.data)

@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Navbar from '@widgets/layout/Navbar'
 import Footer from '@widgets/layout/Footer'
@@ -27,11 +28,19 @@ import OrdenConfirmada from '@pages/OrdenConfirmada'
 import MisDirecciones from '@pages/MisDirecciones'
 import PagoConfirmado from '@pages/PagoConfirmado'
 import PagarOrden from '@pages/PagarOrden'
+import OlvidePassword from '@pages/OlvidePassword'
+import ResetPassword from '@pages/ResetPassword'
 import shellStyles from './AppShell.module.scss'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 })
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
 
 function WhatsAppButton() {
   return (
@@ -65,6 +74,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <ScrollToTop />
         <Routes>
           {/* Admin */}
           <Route path="/admin" element={<AdminLayout />}>
@@ -82,6 +92,8 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/registro" element={<Registro />} />
           <Route path="/verificar-email" element={<VerificarEmail />} />
+          <Route path="/olvide-password" element={<OlvidePassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Main */}
           <Route path="/" element={<MainLayout><Home /></MainLayout>} />

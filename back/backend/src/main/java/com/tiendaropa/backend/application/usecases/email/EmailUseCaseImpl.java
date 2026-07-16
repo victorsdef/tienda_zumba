@@ -52,4 +52,9 @@ public class EmailUseCaseImpl implements EmailUseCase {
     public void enviarEntregado(String destinatario, String nombre, String codigoOrden) {
         emailPort.enviarEntregado(destinatario, nombre, codigoOrden);
     }
+
+    @Override
+    public void enviarRecuperacionPassword(String destinatario, String nombre, String token) {
+        emailPort.enviarRecuperacionPassword(destinatario, nombre, token);
+    }
 }

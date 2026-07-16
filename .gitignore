@@ -1,0 +1,12 @@
+# Secretos — NUNCA subir al repo
+.env
+.env.local
+
+# El ejemplo sí se sube (no tiene valores reales)
+!.env.production.example
+
+# Storage local
+storage/
+
+# Docker
+*.log

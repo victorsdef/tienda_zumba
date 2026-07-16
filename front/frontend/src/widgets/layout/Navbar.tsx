@@ -134,7 +134,7 @@ export default function Navbar() {
             </button>
           </div>
 
-          <button onClick={toggleCart} className={`${styles.iconButton} ${styles.mobileOnly}`}>
+          <button onClick={toggleCart} className={`${styles.iconButton} ${styles.mobileOnly} ${styles.cartButtonMobile}`}>
             <IconCart size={20} />
             {(carrito?.cantidadItems ?? 0) > 0 && (
               <span className={styles.cartCount}>
