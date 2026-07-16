@@ -21,7 +21,7 @@ import com.tiendaropa.backend.domain.model.Usuario;
 import lombok.RequiredArgsConstructor;
 
 @Configuration
-@Profile("dev")
+@Profile("prod")
 @RequiredArgsConstructor
 public class DataInitializer {
 
