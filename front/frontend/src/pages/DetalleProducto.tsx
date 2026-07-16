@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getProductoPorSlug, getProductos, getProductosTrending } from '../api/productos'
 import ImageGallery from '@entities/product/ImageGallery'
@@ -7,7 +7,18 @@ import SizeSelector from '@entities/product/SizeSelector'
 import ColorSelector from '@entities/product/ColorSelector'
 import ProductCard from '@entities/product/ProductCard'
 import { useCartStore } from '../store/useCartStore'
+import { useAuthStore } from '../store/useAuthStore'
 import womanSvg from '../assets/woman.svg'
+
+const COLORES_NOMBRES: Record<string, string> = {
+  '#000000': 'Negro', '#FFFFFF': 'Blanco', '#9CA3AF': 'Gris', '#EF4444': 'Rojo',
+  '#F9A8D4': 'Rosa', '#EC4899': 'Fucsia', '#F97316': 'Naranja', '#FACC15': 'Amarillo',
+  '#22C55E': 'Verde', '#3B82F6': 'Azul', '#1E3A5F': 'Marino', '#A855F7': 'Morado',
+  '#92400E': 'Café', '#D4B896': 'Beige', '#FEF3C7': 'Crema',
+}
+function getColorLabel(hex: string) {
+  return COLORES_NOMBRES[hex] ?? COLORES_NOMBRES[hex.toUpperCase()] ?? hex.toUpperCase()
+}
 
 const GUIA_TALLAS: { zona: string; XS: string; S: string; M: string; L: string; XL: string }[] = [
   { zona: 'Pecho (A)',   XS: '90-93',  S: '94-97',   M: '98-101',  L: '102-105', XL: '106-109' },
@@ -188,9 +199,12 @@ function GuiaTallasModal({ onClose }: { onClose: () => void }) {
 
 export default function DetalleProducto() {
   const { slug } = useParams<{ slug: string }>()
-  const { agregarItem, loading } = useCartStore()
+  const [searchParams] = useSearchParams()
+  const colorParam = searchParams.get('color') ?? undefined
+  const { agregarItem, loading, getCarritoActivo, guestItems, carrito } = useCartStore()
+  const { isAuthenticated } = useAuthStore()
   const [talla, setTalla] = useState<string>()
-  const [color, setColor] = useState<string>()
+  const [color, setColor] = useState<string>(colorParam)
   const [cantidad, setCantidad] = useState(1)
   const [added, setAdded] = useState(false)
   const [guiaOpen, setGuiaOpen] = useState(false)
@@ -233,6 +247,11 @@ export default function DetalleProducto() {
   const necesitaTalla = (producto?.tallas?.length ?? 0) > 0
   const necesitaColor = (producto?.colores?.length ?? 0) > 0
   const stockPorColorTalla = producto?.stockPorColorTalla ?? {}
+
+  // Colores que tienen stock en la talla seleccionada
+  const coloresDisponiblesParaTalla = talla && Object.keys(stockPorColorTalla).length > 0
+    ? producto!.colores.filter(c => (stockPorColorTalla[c]?.[talla] ?? 0) > 0)
+    : undefined
   const stockColorTalla =
     color && talla ? stockPorColorTalla[color]?.[talla] : undefined
 
@@ -240,6 +259,15 @@ export default function DetalleProducto() {
   const stockColor = color && producto?.stockPorColor?.[color] !== undefined
     ? producto.stockPorColor[color]
     : producto?.stock ?? 0
+  const primeraImagenPorColor = Object.values(producto?.imagenesPorColor ?? {}).find(
+    imgs => Array.isArray(imgs) && imgs.length > 0
+  ) ?? []
+  const imagenesActivas =
+    color && producto?.imagenesPorColor?.[color]?.length > 0
+      ? producto.imagenesPorColor[color]
+      : (producto?.imagenes?.length ?? 0) > 0
+        ? producto.imagenes
+        : primeraImagenPorColor
   const stockDisponible =
     stockColorTalla !== undefined
       ? stockColorTalla
@@ -247,13 +275,26 @@ export default function DetalleProducto() {
         ? stockColor
         : (producto?.stock ?? 0)
 
-  const puedeAgregar = (!necesitaTalla || !!talla) && (!necesitaColor || !!color) && stockDisponible > 0
+  const carritoActivo = getCarritoActivo(isAuthenticated)
+  const yaEnCarrito = !!producto && !!(carritoActivo?.items ?? []).find(
+    i => i.productoId === producto.id &&
+      (!talla || i.talla === talla) &&
+      (!color || i.color === color)
+  )
+
+  const puedeAgregar = (!necesitaTalla || !!talla) && (!necesitaColor || !!color) && stockDisponible > 0 && !yaEnCarrito
+
+  // Precio de la variante seleccionada (si existe), si no el precio base
+  const precioVariante: number | undefined =
+    color && talla ? producto?.precioPorColorTalla?.[color]?.[talla] : undefined
+  const precioMostrado = precioVariante ?? producto?.precio ?? 0
+  const hayPrecioVariante = precioVariante !== undefined && precioVariante !== producto?.precio
 
   const handleAgregar = async () => {
     if (!puedeAgregar) return
     await agregarItem(producto!.id, cantidad, talla, color, {
       nombre: producto!.nombre,
-      precio: producto!.precio,
+      precio: precioMostrado,
       imagen: producto!.imagenes?.[0],
     })
     setAdded(true)
@@ -292,7 +333,7 @@ export default function DetalleProducto() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-16">
-        <ImageGallery imagenes={producto.imagenes} nombre={producto.nombre} />
+        <ImageGallery imagenes={imagenesActivas} nombre={producto.nombre} />
 
         <div className="flex flex-col">
           {/* Categoría + nombre */}
@@ -307,14 +348,23 @@ export default function DetalleProducto() {
 
           {/* Precio */}
           <div className="flex items-end gap-3 mb-5">
-            <span className="text-3xl font-black text-red-600">${producto.precio.toFixed(2)}</span>
-            {producto.precioOriginal && producto.precioOriginal > producto.precio && (
+            <span className="text-3xl font-black text-red-600 transition-all duration-200">
+              ${precioMostrado.toFixed(2)}
+            </span>
+            {/* Precio original (descuento general) — solo si no hay precio de variante */}
+            {!hayPrecioVariante && producto.precioOriginal && producto.precioOriginal > producto.precio && (
               <>
                 <span className="text-base text-gray-400 line-through mb-0.5">${producto.precioOriginal.toFixed(2)}</span>
                 <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded-full">
                   -{descuento}% OFF
                 </span>
               </>
+            )}
+            {/* Badge cuando el precio viene de la variante */}
+            {hayPrecioVariante && (
+              <span className="text-xs text-[#7d5c48] bg-[#f0e9df] border border-[#d9ccbb] px-2 py-1 rounded-full font-medium mb-0.5">
+                Precio para {color && getColorLabel(color)}{talla ? ` · ${talla}` : ''}
+              </span>
             )}
           </div>
 
@@ -353,7 +403,19 @@ export default function DetalleProducto() {
                     Guía de tallas
                   </button>
                 </div>
-                <SizeSelector tallas={producto.tallas} selected={talla} onSelect={setTalla} />
+                <SizeSelector
+              tallas={producto.tallas}
+              selected={talla}
+              onSelect={t => {
+                setTalla(t)
+                setCantidad(1)
+                // Si el color actual no tiene stock en la nueva talla, lo deselecciona
+                if (color && Object.keys(stockPorColorTalla).length > 0) {
+                  const disponible = (stockPorColorTalla[color]?.[t] ?? 0) > 0
+                  if (!disponible) setColor(undefined)
+                }
+              }}
+            />
                 {color && producto.stockPorColorTalla?.[color] && (
                   <p className="mt-2 text-xs text-gray-500">
                     {talla
@@ -363,7 +425,17 @@ export default function DetalleProducto() {
                 )}
               </div>
             )}
-            <ColorSelector colores={producto.colores} selected={color} onSelect={c => { setColor(c); setCantidad(1) }} />
+            <ColorSelector
+              colores={producto.colores}
+              selected={color}
+              onSelect={c => { setColor(c); setCantidad(1) }}
+              coloresDisponibles={coloresDisponiblesParaTalla}
+            />
+            {color && producto.imagenesPorColor?.[color]?.length ? (
+              <p className="text-xs text-gray-500">
+                Mostrando fotos de la variante seleccionada.
+              </p>
+            ) : null}
           </div>
 
           {/* Cantidad + alerta stock bajo */}
@@ -403,28 +475,40 @@ export default function DetalleProducto() {
             </p>
           )}
 
-          {/* Botón agregar */}
-          <button
-            onClick={handleAgregar}
-            disabled={loading || stockDisponible === 0 || !puedeAgregar}
-            className={`w-full py-4 font-bold text-white rounded-xl text-base tracking-wide transition-all ${
-              added
-                ? 'bg-green-500 scale-[0.99]'
-                : stockDisponible === 0
-                ? 'bg-gray-300 cursor-not-allowed'
-                : !puedeAgregar
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-red-600 hover:bg-red-700 active:scale-[0.99] shadow-sm hover:shadow-md'
-            }`}
-          >
-            {stockDisponible === 0
-              ? 'Agotado'
-              : added
-              ? 'Agregado al carrito'
-              : loading
-              ? 'Agregando...'
-              : 'Agregar al carrito'}
-          </button>
+          {/* Ya en carrito */}
+          {yaEnCarrito ? (
+            <Link
+              to="/carrito"
+              className="w-full py-4 font-bold rounded-xl text-base tracking-wide border-2 border-[#7d5c48] text-[#7d5c48] hover:bg-[#f5ede6] transition-all flex items-center justify-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6h13" />
+              </svg>
+              Ya está en tu carrito · Ver carrito
+            </Link>
+          ) : (
+            <button
+              onClick={handleAgregar}
+              disabled={loading || stockDisponible === 0 || !puedeAgregar}
+              className={`w-full py-4 font-bold text-white rounded-xl text-base tracking-wide transition-all ${
+                added
+                  ? 'bg-green-500 scale-[0.99]'
+                  : stockDisponible === 0
+                  ? 'bg-gray-300 cursor-not-allowed'
+                  : !puedeAgregar
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-red-600 hover:bg-red-700 active:scale-[0.99] shadow-sm hover:shadow-md'
+              }`}
+            >
+              {stockDisponible === 0
+                ? 'Agotado'
+                : added
+                ? 'Agregado al carrito'
+                : loading
+                ? 'Agregando...'
+                : 'Agregar al carrito'}
+            </button>
+          )}
         </div>
       </div>
 

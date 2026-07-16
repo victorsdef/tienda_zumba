@@ -102,6 +102,7 @@ export default function Checkout() {
       setProcesando(true)
 
       const pagoWindow = requierePago ? window.open('', '_blank') : null
+      const popupBloqueado = requierePago && !pagoWindow
 
       try {
         const orden = await crearOrden({
@@ -109,13 +110,21 @@ export default function Checkout() {
           tipoEntrega,
           conEnvio: requierePago,
         })
-        if (!requierePago) setOrdenCreada(orden)
-        if (pagoWindow) {
+        if (!requierePago) {
+          setOrdenCreada(orden)
+          setProcesando(false)
+        } else {
           const params = new URLSearchParams({ ordenId: String(orden.id), total: String(orden.total) })
           if (orden.codigoOrden) params.set('codigoOrden', orden.codigoOrden)
           const cel = direccionSeleccionada?.celular
           if (cel) params.set('celular', cel)
-          pagoWindow.location.href = `/pagar?${params}`
+          const pagarUrl = `/pagar?${params}`
+          if (pagoWindow) {
+            pagoWindow.location.href = pagarUrl
+          } else if (popupBloqueado) {
+            // Popup bloqueado por el navegador — navegar en la misma pestaña
+            navigate(pagarUrl)
+          }
         }
       } catch (e) {
         setError(errorTexto(e, 'Error al procesar el pedido. Intenta de nuevo.'))
@@ -134,6 +143,7 @@ export default function Checkout() {
       setProcesando(true)
 
       const pagoWindow = requierePago ? window.open('', '_blank') : null
+      const popupBloqueado = requierePago && !pagoWindow
 
       try {
         const orden = await crearOrdenInvitado({
@@ -150,12 +160,19 @@ export default function Checkout() {
           })),
         })
         clearGuest()
-        if (!requierePago) setOrdenCreada(orden)
-        if (pagoWindow) {
+        if (!requierePago) {
+          setOrdenCreada(orden)
+          setProcesando(false)
+        } else {
           const params = new URLSearchParams({ ordenId: String(orden.id), total: String(orden.total), email: guestData.email })
           if (orden.codigoOrden) params.set('codigoOrden', orden.codigoOrden)
           if (guestDirForm?.celular) params.set('celular', guestDirForm.celular)
-          pagoWindow.location.href = `/pagar?${params}`
+          const pagarUrl = `/pagar?${params}`
+          if (pagoWindow) {
+            pagoWindow.location.href = pagarUrl
+          } else if (popupBloqueado) {
+            navigate(pagarUrl)
+          }
         }
       } catch (e) {
         setError(errorTexto(e, 'Error al procesar el pedido. Intenta de nuevo.'))

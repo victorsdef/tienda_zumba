@@ -5,12 +5,18 @@ import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.categoria.C
 import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.categoria.CategoriaRequest;
 import com.tiendaropa.backend.infrastructure.adapters.input.rest.mapper.CategoriaRestMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping({"/api/nueva-arquitectura/categorias", "/api/categorias"})
+@RequestMapping({
+    "/api/nueva-arquitectura/categorias",
+    "/api/categorias",
+    "/api/nueva-arquitectura/admin/categorias",
+    "/api/admin/categorias"
+})
 @RequiredArgsConstructor
 public class CategoriaController {
 
@@ -28,16 +34,19 @@ public class CategoriaController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public CategoriaDTO crear(@RequestBody CategoriaRequest categoria) {
         return categoriaRestMapper.toDto(categoriaUseCase.crear(categoriaRestMapper.toDomain(categoria)));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public CategoriaDTO actualizar(@PathVariable Long id, @RequestBody CategoriaRequest categoria) {
         return categoriaRestMapper.toDto(categoriaUseCase.actualizar(id, categoriaRestMapper.toDomain(categoria)));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public void eliminar(@PathVariable Long id) {
         categoriaUseCase.eliminar(id);
     }

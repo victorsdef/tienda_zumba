@@ -180,7 +180,7 @@ export default function AdminReportes() {
             <div>
               <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">Ventas totales</p>
               <p className="text-3xl font-bold text-gray-900">{formatMoney(stats.ventasTotales)}</p>
-              <p className="text-sm text-gray-500 mt-1">Acumulado histórico</p>
+              <p className="text-sm text-gray-500 mt-1">Órdenes confirmadas</p>
             </div>
             <IconDollar size={22} className="text-emerald-500" />
           </div>

@@ -42,6 +42,14 @@ public class BannerPersistenceAdapter implements BannerRepositoryPort {
     }
 
     @Override
+    public List<Banner> findTodos() {
+        return repository.findAll().stream()
+            .map(mapper::toDomain)
+            .sorted(Comparator.comparing(b -> b.getOrden() != null ? b.getOrden() : 0))
+            .toList();
+    }
+
+    @Override
     public Banner update(Banner banner) {
         return save(banner);
     }

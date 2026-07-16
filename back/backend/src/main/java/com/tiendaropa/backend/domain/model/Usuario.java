@@ -12,7 +12,7 @@ public class Usuario {
     private String email;
     private String password;
     private Rol rol;
-    private boolean emailVerifcado;
+    private boolean emailVerificado;
     private boolean activo;
     private String tokenVerificacion;
     private List<Direccion> direcciones = new ArrayList<>();
@@ -58,12 +58,12 @@ public class Usuario {
         this.rol = rol;
     }
 
-    public boolean isEmailVerifcado() {
-        return emailVerifcado;
+    public boolean isEmailVerificado() {
+        return emailVerificado;
     }
 
-    public void setEmailVerifcado(boolean emailVerifcado) {
-        this.emailVerifcado = emailVerifcado;
+    public void setEmailVerificado(boolean emailVerifcado) {
+        this.emailVerificado = emailVerifcado;
     }
 
     public boolean isActivo() {

@@ -67,6 +67,8 @@ public class ProductoUseCaseImpl implements ProductoUseCase {
         p.setColores(producto.getColores());
         p.setStockPorColor(producto.getStockPorColor());
         p.setStockPorColorTallaJson(producto.getStockPorColorTallaJson());
+        p.setImagenesPorColorJson(producto.getImagenesPorColorJson());
+        p.setPrecioPorColorTallaJson(producto.getPrecioPorColorTallaJson());
         p.setCaracteristicaTitulo(producto.getCaracteristicaTitulo());
         p.setCaracteristicaDescripcion(producto.getCaracteristicaDescripcion());
         if (producto.getCategoria() != null && producto.getCategoria().getId() != null) {

@@ -11,7 +11,7 @@ import java.util.List;
 public interface UsuarioRestMapper {
 
     @Mapping(target = "rol", expression = "java(usuario.getRol() != null ? usuario.getRol().name() : null)")
-    @Mapping(target = "emailVerificado", source = "emailVerifcado")
+    @Mapping(target = "emailVerificado", source = "emailVerificado")
     UsuarioDTO toDto(Usuario usuario);
 
     List<UsuarioDTO> toDtoList(List<Usuario> usuarios);

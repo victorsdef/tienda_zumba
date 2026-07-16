@@ -27,6 +27,11 @@ public class DireccionPersistenceAdapter implements DireccionRepositoryPort {
     }
 
     @Override
+    public List<Direccion> findByUsuarioId(Long usuarioId) {
+        return repository.findByUsuarioId(usuarioId).stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
     public Optional<Direccion> findById(Long id) {
         return repository.findById(id).map(mapper::toDomain);
     }

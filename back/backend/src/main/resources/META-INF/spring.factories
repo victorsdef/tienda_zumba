@@ -1,0 +1,2 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+com.tiendaropa.backend.infrastructure.config.database.DatabaseUrlEnvironmentPostProcessor

@@ -36,4 +36,10 @@ public class CategoriaPersistenceAdapter implements CategoriaRepositoryPort {
     public void deleteById(Long id) {
         repository.deleteById(id);
     }
+
+    @Override
+    public long count() {
+        return repository.count();
+    }
+
 }

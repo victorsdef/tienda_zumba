@@ -45,6 +45,8 @@ export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const navItems = NAV.filter(item => hasPermission(item.permission))
   const defaultRoute = role ? DEFAULT_ROUTE_BY_ROLE[role] : '/'
+  const currentRule = ROUTE_PERMISSION_RULES.find(item => pathname.startsWith(item.startsWith))
+  const canRenderCurrentRoute = canAccessAdmin && (!currentRule || hasPermission(currentRule.permission))
 
   useEffect(() => { setSidebarOpen(false) }, [pathname])
 
@@ -59,13 +61,12 @@ export default function AdminLayout() {
       return
     }
 
-    const rule = ROUTE_PERMISSION_RULES.find(item => pathname.startsWith(item.startsWith))
-    if (rule && !hasPermission(rule.permission)) {
+    if (currentRule && !hasPermission(currentRule.permission)) {
       navigate(defaultRoute, { replace: true })
     }
-  }, [canAccessAdmin, defaultRoute, hasPermission, navigate, pathname])
+  }, [canAccessAdmin, currentRule, defaultRoute, hasPermission, navigate, pathname])
 
-  if (!canAccessAdmin) return null
+  if (!canRenderCurrentRoute) return null
 
   const SidebarContent = () => (
     <>

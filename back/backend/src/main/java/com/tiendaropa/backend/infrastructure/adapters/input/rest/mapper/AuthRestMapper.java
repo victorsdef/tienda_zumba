@@ -15,7 +15,7 @@ public interface AuthRestMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "rol", ignore = true)
     @Mapping(target = "activo", ignore = true)
-    @Mapping(target = "emailVerifcado", ignore = true)
+    @Mapping(target = "emailVerificado", ignore = true)
     @Mapping(target = "tokenVerificacion", ignore = true)
     @Mapping(target = "direcciones", ignore = true)
     @Mapping(target = "carrito", ignore = true)

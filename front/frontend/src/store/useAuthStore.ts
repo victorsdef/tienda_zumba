@@ -25,7 +25,8 @@ interface AuthState {
 }
 
 const stored = localStorage.getItem('user')
-const parsedUser: AuthResponse | null = stored ? JSON.parse(stored) : null
+const storedAccessToken = localStorage.getItem('accessToken')
+const parsedUser: AuthResponse | null = stored && storedAccessToken ? JSON.parse(stored) : null
 
 const rolePermissions: Record<AppRole, AdminPermission[]> = {
   ADMIN: ['dashboard', 'reportes', 'productos', 'ordenes', 'usuarios', 'categorias', 'banners', 'configuracion'],
@@ -39,7 +40,7 @@ const hasPermissionForRole = (role: AppRole | null, permission: AdminPermission)
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: parsedUser,
-  isAuthenticated: !!parsedUser,
+  isAuthenticated: !!parsedUser && !!storedAccessToken,
   isAdmin: parsedUser?.rol === 'ADMIN',
   role: parsedUser?.rol ?? null,
   canAccessAdmin: parsedUser ? parsedUser.rol !== 'CLIENTE' : false,

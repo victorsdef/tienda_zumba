@@ -7,5 +7,7 @@ public interface AuthUseCase {
 
     Map<String, String> login(String email, String password);
 
+    Map<String, String> refresh(String refreshToken);
+
     Usuario register(Usuario usuario, String rawPassword);
 }

@@ -6,6 +6,7 @@ import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.configuraci
 import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.configuracion.RetiroInfoDTO;
 import com.tiendaropa.backend.infrastructure.adapters.input.rest.mapper.ConfiguracionRestMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -14,7 +15,12 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping({"/api/nueva-arquitectura/configuracion", "/api/configuracion", "/api/admin/configuracion"})
+@RequestMapping({
+    "/api/nueva-arquitectura/configuracion",
+    "/api/configuracion",
+    "/api/nueva-arquitectura/admin/configuracion",
+    "/api/admin/configuracion"
+})
 @RequiredArgsConstructor
 public class ConfiguracionController {
 
@@ -42,27 +48,33 @@ public class ConfiguracionController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public List<ConfiguracionDTO> all() { return configuracionRestMapper.toDtoList(configUseCase.getAll()); }
 
     @GetMapping("/{clave}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ConfiguracionDTO get(@PathVariable String clave) {
         return configuracionRestMapper.toDto(configUseCase.get(clave));
     }
 
     @GetMapping("/map")
+    @PreAuthorize("hasRole('ADMIN')")
     public Map<String,String> map() { return configUseCase.getAllAsMap(); }
 
     @PutMapping("/{clave}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ConfiguracionDTO update(@PathVariable String clave, @RequestBody ConfiguracionUpdateRequest request) {
         return configuracionRestMapper.toDto(configUseCase.update(clave, request.getValor()));
     }
 
     @PostMapping("/init/{clave}")
+    @PreAuthorize("hasRole('ADMIN')")
     public void initDefault(@PathVariable String clave, @RequestBody ConfiguracionUpdateRequest request) {
         configUseCase.initDefault(clave, request.getValor(), "");
     }
 
     @GetMapping("/decimal/{clave}")
+    @PreAuthorize("hasRole('ADMIN')")
     public BigDecimal getDecimal(@PathVariable String clave, @RequestParam(required = false) BigDecimal defecto) {
         return configUseCase.getDecimal(clave, defecto);
     }

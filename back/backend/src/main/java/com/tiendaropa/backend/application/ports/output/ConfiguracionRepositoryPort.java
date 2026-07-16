@@ -7,9 +7,14 @@ import java.util.Map;
 import java.util.Optional;
 
 public interface ConfiguracionRepositoryPort {
+
     List<Configuracion> findAll();
+
     Optional<Configuracion> findById(String clave);
+
     Configuracion save(Configuracion configuracion);
+
     void deleteById(String clave);
+
     boolean existsById(String clave);
 }

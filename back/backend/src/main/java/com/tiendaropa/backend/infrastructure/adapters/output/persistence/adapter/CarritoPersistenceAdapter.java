@@ -32,6 +32,11 @@ public class CarritoPersistenceAdapter implements CarritoRepositoryPort {
     }
 
     @Override
+    public Optional<Carrito> findByUsuarioId(Long usuarioId) {
+        return repository.findByUsuario_Id(usuarioId).map(mapper::toDomain);
+    }
+
+    @Override
     public Carrito save(Carrito carrito) {
         CarritoEntity entity = mapper.toEntity(carrito);
         if (carrito.getUsuario() != null && carrito.getUsuario().getId() != null) {

@@ -8,6 +8,7 @@ public interface BannerUseCase {
     Banner crear(Banner banner);
     Optional<Banner> obtener(Long id);
     List<Banner> listarActivos();
+    List<Banner> listarTodos();
     Banner actualizar(Banner banner);
     void eliminar(Long id);
 }

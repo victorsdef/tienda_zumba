@@ -53,4 +53,9 @@ public class OrdenEntity {
     private String guiaImagenUrl;
 
     private LocalDateTime fechaCreacion;
+
+    @PrePersist
+    protected void onCreate() {
+        if (fechaCreacion == null) fechaCreacion = LocalDateTime.now();
+    }
 }

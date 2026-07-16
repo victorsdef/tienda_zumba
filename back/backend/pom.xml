@@ -114,6 +114,18 @@
             <version>2.0.30</version>
         </dependency>
 
+        <!-- SVG → PNG (para logo en PDF) -->
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-transcoder</artifactId>
+            <version>1.17</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-codec</artifactId>
+            <version>1.17</version>
+        </dependency>
+
         <!-- H2 (dev) -->
         <dependency>
             <groupId>com.h2database</groupId>

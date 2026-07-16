@@ -11,7 +11,12 @@ export default function MiCuenta() {
 
   if (!isAuthenticated) { navigate('/login'); return null }
 
-  const { data: perfil } = useQuery({ queryKey: ['perfil'], queryFn: getPerfil })
+  const { data: perfil } = useQuery({
+    queryKey: ['perfil'],
+    queryFn: getPerfil,
+    enabled: isAuthenticated,
+    retry: false,
+  })
 
   const { register, handleSubmit, formState: { isSubmitting } } = useForm({
     values: { nombre: perfil?.nombre ?? '' }

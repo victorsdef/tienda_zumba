@@ -26,7 +26,14 @@ const ESTADO_COLOR: Record<string, string> = {
 
 export default function AdminDashboard() {
   const { hasPermission } = useAuthStore()
-  const { data: stats, isLoading } = useQuery({ queryKey: ['admin-dashboard'], queryFn: getDashboard })
+  const canViewDashboard = hasPermission('dashboard')
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['admin-dashboard'],
+    queryFn: getDashboard,
+    enabled: canViewDashboard,
+  })
+
+  if (!canViewDashboard) return null
 
   if (isLoading) return (
     <div className="p-4 md:p-8 grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 animate-pulse">

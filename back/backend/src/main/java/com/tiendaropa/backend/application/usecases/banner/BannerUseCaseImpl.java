@@ -25,6 +25,9 @@ public class BannerUseCaseImpl implements BannerUseCase {
     public List<Banner> listarActivos() { return bannerRepository.findActivos(); }
 
     @Override
+    public List<Banner> listarTodos() { return bannerRepository.findTodos(); }
+
+    @Override
     public Banner actualizar(Banner banner) { return bannerRepository.update(banner); }
 
     @Override

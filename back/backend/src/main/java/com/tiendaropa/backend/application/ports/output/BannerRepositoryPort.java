@@ -8,6 +8,7 @@ public interface BannerRepositoryPort {
     Banner save(Banner banner);
     Optional<Banner> findById(Long id);
     List<Banner> findActivos();
+    List<Banner> findTodos();
     Banner update(Banner banner);
     void deleteById(Long id);
 }

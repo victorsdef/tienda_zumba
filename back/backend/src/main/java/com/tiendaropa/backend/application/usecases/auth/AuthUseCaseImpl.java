@@ -29,7 +29,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
         if (u == null || !passwordEncoder.matches(password, u.getPassword())) {
             return Map.of();
         }
-        if (!u.isActivo() || !u.isEmailVerifcado()) {
+        if (!u.isActivo() || !u.isEmailVerificado()) {
             return Map.of();
         }
 
@@ -44,6 +44,25 @@ public class AuthUseCaseImpl implements AuthUseCase {
     }
 
     @Override
+    public Map<String, String> refresh(String refreshToken) {
+        try {
+            String email = jwtPort.extractUsername(refreshToken);
+            if (email == null) return Map.of();
+            Usuario u = usuarioUseCase.findByEmail(email).orElse(null);
+            if (u == null || !u.isActivo() || !jwtPort.isTokenValid(refreshToken, email)) return Map.of();
+            Map<String, String> response = new HashMap<>();
+            response.put("accessToken", jwtPort.generateToken(u));
+            response.put("refreshToken", jwtPort.generateRefreshToken(u));
+            response.put("email", u.getEmail());
+            response.put("nombre", u.getNombre());
+            response.put("rol", u.getRol() != null ? u.getRol().name() : null);
+            return response;
+        } catch (Exception e) {
+            return Map.of();
+        }
+    }
+
+    @Override
     public Usuario register(Usuario usuario, String rawPassword) {
         if (usuarioUseCase.findByEmail(usuario.getEmail()).isPresent()) {
             throw new IllegalArgumentException("El email ya está registrado");
@@ -51,7 +70,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
 
         usuario.setPassword(passwordEncoder.encode(rawPassword));
         usuario.setRol(Rol.CLIENTE);
-        usuario.setEmailVerifcado(true);
+        usuario.setEmailVerificado(true);
         usuario.setActivo(true);
         usuario.setTokenVerificacion(null);
 

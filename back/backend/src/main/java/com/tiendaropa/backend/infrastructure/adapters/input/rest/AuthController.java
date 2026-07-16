@@ -3,6 +3,7 @@ package com.tiendaropa.backend.infrastructure.adapters.input.rest;
 import com.tiendaropa.backend.application.ports.input.AuthUseCase;
 import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.auth.AuthResponse;
 import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.auth.LoginRequest;
+import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.auth.RefreshTokenRequest;
 import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.auth.RegisterRequest;
 import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.auth.RegisterResponse;
 import com.tiendaropa.backend.infrastructure.adapters.input.rest.mapper.AuthRestMapper;
@@ -32,6 +33,13 @@ public class AuthController {
             return ResponseEntity.status(401).build();
         }
 
+        return ResponseEntity.ok(authRestMapper.toAuthResponse(tokens));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(@RequestBody RefreshTokenRequest request) {
+        var tokens = authUseCase.refresh(request.getRefreshToken());
+        if (tokens.isEmpty()) return ResponseEntity.status(401).build();
         return ResponseEntity.ok(authRestMapper.toAuthResponse(tokens));
     }
 

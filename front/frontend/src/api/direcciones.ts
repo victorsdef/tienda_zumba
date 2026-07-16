@@ -13,16 +13,16 @@ export type DireccionRequest = {
 }
 
 export const getDirecciones = () =>
-  api.get<Direccion[]>('/direcciones').then(r => r.data)
+  api.get<Direccion[]>('/usuario/direcciones').then(r => r.data)
 
 export const crearDireccion = (data: DireccionRequest) =>
-  api.post<Direccion>('/direcciones', data).then(r => r.data)
+  api.post<Direccion>('/usuario/direcciones', data).then(r => r.data)
 
 export const actualizarDireccion = (id: number, data: DireccionRequest) =>
-  api.put<Direccion>(`/direcciones/${id}`, data).then(r => r.data)
+  api.put<Direccion>(`/usuario/direcciones/${id}`, data).then(r => r.data)
 
 export const eliminarDireccion = (id: number) =>
-  api.delete(`/direcciones/${id}`)
+  api.delete(`/usuario/direcciones/${id}`)
 
 export const setPredeterminada = (id: number) =>
-  api.patch<Direccion>(`/direcciones/${id}/predeterminada`).then(r => r.data)
+  api.patch<Direccion>(`/usuario/direcciones/${id}/predeterminada`).then(r => r.data)

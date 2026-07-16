@@ -8,6 +8,8 @@ interface Props {
   value: string[]
   onChange: (urls: string[]) => void
   renderCropPreview?: (previewUrl: string) => React.ReactNode
+  label?: string
+  maxImages?: number
 }
 
 // Genera la imagen recortada como Blob usando canvas
@@ -24,6 +26,67 @@ async function cropToBlob(img: HTMLImageElement, crop: PixelCrop): Promise<Blob>
 
 function initCrop(): Crop {
   return { unit: '%', x: 0, y: 0, width: 100, height: 100 }
+}
+
+// ──── Modal preview GIF (sin recorte) ────────────────────────────
+interface GifPreviewModalProps {
+  src: string
+  blob: Blob
+  filename: string
+  onConfirm: (blob: Blob, filename: string) => void
+  onClose: () => void
+  renderCropPreview?: (previewUrl: string) => React.ReactNode
+}
+
+function GifPreviewModal({ src, blob, filename, onConfirm, onClose, renderCropPreview }: GifPreviewModalProps) {
+  return (
+    <div className="fixed inset-0 z-[200] flex flex-col sm:items-center sm:justify-center">
+      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <div className="relative bg-white w-full h-full sm:h-auto sm:max-w-4xl sm:max-h-[90vh] sm:mx-4 sm:rounded-xl shadow-2xl flex flex-col overflow-hidden">
+
+        {/* Header */}
+        <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b">
+          <div>
+            <h3 className="font-bold text-gray-800 text-sm">Vista previa — GIF animado</h3>
+            <p className="text-[11px] text-gray-400 mt-0.5">Los GIF no se pueden recortar — se suben con la animación completa</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><IconX size={20} /></button>
+        </div>
+
+        {/* Cuerpo */}
+        <div className={`flex-1 min-h-0 grid ${renderCropPreview ? 'sm:grid-cols-[1fr_1.4fr]' : 'grid-cols-1'}`}>
+          {/* GIF */}
+          <div className="flex items-center justify-center bg-gray-900 overflow-auto p-4">
+            <img src={src} alt="gif preview" style={{ maxHeight: '60vh', maxWidth: '100%', display: 'block' }} />
+          </div>
+          {/* Preview banner */}
+          {renderCropPreview && (
+            <div className="flex flex-col min-h-0 border-l border-gray-200 bg-white">
+              <div className="flex-shrink-0 px-4 py-2 border-b bg-white">
+                <p className="text-xs font-semibold text-gray-500 uppercase">Así se verá</p>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 bg-[#faf7f2]">
+                {renderCropPreview(src)}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex-shrink-0 flex items-center justify-between gap-3 px-4 py-3 border-t bg-gray-50">
+          <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1 hidden sm:block">
+            ⚠ El recorte no está disponible para GIF animados
+          </p>
+          <div className="flex gap-2 ml-auto">
+            <button type="button" onClick={onClose} className="btn-outline text-sm py-2 px-3">Cancelar</button>
+            <button type="button" onClick={() => onConfirm(blob, filename)} className="btn-primary text-sm py-2 px-4">
+              Subir GIF
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 // ──── Modal de recorte ────────────────────────────────────────────
@@ -77,31 +140,46 @@ function CropModal({ src, filename, onConfirm, onClose, renderCropPreview }: Cro
     { label: '16:9', value: 16 / 9 },
   ]
 
+  const [showPreviewTab, setShowPreviewTab] = useState(false)
+
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center">
+    <div className="fixed inset-0 z-[200] flex flex-col sm:items-center sm:justify-center">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-6xl mx-4 overflow-hidden">
+      <div className="relative bg-white w-full h-full sm:h-auto sm:max-w-5xl sm:max-h-[90vh] sm:mx-4 sm:rounded-xl shadow-2xl flex flex-col overflow-hidden">
+
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b">
-          <h3 className="font-bold text-gray-800">Recortar imagen</h3>
+        <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b">
+          <h3 className="font-bold text-gray-800 text-sm">Recortar imagen</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><IconX size={20} /></button>
         </div>
 
-        {/* Aspect ratio selectors */}
-        <div className="flex items-center gap-2 px-5 py-3 bg-gray-50 border-b">
-          <span className="text-xs text-gray-500 font-medium">Proporción:</span>
+        {/* Aspect ratio + toggle preview (mobile) */}
+        <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-gray-50 border-b overflow-x-auto">
+          <span className="text-xs text-gray-500 font-medium flex-shrink-0">Prop:</span>
           {ASPECTS.map(a => (
             <button key={a.label} type="button"
               onClick={() => setAspect(a.value)}
-              className={`px-3 py-1 rounded text-xs font-medium border transition-colors ${aspect === a.value ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400'}`}>
+              className={`flex-shrink-0 px-2.5 py-1 rounded text-xs font-medium border transition-colors ${aspect === a.value ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-200 text-gray-600'}`}>
               {a.label}
             </button>
           ))}
+          {/* Botón ver preview solo en mobile */}
+          {renderCropPreview && (
+            <button
+              type="button"
+              onClick={() => setShowPreviewTab(v => !v)}
+              className={`sm:hidden flex-shrink-0 ml-auto px-2.5 py-1 rounded text-xs font-medium border transition-colors ${showPreviewTab ? 'bg-[#4a3728] text-white border-[#4a3728]' : 'bg-white border-gray-200 text-gray-600'}`}
+            >
+              {showPreviewTab ? 'Ver recorte' : 'Ver preview'}
+            </button>
+          )}
         </div>
 
-        <div className={`grid ${renderCropPreview ? 'lg:grid-cols-[1.1fr_0.9fr]' : 'grid-cols-1'}`}>
-          {/* Crop area */}
-          <div className="flex items-center justify-center bg-gray-900 p-4" style={{ maxHeight: '65vh', overflow: 'auto' }}>
+        {/* Cuerpo — crop + preview */}
+        <div className={`flex-1 min-h-0 grid ${renderCropPreview ? 'sm:grid-cols-[1fr_1.4fr]' : 'grid-cols-1'}`}>
+
+          {/* Área de recorte — oculta en mobile cuando se ve preview */}
+          <div className={`flex items-center justify-center bg-gray-900 overflow-auto p-3 ${showPreviewTab ? 'hidden sm:flex' : 'flex'}`}>
             <ReactCrop
               crop={crop}
               onChange={c => setCrop(c)}
@@ -115,24 +193,22 @@ function CropModal({ src, filename, onConfirm, onClose, renderCropPreview }: Cro
                 src={src}
                 crossOrigin="anonymous"
                 onLoad={onLoad}
-                style={{ maxHeight: '58vh', maxWidth: '100%' }}
+                style={{ maxHeight: '60vh', maxWidth: '100%', display: 'block', objectFit: 'contain' }}
                 alt="crop"
               />
             </ReactCrop>
           </div>
 
-          {/* Preview del banner */}
+          {/* Preview — en mobile solo si se activó el toggle */}
           {renderCropPreview && (
-            <div className="border-t lg:border-t-0 lg:border-l bg-white">
-              <div className="px-5 py-3 border-b bg-white">
-                <p className="text-xs font-semibold text-gray-500 uppercase">Así se verá en el banner</p>
+            <div className={`border-gray-200 bg-white flex flex-col min-h-0 sm:border-l ${showPreviewTab ? 'flex' : 'hidden sm:flex'}`}>
+              <div className="flex-shrink-0 px-4 py-2 border-b bg-white">
+                <p className="text-xs font-semibold text-gray-500 uppercase">Así se verá</p>
               </div>
-              <div className="p-4 bg-[#faf7f2] max-h-[65vh] overflow-auto">
-                {previewUrl ? (
-                  renderCropPreview(previewUrl)
-                ) : (
-                  <div className="flex min-h-[220px] items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white px-4 text-center text-sm text-gray-400">
-                    Mueve o redimensiona el recorte para ver la vista previa aquí.
+              <div className="flex-1 overflow-y-auto p-3 bg-[#faf7f2]">
+                {previewUrl ? renderCropPreview(previewUrl) : (
+                  <div className="flex h-full min-h-[140px] items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white px-4 text-center text-xs text-gray-400">
+                    Mové el recorte para ver la vista previa
                   </div>
                 )}
               </div>
@@ -141,12 +217,12 @@ function CropModal({ src, filename, onConfirm, onClose, renderCropPreview }: Cro
         </div>
 
         {/* Footer */}
-        <div className="flex flex-col gap-3 px-5 py-4 border-t bg-gray-50 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-gray-400">Arrastrá para seleccionar el área • Las esquinas redimensionan</p>
-          <div className="flex gap-3 self-end sm:self-auto">
-            <button type="button" onClick={onClose} className="btn-outline text-sm py-2">Cancelar</button>
-            <button type="button" onClick={handleConfirm} className="btn-primary text-sm py-2">
-              Usar imagen recortada
+        <div className="flex-shrink-0 flex items-center justify-between gap-3 px-4 py-3 border-t bg-gray-50">
+          <p className="text-xs text-gray-400 hidden sm:block">Arrastrá para seleccionar el área</p>
+          <div className="flex gap-2 ml-auto">
+            <button type="button" onClick={onClose} className="btn-outline text-sm py-2 px-3">Cancelar</button>
+            <button type="button" onClick={handleConfirm} className="btn-primary text-sm py-2 px-4">
+              Usar recorte
             </button>
           </div>
         </div>
@@ -156,10 +232,11 @@ function CropModal({ src, filename, onConfirm, onClose, renderCropPreview }: Cro
 }
 
 // ──── Componente principal ────────────────────────────────────────
-export default function ImageManager({ value, onChange, renderCropPreview }: Props) {
+export default function ImageManager({ value, onChange, renderCropPreview, label = 'Imágenes del producto', maxImages }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [cropSrc, setCropSrc] = useState<string | null>(null)
   const [cropFilename, setCropFilename] = useState('')
+  const [gifPreview, setGifPreview] = useState<{ src: string; blob: Blob; filename: string } | null>(null)
   const [uploading, setUploading] = useState(false)
   const [urlInput, setUrlInput] = useState('')
   const [urlPreview, setUrlPreview] = useState('')
@@ -168,22 +245,28 @@ export default function ImageManager({ value, onChange, renderCropPreview }: Pro
   const [uploadError, setUploadError] = useState('')
   const [editIdx, setEditIdx] = useState<number | null>(null)
 
-  // ── Selección de archivo → abre modal de crop ──────────────────
+  // ── Selección de archivo → abre modal de crop (GIF sube directo) ──
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    e.target.value = ''
+
+    if (file.type === 'image/gif') {
+      // GIF: mostrar preview antes de subir
+      const reader = new FileReader()
+      reader.onload = ev => setGifPreview({ src: ev.target?.result as string, blob: file, filename: file.name })
+      reader.readAsDataURL(file)
+      return
+    }
+
     setCropFilename(file.name)
     const reader = new FileReader()
     reader.onload = ev => setCropSrc(ev.target?.result as string)
     reader.readAsDataURL(file)
-    e.target.value = ''
   }
 
-  // ── Tras confirmar crop → sube al backend ─────────────────────
-  const handleCropConfirm = async (blob: Blob, filename: string) => {
-    const idx = editIdx
-    setCropSrc(null)
-    setEditIdx(null)
+  // ── Subida directa (sin crop) ─────────────────────────────────
+  const uploadBlob = async (blob: Blob, filename: string, idx: number | null = null) => {
     setUploading(true)
     setUploadError('')
     try {
@@ -204,6 +287,14 @@ export default function ImageManager({ value, onChange, renderCropPreview }: Pro
     } finally {
       setUploading(false)
     }
+  }
+
+  // ── Tras confirmar crop → sube al backend ─────────────────────
+  const handleCropConfirm = (blob: Blob, filename: string) => {
+    const idx = editIdx
+    setCropSrc(null)
+    setEditIdx(null)
+    uploadBlob(blob, filename, idx)
   }
 
   // ── Agregar URL — descarga en el backend para evitar CORS ────
@@ -259,10 +350,8 @@ export default function ImageManager({ value, onChange, renderCropPreview }: Pro
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="block text-xs font-semibold text-gray-600 uppercase">
-          Imágenes del producto
-        </label>
-        <span className="text-xs text-gray-400">{value.length} imagen{value.length !== 1 ? 'es' : ''}</span>
+        <label className="block text-xs font-semibold text-gray-600 uppercase">{label}</label>
+        <span className="text-xs text-gray-400">{value.length}{maxImages ? `/${maxImages}` : ''} imagen{value.length !== 1 ? 'es' : ''}</span>
       </div>
 
       {/* Galería de imágenes actuales */}
@@ -342,7 +431,7 @@ export default function ImageManager({ value, onChange, renderCropPreview }: Pro
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   <p className="text-sm text-gray-500">Hacé click para seleccionar</p>
-                  <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP · Máx 10MB · Podrás recortar antes de subir</p>
+                  <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP, GIF · Máx 10MB · GIF se sube sin recortar</p>
                 </>
               )}
             </div>
@@ -416,6 +505,18 @@ export default function ImageManager({ value, onChange, renderCropPreview }: Pro
           filename={cropFilename}
           onConfirm={handleCropConfirm}
           onClose={() => setCropSrc(null)}
+          renderCropPreview={renderCropPreview}
+        />
+      )}
+
+      {/* Modal preview GIF */}
+      {gifPreview && (
+        <GifPreviewModal
+          src={gifPreview.src}
+          blob={gifPreview.blob}
+          filename={gifPreview.filename}
+          onConfirm={(blob, filename) => { setGifPreview(null); uploadBlob(blob, filename, editIdx); setEditIdx(null) }}
+          onClose={() => setGifPreview(null)}
           renderCropPreview={renderCropPreview}
         />
       )}

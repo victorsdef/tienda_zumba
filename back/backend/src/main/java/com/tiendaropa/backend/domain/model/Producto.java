@@ -18,6 +18,8 @@ public class Producto {
     private java.util.List<String> colores = new java.util.ArrayList<>();
     private java.util.Map<String, Integer> stockPorColor = new java.util.LinkedHashMap<>();
     private String stockPorColorTallaJson;
+    private String imagenesPorColorJson;
+    private String precioPorColorTallaJson;
     private String caracteristicaTitulo;
     private String caracteristicaDescripcion;
 
@@ -68,6 +70,12 @@ public class Producto {
 
     public String getStockPorColorTallaJson() { return stockPorColorTallaJson; }
     public void setStockPorColorTallaJson(String stockPorColorTallaJson) { this.stockPorColorTallaJson = stockPorColorTallaJson; }
+
+    public String getImagenesPorColorJson() { return imagenesPorColorJson; }
+    public void setImagenesPorColorJson(String imagenesPorColorJson) { this.imagenesPorColorJson = imagenesPorColorJson; }
+
+    public String getPrecioPorColorTallaJson() { return precioPorColorTallaJson; }
+    public void setPrecioPorColorTallaJson(String precioPorColorTallaJson) { this.precioPorColorTallaJson = precioPorColorTallaJson; }
 
     public String getCaracteristicaTitulo() { return caracteristicaTitulo; }
     public void setCaracteristicaTitulo(String caracteristicaTitulo) { this.caracteristicaTitulo = caracteristicaTitulo; }

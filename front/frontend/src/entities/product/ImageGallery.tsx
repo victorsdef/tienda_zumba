@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface Props {
   imagenes: string[]
@@ -8,6 +8,10 @@ interface Props {
 export default function ImageGallery({ imagenes, nombre }: Props) {
   const [selected, setSelected] = useState(0)
   const imgs = imagenes.length > 0 ? imagenes : ['https://placehold.co/600x750/f3f4f6/9ca3af?text=Sin+imagen']
+
+  useEffect(() => {
+    setSelected(0)
+  }, [imagenes])
 
   return (
     <div className="flex gap-3">

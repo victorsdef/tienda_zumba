@@ -28,6 +28,11 @@ public class OrdenPersistenceAdapter implements OrdenRepositoryPort {
     }
 
     @Override
+    public Optional<Orden> findByCodigoOrden(String codigoOrden) {
+        return repository.findByCodigoOrdenIgnoreCase(codigoOrden).map(mapper::toDomain);
+    }
+
+    @Override
     public List<Orden> findAll() {
         return repository.findAll().stream().map(mapper::toDomain).toList();
     }
@@ -35,6 +40,11 @@ public class OrdenPersistenceAdapter implements OrdenRepositoryPort {
     @Override
     public List<Orden> findByUsuarioId(Long usuarioId) {
         return repository.findByUsuarioId(usuarioId).stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
+    public boolean existsByCodigoOrden(String codigoOrden) {
+        return repository.existsByCodigoOrden(codigoOrden);
     }
 
     @Override

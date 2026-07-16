@@ -8,16 +8,16 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "configuraciones")
+@Table(name = "configuracion")
 @Getter
 @Setter
 public class ConfiguracionEntity {
 
     @Id
-    @Column(nullable = false, updatable = false)
+    @Column(name = "clave", length = 100, nullable = false, updatable = false)
     private String clave;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String valor;
 
     @Column(columnDefinition = "TEXT")

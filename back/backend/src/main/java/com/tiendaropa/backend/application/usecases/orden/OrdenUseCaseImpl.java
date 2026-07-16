@@ -26,6 +26,11 @@ public class OrdenUseCaseImpl implements OrdenUseCase {
     }
 
     @Override
+    public List<Orden> listarTodas() {
+        return ordenRepository.findAll();
+    }
+
+    @Override
     public List<Orden> listarPorUsuarioId(Long usuarioId) {
         return ordenRepository.findByUsuarioId(usuarioId);
     }
