@@ -95,7 +95,7 @@ function generarReportePDF(ordenes: Orden[], filtroEstado: string) {
           <div class="meta-bloque">
             <p class="meta-label">Cliente</p>
             <p class="meta-val">${o.usuarioNombre ?? '—'}</p>
-            ${o.telefonoEnvio ? `<p class="meta-sub">${o.telefonoEnvio}</p>` : ''}
+            ${o.celularEnvio ? `<p class="meta-sub">${o.celularEnvio}</p>` : ''}
           </div>
           <div class="meta-bloque">
             <p class="meta-label">Dirección de envío</p>
