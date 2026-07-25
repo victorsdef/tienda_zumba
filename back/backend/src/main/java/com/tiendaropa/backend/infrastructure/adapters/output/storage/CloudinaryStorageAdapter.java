@@ -36,7 +36,10 @@ public class CloudinaryStorageAdapter implements FileStoragePort {
         try {
             Map<String, Object> result = cloudinary.uploader().upload(
                 file.getBytes(),
-                ObjectUtils.asMap("folder", "sofia-couture")
+                ObjectUtils.asMap(
+                    "folder",        "sofia-couture",
+                    "resource_type", "auto"
+                )
             );
             return (String) result.get("secure_url");
         } catch (IOException e) {
