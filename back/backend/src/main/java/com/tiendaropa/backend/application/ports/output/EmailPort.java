@@ -13,4 +13,5 @@ public interface EmailPort {
     void enviarEnviado(String destinatario, String nombre, String codigoOrden, String numeroGuia);
     void enviarEntregado(String destinatario, String nombre, String codigoOrden);
     void enviarRecuperacionPassword(String destinatario, String nombre, String token);
+    void enviarConfirmacionOrdenConPdf(Orden orden, byte[] pdfBytes);
 }

@@ -12,6 +12,7 @@ public interface UsuarioRepositoryPort {
     Optional<Usuario> findById(Long id);
 
     Optional<Usuario> findByEmail(String email);
+    Optional<Usuario> findByTokenVerificacion(String token);
 
     Usuario save(Usuario usuario);
 

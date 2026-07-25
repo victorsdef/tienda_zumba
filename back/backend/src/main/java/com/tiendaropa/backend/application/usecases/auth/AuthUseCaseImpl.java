@@ -1,9 +1,11 @@
 package com.tiendaropa.backend.application.usecases.auth;
 
 import com.tiendaropa.backend.application.ports.input.AuthUseCase;
+import com.tiendaropa.backend.application.ports.input.EmailUseCase;
 import com.tiendaropa.backend.application.ports.input.UsuarioUseCase;
 import com.tiendaropa.backend.application.ports.output.CarritoRepositoryPort;
 import com.tiendaropa.backend.application.ports.output.JwtPort;
+import com.tiendaropa.backend.application.ports.output.UsuarioRepositoryPort;
 import com.tiendaropa.backend.domain.enums.Rol;
 import com.tiendaropa.backend.domain.model.Carrito;
 import com.tiendaropa.backend.domain.model.Usuario;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -20,8 +23,10 @@ public class AuthUseCaseImpl implements AuthUseCase {
 
     private final UsuarioUseCase usuarioUseCase;
     private final CarritoRepositoryPort carritoRepositoryPort;
+    private final UsuarioRepositoryPort usuarioRepositoryPort;
     private final JwtPort jwtPort;
     private final PasswordEncoder passwordEncoder;
+    private final EmailUseCase emailUseCase;
 
     @Override
     public Map<String, String> login(String email, String password) {
@@ -70,9 +75,11 @@ public class AuthUseCaseImpl implements AuthUseCase {
 
         usuario.setPassword(passwordEncoder.encode(rawPassword));
         usuario.setRol(Rol.CLIENTE);
-        usuario.setEmailVerificado(true);
+        usuario.setEmailVerificado(false);
         usuario.setActivo(true);
-        usuario.setTokenVerificacion(null);
+
+        String token = UUID.randomUUID().toString();
+        usuario.setTokenVerificacion(token);
 
         Usuario created = usuarioUseCase.crear(usuario);
 
@@ -80,6 +87,19 @@ public class AuthUseCaseImpl implements AuthUseCase {
         carrito.setUsuario(created);
         carritoRepositoryPort.save(carrito);
 
+        emailUseCase.enviarVerificacion(created.getEmail(), created.getNombre(), token);
+
         return created;
+    }
+
+    public boolean verificarEmail(String token) {
+        return usuarioRepositoryPort.findByTokenVerificacion(token)
+            .map(u -> {
+                u.setEmailVerificado(true);
+                u.setTokenVerificacion(null);
+                usuarioRepositoryPort.save(u);
+                return true;
+            })
+            .orElse(false);
     }
 }

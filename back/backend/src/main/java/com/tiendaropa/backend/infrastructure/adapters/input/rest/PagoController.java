@@ -4,6 +4,7 @@ import com.tiendaropa.backend.application.ports.input.ConfiguracionUseCase;
 import com.tiendaropa.backend.application.ports.input.EmailUseCase;
 import com.tiendaropa.backend.application.ports.input.OrdenUseCase;
 import com.tiendaropa.backend.application.ports.output.OrdenRepositoryPort;
+import com.tiendaropa.backend.application.ports.output.PdfGeneratorPort;
 import com.tiendaropa.backend.application.ports.output.ProductoRepositoryPort;
 import com.tiendaropa.backend.application.ports.output.UsuarioRepositoryPort;
 import com.tiendaropa.backend.domain.model.Orden;
@@ -39,6 +40,7 @@ public class PagoController {
     private final UsuarioRepositoryPort usuarioRepositoryPort;
     private final ConfiguracionUseCase configuracionUseCase;
     private final EmailUseCase emailUseCase;
+    private final PdfGeneratorPort pdfGeneratorPort;
     private final OrdenRestMapper ordenRestMapper;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
@@ -177,8 +179,14 @@ public class PagoController {
                 if (usuario != null) { emailCliente = usuario.getEmail(); nombreCliente = usuario.getNombre(); }
             }
             if (emailCliente == null) emailCliente = orden.getEmailInvitado();
-            if (emailCliente != null)
-                emailUseCase.enviarConfirmacionOrden(emailCliente, nombreCliente != null ? nombreCliente : "", orden.getCodigoOrden(), orden.getTotal().toPlainString());
+            if (emailCliente != null) {
+                // Ponemos email y nombre en los campos de invitado temporalmente para que EmailAdapter los use
+                orden.setEmailInvitado(emailCliente);
+                orden.setNombreInvitado(nombreCliente != null ? nombreCliente : "");
+                byte[] pdfBytes = pdfGeneratorPort.generarFactura(orden);
+                emailUseCase.enviarConfirmacionOrdenConPdf(orden, pdfBytes);
+                emailUseCase.enviarNotificacionAdmin(orden);
+            }
         } else {
             orden.setEstado("CANCELADO");
             ordenUseCase.actualizar(orden);

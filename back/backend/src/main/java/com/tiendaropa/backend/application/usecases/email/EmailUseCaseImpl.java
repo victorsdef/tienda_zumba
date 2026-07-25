@@ -57,4 +57,9 @@ public class EmailUseCaseImpl implements EmailUseCase {
     public void enviarRecuperacionPassword(String destinatario, String nombre, String token) {
         emailPort.enviarRecuperacionPassword(destinatario, nombre, token);
     }
+
+    @Override
+    public void enviarConfirmacionOrdenConPdf(Orden orden, byte[] pdfBytes) {
+        emailPort.enviarConfirmacionOrdenConPdf(orden, pdfBytes);
+    }
 }

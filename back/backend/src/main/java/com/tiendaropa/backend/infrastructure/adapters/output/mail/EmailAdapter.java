@@ -220,6 +220,82 @@ public class EmailAdapter implements EmailPort {
         enviar(destinatario, "Recupera tu contraseña — Sofia Couture EC", html);
     }
 
+    @Override
+    public void enviarConfirmacionOrdenConPdf(Orden orden, byte[] pdfBytes) {
+        String email  = orden.getUsuarioId() != null ? null : orden.getEmailInvitado();
+        // El email del usuario registrado se resuelve en el llamador (PagoController)
+        // Este método recibe el email ya resuelto en emailInvitado o lo obtiene de otro campo
+        // Usamos getNombreInvitado / getEmailInvitado como campos generales de contacto
+        String nombre = orden.getNombreInvitado() != null ? orden.getNombreInvitado() : "Cliente";
+        String emailDest = orden.getEmailInvitado();
+        if (emailDest == null || emailDest.isBlank()) return;
+
+        String codigo = orden.getCodigoOrden() != null ? orden.getCodigoOrden() : "#" + orden.getId();
+        String total  = orden.getTotal() != null ? "$" + orden.getTotal().toPlainString() : "—";
+
+        StringBuilder itemsHtml = new StringBuilder();
+        if (orden.getItems() != null) {
+            for (var item : orden.getItems()) {
+                String nombreProd = item.getNombreProducto() != null ? item.getNombreProducto() : "Producto";
+                String talla = item.getTalla() != null ? item.getTalla() : "";
+                String color = item.getColor() != null ? item.getColor() : "";
+                int cant = item.getCantidad() != null ? item.getCantidad() : 1;
+                String precioItem = item.getPrecioUnitario() != null ? "$" + item.getPrecioUnitario().toPlainString()
+                    : (item.getPrecio() != null ? "$" + item.getPrecio().toPlainString() : "—");
+                itemsHtml.append("<tr>")
+                    .append("<td style='padding:6px 8px;border-bottom:1px solid #ede8df;font-size:13px;color:#333'>").append(nombreProd)
+                    .append(talla.isBlank() ? "" : " · " + talla)
+                    .append(color.isBlank() ? "" : " · " + color).append("</td>")
+                    .append("<td style='padding:6px 8px;border-bottom:1px solid #ede8df;font-size:13px;text-align:center;color:#555'>").append(cant).append("</td>")
+                    .append("<td style='padding:6px 8px;border-bottom:1px solid #ede8df;font-size:13px;text-align:right;color:#333'>").append(precioItem).append("</td>")
+                    .append("</tr>");
+            }
+        }
+
+        String html = wrap("""
+            <h2>¡Pedido confirmado!</h2>
+            <p>Hola <strong>%s</strong>, tu pago fue aprobado y tu pedido está en camino.</p>
+            <div class="badge">%s</div>
+            <table style="width:100%%;border-collapse:collapse;margin:12px 0">
+              <thead>
+                <tr style="background:#f5f0e8">
+                  <th style="padding:8px;text-align:left;font-size:12px;color:#7d5c48;font-weight:600;border-bottom:2px solid #ede8df">Producto</th>
+                  <th style="padding:8px;text-align:center;font-size:12px;color:#7d5c48;font-weight:600;border-bottom:2px solid #ede8df">Cant.</th>
+                  <th style="padding:8px;text-align:right;font-size:12px;color:#7d5c48;font-weight:600;border-bottom:2px solid #ede8df">Precio</th>
+                </tr>
+              </thead>
+              <tbody>%s</tbody>
+            </table>
+            <div class="info-box">
+              <p><strong>Total pagado:</strong> %s</p>
+            </div>
+            <p style="font-size:13px;color:#666">El comprobante de tu pedido está adjunto en este correo en formato PDF.</p>
+            <a class="btn" href="%s/ordenes">Ver mis pedidos</a>
+            """.formatted(nombre, codigo, itemsHtml, total, frontendUrl));
+
+        try {
+            if (mailSender != null) {
+                MimeMessage msg = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
+                helper.setFrom(from);
+                helper.setTo(emailDest);
+                helper.setSubject("Pedido " + codigo + " confirmado — Sofia Couture EC");
+                helper.setText(html, true);
+                if (pdfBytes != null && pdfBytes.length > 0) {
+                    helper.addAttachment("comprobante-" + codigo + ".pdf",
+                        new org.springframework.core.io.ByteArrayResource(pdfBytes),
+                        "application/pdf");
+                }
+                mailSender.send(msg);
+                log.info("[EMAIL] Confirmación con PDF enviada a {}", emailDest);
+            } else {
+                log.info("[EMAIL SIMULADO] Confirmación con PDF a {}", emailDest);
+            }
+        } catch (Exception e) {
+            log.error("[EMAIL ERROR] Confirmación con PDF a {} | {}", emailDest, e.getMessage());
+        }
+    }
+
     // ── Envío SMTP ───────────────────────────────────────────────
     private void enviar(String destinatario, String asunto, String html) {
         try {

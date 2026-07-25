@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface UsuarioJpaRepository extends JpaRepository<UsuarioEntity, Long> {
     Optional<UsuarioEntity> findByEmailIgnoreCase(String email);
+    Optional<UsuarioEntity> findByTokenVerificacion(String tokenVerificacion);
 }

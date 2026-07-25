@@ -38,6 +38,11 @@ public class UsuarioPersistenceAdapter implements UsuarioRepositoryPort {
     }
 
     @Override
+    public Optional<Usuario> findByTokenVerificacion(String token) {
+        return repository.findByTokenVerificacion(token).map(mapper::toDomain);
+    }
+
+    @Override
     public void deleteById(Long id) {
         repository.deleteById(id);
     }
