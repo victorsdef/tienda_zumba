@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { getProductosAdmin, toggleActivo, actualizarStock } from '../../api/admin'
 import { crearProducto, actualizarProducto, eliminarProducto } from '../../api/productos'
 import { getCategoriasAdmin } from '../../api/categorias'
+import { getConfiguracion } from '../../api/configuracion'
 import { IconSearch, IconEdit, IconTrash, IconHanger, IconX, IconChevronDown } from '@shared/Icon'
 import ImageManager from '@shared/ImageManager'
 import TallasSelector from '@shared/TallasSelector'
@@ -84,6 +85,9 @@ export default function AdminProductos() {
   })
   const generosActivos = new Set(cats.filter(c => c.activo).map(c => c.genero).filter(Boolean))
   const generoOpts = GENERO_OPTS.filter(g => generosActivos.has(g.value))
+
+  const { data: config } = useQuery({ queryKey: ['configuracion'], queryFn: getConfiguracion, staleTime: 60_000 })
+  const comisionPct = Number(config?.find(c => c.clave === 'comision_payphone')?.valor ?? 5.75)
 
   const { register, handleSubmit, reset, watch, trigger, formState: { isSubmitting, errors } } = useForm<FormData>()
   const precioActual = Number(watch('precio') ?? 0)
@@ -483,6 +487,40 @@ export default function AdminProductos() {
                     </div>
                   ))}
                 </div>
+
+                {/* Panel comisión PayPhone */}
+                {(() => {
+                  const variantesConPrecio = colores.flatMap(hex =>
+                    tallas.flatMap(t => {
+                      const p = precioPorColorTalla[hex]?.[t]
+                      return p && p > 0 ? [{ hex, talla: t, precio: p }] : []
+                    })
+                  )
+                  if (variantesConPrecio.length === 0) return null
+                  return (
+                    <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-sm">💳</span>
+                        <p className="text-xs font-semibold text-amber-800">Comisión PayPhone ({comisionPct}%) — lo que recibirás por variante</p>
+                      </div>
+                      <div className="grid gap-1">
+                        {variantesConPrecio.map(({ hex, talla, precio }) => {
+                          const cobran = precio * (comisionPct / 100)
+                          const recibes = precio - cobran
+                          return (
+                            <div key={`${hex}-${talla}`} className="flex items-center gap-2 text-xs">
+                              <span className="w-3 h-3 rounded-full flex-shrink-0 border border-amber-300" style={{ backgroundColor: hex }} />
+                              <span className="text-amber-800 font-medium w-24 truncate">{getColorLabel(hex)} {talla}</span>
+                              <span className="text-amber-600">${precio.toFixed(2)}</span>
+                              <span className="text-amber-500">− ${cobran.toFixed(2)}</span>
+                              <span className="ml-auto font-bold text-green-700">= ${recibes.toFixed(2)}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
             )
           })()}

@@ -11,13 +11,6 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface BannerRestMapper {
 
-    @Mapping(target = "tag", ignore = true)
-    @Mapping(target = "subtitulo", ignore = true)
-    @Mapping(target = "ctaTexto", ignore = true)
-    @Mapping(target = "tipoDestino", ignore = true)
-    @Mapping(target = "destinoValor", source = "enlace")
-    @Mapping(target = "colorDesde", ignore = true)
-    @Mapping(target = "colorHasta", ignore = true)
     @Mapping(target = "imagen", source = "imagenUrl")
     BannerDTO toDto(Banner banner);
 
@@ -25,8 +18,5 @@ public interface BannerRestMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "imagenUrl", source = "imagen")
-    @Mapping(target = "enlace", source = "destinoValor")
-    @Mapping(target = "fechaInicio", ignore = true)
-    @Mapping(target = "fechaFin", ignore = true)
     Banner toDomain(BannerRequest request);
 }

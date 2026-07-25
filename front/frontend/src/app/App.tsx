@@ -22,6 +22,7 @@ import AdminOrdenes from '@pages/admin/AdminOrdenes'
 import AdminUsuarios from '@pages/admin/AdminUsuarios'
 import AdminBanners from '@pages/admin/AdminBanners'
 import AdminConfiguracion from '@pages/admin/AdminConfiguracion'
+import AdminHomeEditor from '@pages/admin/AdminHomeEditor'
 import AdminReportes from '@pages/admin/AdminReportes'
 import VerificarEmail from '@pages/VerificarEmail'
 import OrdenConfirmada from '@pages/OrdenConfirmada'
@@ -86,6 +87,7 @@ export default function App() {
             <Route path="usuarios" element={<AdminUsuarios />} />
             <Route path="banners" element={<AdminBanners />} />
             <Route path="configuracion" element={<AdminConfiguracion />} />
+            <Route path="home-editor" element={<AdminHomeEditor />} />
           </Route>
 
           {/* Auth */}

@@ -6,6 +6,26 @@ type ConfigMeta = { label: string; hint: string; tipo: 'numero'; prefix?: string
                 | { label: string; hint: string; tipo: 'texto'; placeholder?: string }
 
 const LABELS: Record<string, ConfigMeta> = {
+  home_editorial_titulo: {
+    tipo: 'texto', label: 'Título del bloque editorial',
+    hint: 'Título grande que aparece en la sección central del home.',
+    placeholder: 'Moda que te hace sentir única en cada ocasión.',
+  },
+  home_editorial_subtitulo: {
+    tipo: 'texto', label: 'Subtítulo del bloque editorial',
+    hint: 'Texto descriptivo debajo del título.',
+    placeholder: 'Descubrí piezas pensadas para resaltar tu estilo...',
+  },
+  home_editorial_boton: {
+    tipo: 'texto', label: 'Texto del botón "Ver catálogo"',
+    hint: 'Texto del enlace que lleva al catálogo desde el bloque editorial.',
+    placeholder: 'Ver catálogo completo',
+  },
+  home_editorial_link: {
+    tipo: 'texto', label: 'Destino del botón editorial',
+    hint: 'Ruta a la que lleva el botón. Ej: /catalogo, /catalogo?genero=MUJER',
+    placeholder: '/catalogo',
+  },
   comision_payphone: {
     tipo: 'numero', label: 'Comisión Payphone', suffix: '%',
     hint: 'Se descuenta de cada venta pagada con tarjeta. Payphone cobra esto directamente.',

@@ -21,7 +21,7 @@ import com.tiendaropa.backend.domain.model.Usuario;
 import lombok.RequiredArgsConstructor;
 
 @Configuration
-@Profile("prod")
+@Profile("dev")
 @RequiredArgsConstructor
 public class DataInitializer {
 
@@ -350,6 +350,26 @@ public class DataInitializer {
                     "retiro_whatsapp",
                     "593984000000",
                     "Número WhatsApp en formato internacional");
+
+            guardarConfiguracion(
+                    "home_editorial_titulo",
+                    "Moda que te hace sentir única en cada ocasión.",
+                    "Título del bloque editorial en el home");
+
+            guardarConfiguracion(
+                    "home_editorial_subtitulo",
+                    "Descubrí piezas pensadas para resaltar tu estilo. Envíos a todo Ecuador, atención personalizada y los mejores precios de la temporada.",
+                    "Subtítulo del bloque editorial en el home");
+
+            guardarConfiguracion(
+                    "home_editorial_boton",
+                    "Ver catálogo completo",
+                    "Texto del botón del bloque editorial");
+
+            guardarConfiguracion(
+                    "home_editorial_link",
+                    "/catalogo",
+                    "Ruta destino del botón del bloque editorial");
         };
     }
 

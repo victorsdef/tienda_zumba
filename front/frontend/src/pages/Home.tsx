@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getProductos, getProductosTrending } from '@api/productos'
 import { getBannersPublic, type Banner } from '@api/banners'
 import { getCategorias } from '../api/categorias'
+import { getConfiguracion } from '../api/configuracion'
 import HeroBannerPreview from '@widgets/banners/HeroBannerPreview'
 import ProductCard from '@entities/product/ProductCard'
 import { ProductGridSkeleton } from '@shared/LoadingSkeleton'
@@ -195,6 +196,13 @@ export default function Home() {
     queryFn: () => getProductos({ size: 8, sort: 'precio,asc' }),
   })
 
+  const { data: config = [] } = useQuery({ queryKey: ['configuracion'], queryFn: getConfiguracion, staleTime: 60_000 })
+  const cfg = (clave: string, fallback: string) => config.find(c => c.clave === clave)?.valor ?? fallback
+  const editorialTitulo    = cfg('home_editorial_titulo',    'Moda que te hace sentir única en cada ocasión.')
+  const editorialSubtitulo = cfg('home_editorial_subtitulo', 'Descubrí piezas pensadas para resaltar tu estilo. Envíos a todo Ecuador, atención personalizada y los mejores precios de la temporada.')
+  const editorialBoton     = cfg('home_editorial_boton',     'Ver catálogo completo')
+  const editorialLink      = cfg('home_editorial_link',      '/catalogo')
+
   const coleccion = coleccionData?.content ?? []
   const ofertas = ofertasData?.content ?? []
   const fallbackHeroImage =
@@ -235,8 +243,8 @@ export default function Home() {
       <section className={styles.contentSection}>
         <div className={styles.pageContainer}>
           <SectionHeader
-            title="Nueva coleccion"
-            subtitle="Una portada mas limpia, productos mas visibles y acceso directo al catalogo."
+            title="Nueva colección"
+            subtitle="Las últimas piezas que llegaron a la tienda."
             link="/catalogo?sort=id,desc"
           />
 
@@ -259,28 +267,27 @@ export default function Home() {
           <div className={styles.editorialCard}>
             <div>
               <p className={styles.eyebrow}>Sofia Couture EC</p>
-              <h2 className={styles.editorialTitle}>
-                Una home mas elegante para que tu marca venda mejor.
-              </h2>
-              <p className={styles.editorialCopy}>
-                Este estilo le da mas presencia a la portada, mejora la lectura del catalogo y hace que la tienda se sienta
-                mas premium desde el primer vistazo.
-              </p>
+              <h2 className={styles.editorialTitle}>{editorialTitulo}</h2>
+              <p className={styles.editorialCopy}>{editorialSubtitulo}</p>
             </div>
 
             <div className={styles.editorialFooter}>
-              <Link to="/catalogo" className={styles.catalogLink}>
-                Ir al catalogo completo
+              <Link to={editorialLink} className={styles.catalogLink}>
+                {editorialBoton}
                 <IconChevronRight size={16} />
               </Link>
               <div className={styles.statGrid}>
                 <div className={styles.statCard}>
-                  <p className={styles.statValue}>Look</p>
-                  <p className={styles.statLabel}>Editorial</p>
+                  <svg className={styles.statValue} fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: 24, height: 24 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  <p className={styles.statLabel}>Pago seguro</p>
                 </div>
                 <div className={styles.statCard}>
-                  <p className={styles.statValue}>UX</p>
-                  <p className={styles.statLabel}>Mas clara</p>
+                  <svg className={styles.statValue} fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: 24, height: 24 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                  </svg>
+                  <p className={styles.statLabel}>Envío Ecuador</p>
                 </div>
               </div>
             </div>
@@ -289,7 +296,7 @@ export default function Home() {
           <div>
             <SectionHeader
               title="Favoritos de la boutique"
-              subtitle="Productos con mejor salida para empujar conversion desde el inicio."
+              subtitle="Los más elegidos por nuestras clientas."
               link="/catalogo"
             />
             {loadingFavoritos ? (
@@ -310,8 +317,8 @@ export default function Home() {
       <section className={styles.offersSection}>
         <div className={styles.pageContainer}>
           <SectionHeader
-            title="Precios para rotacion"
-            subtitle="Selecciones rapidas para quienes llegan buscando oportunidad."
+            title="Precios irresistibles"
+            subtitle="Las mejores piezas al mejor precio, solo por tiempo limitado."
             link="/catalogo?sort=precio,asc"
             linkLabel="Ver ofertas"
           />

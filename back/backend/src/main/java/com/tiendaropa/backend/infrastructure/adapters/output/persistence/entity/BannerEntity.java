@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "banners")
 @Getter
@@ -16,16 +14,22 @@ public class BannerEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String tag;
+
     @Column(nullable = false)
     private String titulo;
 
+    @Column(columnDefinition = "TEXT")
+    private String subtitulo;
+
+    private String ctaTexto;
+    private String tipoDestino;
+    private String destinoValor;
+    private String colorDesde;
+    private String colorHasta;
     private String imagenUrl;
-    private String enlace;
     private Integer orden;
 
     @Column(nullable = false)
     private boolean activo;
-
-    private LocalDateTime fechaInicio;
-    private LocalDateTime fechaFin;
 }

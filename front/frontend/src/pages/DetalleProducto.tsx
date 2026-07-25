@@ -323,13 +323,23 @@ export default function DetalleProducto() {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-8 py-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-1 text-xs text-gray-400 mb-6">
-        <Link to="/" className="hover:text-red-500 transition-colors">Inicio</Link>
-        <span>/</span>
-        <Link to="/catalogo" className="hover:text-red-500 transition-colors">Catálogo</Link>
-        <span>/</span>
-        <span className="text-gray-600 truncate max-w-[160px]">{producto.nombre}</span>
+      {/* Breadcrumb — solo desktop */}
+      <div className="hidden md:flex items-center gap-1.5 text-xs text-gray-400 mb-6">
+        <Link to="/" className="hover:text-[#7d5c48] transition-colors">Inicio</Link>
+        <span className="text-gray-300">/</span>
+        <Link to="/catalogo" className="hover:text-[#7d5c48] transition-colors">Catálogo</Link>
+        <span className="text-gray-300">/</span>
+        <span className="text-gray-600 truncate max-w-[200px]">{producto.nombre}</span>
+      </div>
+
+      {/* Botón volver — solo móvil */}
+      <div className="flex md:hidden mb-4">
+        <Link to="/catalogo" className="flex items-center gap-1.5 text-xs text-[#7d5c48] font-medium">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Volver al catálogo
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-16">
@@ -475,41 +485,71 @@ export default function DetalleProducto() {
             </p>
           )}
 
-          {/* Ya en carrito */}
-          {yaEnCarrito ? (
-            <Link
-              to="/carrito"
-              className="w-full py-4 font-bold rounded-xl text-base tracking-wide border-2 border-[#7d5c48] text-[#7d5c48] hover:bg-[#f5ede6] transition-all flex items-center justify-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6h13" />
-              </svg>
-              Ya está en tu carrito · Ver carrito
-            </Link>
-          ) : (
-            <button
-              onClick={handleAgregar}
-              disabled={loading || stockDisponible === 0 || !puedeAgregar}
-              className={`w-full py-4 font-bold text-white rounded-xl text-base tracking-wide transition-all ${
-                added
-                  ? 'bg-green-500 scale-[0.99]'
-                  : stockDisponible === 0
-                  ? 'bg-gray-300 cursor-not-allowed'
-                  : !puedeAgregar
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-red-600 hover:bg-red-700 active:scale-[0.99] shadow-sm hover:shadow-md'
-              }`}
-            >
-              {stockDisponible === 0
-                ? 'Agotado'
-                : added
-                ? 'Agregado al carrito'
-                : loading
-                ? 'Agregando...'
-                : 'Agregar al carrito'}
-            </button>
-          )}
+          {/* Ya en carrito — desktop (inline) */}
+          <div className="hidden md:block">
+            {yaEnCarrito ? (
+              <Link
+                to="/carrito"
+                className="w-full py-4 font-bold rounded-xl text-base tracking-wide border-2 border-[#7d5c48] text-[#7d5c48] hover:bg-[#f5ede6] transition-all flex items-center justify-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6h13" />
+                </svg>
+                Ya está en tu carrito · Ver carrito
+              </Link>
+            ) : (
+              <button
+                onClick={handleAgregar}
+                disabled={loading || stockDisponible === 0 || !puedeAgregar}
+                className={`w-full py-4 font-bold text-white rounded-xl text-base tracking-wide transition-all ${
+                  added
+                    ? 'bg-green-500 scale-[0.99]'
+                    : stockDisponible === 0
+                    ? 'bg-gray-300 cursor-not-allowed'
+                    : !puedeAgregar
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'bg-red-600 hover:bg-red-700 active:scale-[0.99] shadow-sm hover:shadow-md'
+                }`}
+              >
+                {stockDisponible === 0 ? 'Agotado' : added ? 'Agregado ✓' : loading ? 'Agregando...' : 'Agregar al carrito'}
+              </button>
+            )}
+          </div>
+
+          {/* Spacer en móvil para que el botón sticky no tape contenido */}
+          <div className="block md:hidden h-20" />
         </div>
+      </div>
+
+      {/* Botón sticky — solo móvil */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white border-t border-gray-100 px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
+        {yaEnCarrito ? (
+          <Link
+            to="/carrito"
+            className="w-full py-3.5 font-bold rounded-xl text-base tracking-wide border-2 border-[#7d5c48] text-[#7d5c48] flex items-center justify-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6h13" />
+            </svg>
+            Ya está en tu carrito · Ver carrito
+          </Link>
+        ) : (
+          <button
+            onClick={handleAgregar}
+            disabled={loading || stockDisponible === 0 || !puedeAgregar}
+            className={`w-full py-3.5 font-bold text-white rounded-xl text-base tracking-wide transition-all ${
+              added
+                ? 'bg-green-500'
+                : stockDisponible === 0
+                ? 'bg-gray-300 cursor-not-allowed'
+                : !puedeAgregar
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : 'bg-red-600 active:scale-[0.99]'
+            }`}
+          >
+            {stockDisponible === 0 ? 'Agotado' : added ? '✓ Agregado al carrito' : loading ? 'Agregando...' : 'Agregar al carrito'}
+          </button>
+        )}
       </div>
 
       {/* Sugerencias */}

@@ -7,7 +7,6 @@ import com.tiendaropa.backend.infrastructure.adapters.output.persistence.reposit
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -31,12 +30,9 @@ public class BannerPersistenceAdapter implements BannerRepositoryPort {
 
     @Override
     public List<Banner> findActivos() {
-        LocalDateTime now = LocalDateTime.now();
         return repository.findAll().stream()
             .map(mapper::toDomain)
             .filter(Banner::isActivo)
-            .filter(b -> (b.getFechaInicio() == null || !b.getFechaInicio().isAfter(now))
-                && (b.getFechaFin() == null || !b.getFechaFin().isBefore(now)))
             .sorted(Comparator.comparing(b -> b.getOrden() != null ? b.getOrden() : 0))
             .toList();
     }

@@ -2,6 +2,7 @@ package com.tiendaropa.backend.infrastructure.adapters.output.storage;
 
 import com.tiendaropa.backend.application.ports.output.FileStoragePort;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -12,6 +13,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 @Component
+@ConditionalOnMissingBean(CloudinaryStorageAdapter.class)
 public class LocalFileStorageAdapter implements FileStoragePort {
 
     private final Path uploadsDir;
