@@ -60,17 +60,17 @@ export default function AdminDescuentos() {
   const totalPaginas = data?.totalPages ?? 1
 
   // Expandir productos con colores en filas separadas
-  const filas: Fila[] = productos.flatMap(p => {
+  const filas: Fila[] = productos.flatMap((p): Fila[] => {
     const pct = p.precioPorColorTalla
     if (pct && Object.keys(pct).length > 0) {
-      return Object.entries(pct).map(([color, precios]) => ({
-        tipo: 'color' as const,
+      return Object.entries(pct).map(([color, precios]): FilaColor => ({
+        tipo: 'color',
         producto: p,
         color,
         precios,
       }))
     }
-    return [{ tipo: 'simple' as const, producto: p }]
+    return [{ tipo: 'simple', producto: p }]
   })
 
   const actualizarMut = useMutation({
@@ -255,9 +255,6 @@ export default function AdminDescuentos() {
             const pct = conDesc && minOriginal > 0 ? Math.round((1 - minPrecio / minOriginal) * 100) : 0
 
             const tallas = Object.keys(precios)
-
-            // Buscar un color hex de imagenesPorColor (el color puede ser el nombre)
-            const colorSwatchStyle = p.imagenesPorColor?.[color] ? {} : {}
 
             return (
               <div key={key} className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all ${estadoColor.abierto ? 'border-[#7d5c48] ring-2 ring-[#7d5c48]/20' : 'border-gray-200 hover:border-gray-300'}`}>
