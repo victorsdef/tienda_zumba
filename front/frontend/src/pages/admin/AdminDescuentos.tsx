@@ -1,7 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getProductosAdmin } from '../../api/admin'
-import { actualizarProducto } from '../../api/productos'
+import { getProductos, actualizarProducto } from '../../api/productos'
 import type { Producto } from '../../types'
 
 type FilaEstado = { descuento: string; precio: string; editando: boolean }
@@ -9,12 +8,20 @@ type FilaEstado = { descuento: string; precio: string; editando: boolean }
 export default function AdminDescuentos() {
   const qc = useQueryClient()
   const [pagina, setPagina] = useState(0)
+  const [inputBusqueda, setInputBusqueda] = useState('')
   const [busqueda, setBusqueda] = useState('')
   const [filas, setFilas] = useState<Record<number, FilaEstado>>({})
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleBusqueda = (val: string) => {
+    setInputBusqueda(val)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => { setBusqueda(val); setPagina(0) }, 500)
+  }
 
   const { data, isLoading } = useQuery({
-    queryKey: ['productos-admin-desc', pagina],
-    queryFn: () => getProductosAdmin(pagina, 20),
+    queryKey: ['productos-desc', pagina, busqueda],
+    queryFn: () => getProductos({ page: pagina, size: 20, nombre: busqueda || undefined }),
   })
 
   const productos = data?.content ?? []
@@ -22,12 +29,10 @@ export default function AdminDescuentos() {
 
   const actualizarMut = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<Producto> }) => actualizarProducto(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['productos-admin-desc'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['productos-desc'] }),
   })
 
-  const productosFiltrados = busqueda
-    ? productos.filter(p => p.nombre.toLowerCase().includes(busqueda.toLowerCase()))
-    : productos
+  const productosFiltrados = productos
 
   const getFila = (p: Producto): FilaEstado => filas[p.id] ?? {
     descuento: p.precioOriginal && p.precioOriginal > p.precio
@@ -65,8 +70,8 @@ export default function AdminDescuentos() {
 
       <div className="mb-4">
         <input
-          value={busqueda}
-          onChange={e => setBusqueda(e.target.value)}
+          value={inputBusqueda}
+          onChange={e => handleBusqueda(e.target.value)}
           placeholder="Buscar producto..."
           className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full max-w-xs focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30"
         />
