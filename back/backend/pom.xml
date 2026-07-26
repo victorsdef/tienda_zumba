@@ -96,6 +96,12 @@
             <version>2.3.0</version>
         </dependency>
 
+        <!-- EMAIL SMTP -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- RESEND -->
         <dependency>
             <groupId>com.resend</groupId>
