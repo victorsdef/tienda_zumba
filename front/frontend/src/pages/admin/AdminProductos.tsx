@@ -195,6 +195,7 @@ export default function AdminProductos() {
     })
     setPrecioPorColorTalla(prev => {
       const next: Record<string, Record<string, number>> = {}
+      if (prev['_']) next['_'] = prev['_']  // preserve per-talla pricing without colors
       colores.forEach(color => { if (prev[color]) next[color] = prev[color] })
       return next
     })

@@ -286,8 +286,13 @@ export default function DetalleProducto() {
   const puedeAgregar = (!necesitaTalla || !!talla) && (!necesitaColor || !!color) && stockDisponible > 0 && !yaEnCarrito
 
   // Precio de la variante seleccionada (si existe), si no el precio base
-  const precioVariante: number | undefined =
-    color && talla ? producto?.precioPorColorTalla?.[color]?.[talla] : undefined
+  const precioVariante: number | undefined = (() => {
+    const pct = producto?.precioPorColorTalla
+    if (!pct) return undefined
+    if (color && talla) return pct[color]?.[talla]
+    if (talla && pct['_']) return pct['_'][talla]  // sin-color per-talla
+    return undefined
+  })()
   const precioMostrado = precioVariante ?? producto?.precio ?? 0
   const hayPrecioVariante = precioVariante !== undefined && precioVariante !== producto?.precio
 
@@ -374,7 +379,7 @@ export default function DetalleProducto() {
             {/* Badge cuando el precio viene de la variante */}
             {hayPrecioVariante && (
               <span className="text-xs text-[#7d5c48] bg-[#f0e9df] border border-[#d9ccbb] px-2 py-1 rounded-full font-medium mb-0.5">
-                Precio para {color && getColorLabel(color)}{talla ? ` · ${talla}` : ''}
+                Precio para {color ? `${getColorLabel(color)}${talla ? ` · ${talla}` : ''}` : `Talla ${talla}`}
               </span>
             )}
           </div>
