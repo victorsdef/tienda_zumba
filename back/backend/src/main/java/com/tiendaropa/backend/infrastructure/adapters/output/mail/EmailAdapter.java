@@ -296,7 +296,7 @@ public class EmailAdapter implements EmailPort {
             if (adjuntoNombre != null && adjuntoBase64 != null) {
                 builder.attachments(List.of(
                     Attachment.builder()
-                        .filename(adjuntoNombre)
+                        .fileName(adjuntoNombre)
                         .content(adjuntoBase64)
                         .build()
                 ));
