@@ -19,13 +19,13 @@ export default function ProductCard({ producto, compact = false }: Props) {
 
   const colorActual = tieneColores ? colores[colorIndex] : null
 
-  const getImagen = (color: string | null) => {
+  const getImagen = (color: string | null): string | null => {
     if (color && producto.imagenesPorColor?.[color]?.length) {
       return producto.imagenesPorColor[color][0]
     }
     return producto.imagenes?.[0]
       || Object.values(producto.imagenesPorColor ?? {}).find(imgs => imgs?.length)?.[0]
-      || 'https://placehold.co/300x400/f0f0f0/aaaaaa?text=Sin+imagen'
+      || null
   }
 
   const getPrecio = (color: string | null) => {
@@ -75,13 +75,24 @@ export default function ProductCard({ producto, compact = false }: Props) {
   return (
     <Link to={href} className="group block bg-white hover:shadow-md transition-shadow duration-200">
       {/* Image */}
-      <div className={`relative overflow-hidden bg-gray-50 ${compact ? 'aspect-[3/4]' : 'aspect-[3/4]'}`}>
-        <img
-          src={imagen}
-          alt={producto.nombre}
-          className="w-full h-full object-cover transition-all duration-500"
-          loading="lazy"
-        />
+      <div className={`relative overflow-hidden bg-[#f5ede6] ${compact ? 'aspect-[3/4]' : 'aspect-[3/4]'}`}>
+        {imagen ? (
+          <img
+            src={imagen}
+            alt={producto.nombre}
+            className="w-full h-full object-cover transition-all duration-500"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center text-[#c4a882] gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" />
+            </svg>
+            <span className="text-[10px] opacity-50 font-medium">Sin imagen</span>
+          </div>
+        )}
 
         {descuento && descuento > 0 && (
           <span className="absolute top-1.5 left-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm z-10">

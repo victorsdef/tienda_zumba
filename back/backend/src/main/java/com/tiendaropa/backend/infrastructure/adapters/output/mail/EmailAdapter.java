@@ -1,24 +1,26 @@
 package com.tiendaropa.backend.infrastructure.adapters.output.mail;
 
+import com.resend.Resend;
+import com.resend.core.exception.ResendException;
+import com.resend.services.emails.model.Attachment;
+import com.resend.services.emails.model.CreateEmailOptions;
 import com.tiendaropa.backend.application.ports.output.EmailPort;
 import com.tiendaropa.backend.domain.model.Orden;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
 
-import jakarta.mail.internet.MimeMessage;
+import java.util.Base64;
+import java.util.List;
 
 @Component
 @Slf4j
 public class EmailAdapter implements EmailPort {
 
-    @Autowired(required = false)
-    private JavaMailSender mailSender;
+    @Value("${app.mail.resend.api-key:}")
+    private String resendApiKey;
 
-    @Value("${app.mail.from:Sofia Couture EC <no-reply@example.com>}")
+    @Value("${app.mail.from:Sofia Couture EC <onboarding@resend.dev>}")
     private String from;
 
     @Value("${app.mail.admin:admin@example.com}")
@@ -86,7 +88,7 @@ public class EmailAdapter implements EmailPort {
             <hr class="divider"/>
             <p style="font-size:12px;color:#999">Si no creaste esta cuenta, ignora este correo.</p>
             """.formatted(nombre, url));
-        enviar(destinatario, "Verifica tu cuenta — Sofia Couture EC", html);
+        enviar(destinatario, "Verifica tu cuenta — Sofia Couture EC", html, null, null);
     }
 
     @Override
@@ -97,7 +99,7 @@ public class EmailAdapter implements EmailPort {
             <p>Tu cuenta ha sido creada con éxito. Ya puedes explorar toda nuestra colección.</p>
             <a class="btn" href="%s/catalogo">Ver catálogo</a>
             """.formatted(nombre, frontendUrl));
-        enviar(destinatario, "Bienvenida a Sofia Couture EC", html);
+        enviar(destinatario, "Bienvenida a Sofia Couture EC", html, null, null);
     }
 
     @Override
@@ -113,7 +115,7 @@ public class EmailAdapter implements EmailPort {
             <p>En cuanto confirmemos el pago, empezaremos a preparar tu pedido.</p>
             <a class="btn" href="%s/mis-ordenes">Ver mis pedidos</a>
             """.formatted(nombre, codigoOrden, total, frontendUrl));
-        enviar(destinatario, "Pedido " + codigoOrden + " recibido — Sofia Couture EC", html);
+        enviar(destinatario, "Pedido " + codigoOrden + " recibido — Sofia Couture EC", html, null, null);
     }
 
     @Override
@@ -132,13 +134,13 @@ public class EmailAdapter implements EmailPort {
             </div>
             <p>Te avisaremos cuando lo enviemos. ¡Gracias por tu compra!</p>
             """.formatted(nombre, codigo, total));
-        enviar(email, "Pedido " + codigo + " — Sofia Couture EC", html);
+        enviar(email, "Pedido " + codigo + " — Sofia Couture EC", html, null, null);
     }
 
     @Override
     public void enviarNotificacionAdmin(Orden orden) {
-        String codigo = orden.getCodigoOrden() != null ? orden.getCodigoOrden() : "#" + orden.getId();
-        String total  = orden.getTotal() != null ? "$" + orden.getTotal().toPlainString() : "—";
+        String codigo  = orden.getCodigoOrden() != null ? orden.getCodigoOrden() : "#" + orden.getId();
+        String total   = orden.getTotal() != null ? "$" + orden.getTotal().toPlainString() : "—";
         String cliente = orden.getNombreInvitado() != null ? orden.getNombreInvitado() : "Cliente registrado";
         String email   = orden.getEmailInvitado() != null ? orden.getEmailInvitado() : "—";
         String html = wrap("""
@@ -151,7 +153,7 @@ public class EmailAdapter implements EmailPort {
             </div>
             <a class="btn" href="%s/admin/ordenes">Ver en panel</a>
             """.formatted(codigo, cliente, email, total, frontendUrl));
-        enviar(adminEmail, "Nuevo pedido " + codigo, html);
+        enviar(adminEmail, "Nuevo pedido " + codigo, html, null, null);
     }
 
     @Override
@@ -162,7 +164,7 @@ public class EmailAdapter implements EmailPort {
             <p>Tu pedido <strong>%s</strong> fue cancelado.</p>
             <p>Si tienes dudas, escríbenos por WhatsApp.</p>
             """.formatted(nombre, codigoOrden));
-        enviar(destinatario, "Pedido " + codigoOrden + " cancelado", html);
+        enviar(destinatario, "Pedido " + codigoOrden + " cancelado", html, null, null);
     }
 
     @Override
@@ -174,7 +176,7 @@ public class EmailAdapter implements EmailPort {
             <p>Pronto lo enviaremos. Te avisaremos cuando esté en camino.</p>
             <a class="btn" href="%s/mis-ordenes">Ver estado</a>
             """.formatted(nombre, codigoOrden, frontendUrl));
-        enviar(destinatario, "Tu pedido " + codigoOrden + " está en preparación", html);
+        enviar(destinatario, "Tu pedido " + codigoOrden + " está en preparación", html, null, null);
     }
 
     @Override
@@ -186,12 +188,10 @@ public class EmailAdapter implements EmailPort {
             <h2>¡Tu pedido está en camino!</h2>
             <p>Hola <strong>%s</strong>,</p>
             <p>Tu pedido <strong>%s</strong> ha sido enviado.</p>
-            <div class="info-box">
-              %s
-            </div>
+            <div class="info-box">%s</div>
             <a class="btn" href="%s/mis-ordenes">Ver mis pedidos</a>
             """.formatted(nombre, codigoOrden, guiaHtml, frontendUrl));
-        enviar(destinatario, "Tu pedido " + codigoOrden + " está en camino", html);
+        enviar(destinatario, "Tu pedido " + codigoOrden + " está en camino", html, null, null);
     }
 
     @Override
@@ -203,7 +203,7 @@ public class EmailAdapter implements EmailPort {
             <p>Si tienes algún comentario o problema, escríbenos.</p>
             <a class="btn" href="%s/catalogo">Seguir comprando</a>
             """.formatted(nombre, codigoOrden, frontendUrl));
-        enviar(destinatario, "Pedido " + codigoOrden + " entregado — ¡Gracias!", html);
+        enviar(destinatario, "Pedido " + codigoOrden + " entregado — ¡Gracias!", html, null, null);
     }
 
     @Override
@@ -217,19 +217,15 @@ public class EmailAdapter implements EmailPort {
             <hr class="divider"/>
             <p style="font-size:12px;color:#999">Este enlace expira en 30 minutos. Si no solicitaste esto, ignora este correo.</p>
             """.formatted(nombre, url));
-        enviar(destinatario, "Recupera tu contraseña — Sofia Couture EC", html);
+        enviar(destinatario, "Recupera tu contraseña — Sofia Couture EC", html, null, null);
     }
 
     @Override
     public void enviarConfirmacionOrdenConPdf(Orden orden, byte[] pdfBytes) {
-        String email  = orden.getUsuarioId() != null ? null : orden.getEmailInvitado();
-        // El email del usuario registrado se resuelve en el llamador (PagoController)
-        // Este método recibe el email ya resuelto en emailInvitado o lo obtiene de otro campo
-        // Usamos getNombreInvitado / getEmailInvitado como campos generales de contacto
-        String nombre = orden.getNombreInvitado() != null ? orden.getNombreInvitado() : "Cliente";
         String emailDest = orden.getEmailInvitado();
         if (emailDest == null || emailDest.isBlank()) return;
 
+        String nombre = orden.getNombreInvitado() != null ? orden.getNombreInvitado() : "Cliente";
         String codigo = orden.getCodigoOrden() != null ? orden.getCodigoOrden() : "#" + orden.getId();
         String total  = orden.getTotal() != null ? "$" + orden.getTotal().toPlainString() : "—";
 
@@ -273,45 +269,42 @@ public class EmailAdapter implements EmailPort {
             <a class="btn" href="%s/ordenes">Ver mis pedidos</a>
             """.formatted(nombre, codigo, itemsHtml, total, frontendUrl));
 
-        try {
-            if (mailSender != null) {
-                MimeMessage msg = mailSender.createMimeMessage();
-                MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
-                helper.setFrom(from);
-                helper.setTo(emailDest);
-                helper.setSubject("Pedido " + codigo + " confirmado — Sofia Couture EC");
-                helper.setText(html, true);
-                if (pdfBytes != null && pdfBytes.length > 0) {
-                    helper.addAttachment("comprobante-" + codigo + ".pdf",
-                        new org.springframework.core.io.ByteArrayResource(pdfBytes),
-                        "application/pdf");
-                }
-                mailSender.send(msg);
-                log.info("[EMAIL] Confirmación con PDF enviada a {}", emailDest);
-            } else {
-                log.info("[EMAIL SIMULADO] Confirmación con PDF a {}", emailDest);
-            }
-        } catch (Exception e) {
-            log.error("[EMAIL ERROR] Confirmación con PDF a {} | {}", emailDest, e.getMessage());
-        }
+        String adjuntoNombre = "comprobante-" + codigo + ".pdf";
+        String adjuntoBase64 = (pdfBytes != null && pdfBytes.length > 0)
+            ? Base64.getEncoder().encodeToString(pdfBytes) : null;
+
+        enviar(emailDest, "Pedido " + codigo + " confirmado — Sofia Couture EC", html,
+            adjuntoNombre, adjuntoBase64);
     }
 
-    // ── Envío SMTP ───────────────────────────────────────────────
-    private void enviar(String destinatario, String asunto, String html) {
+    // ── Envío via Resend ─────────────────────────────────────────
+    private void enviar(String destinatario, String asunto, String html,
+                        String adjuntoNombre, String adjuntoBase64) {
+        if (resendApiKey == null || resendApiKey.isBlank()) {
+            log.info("[EMAIL SIMULADO] To: {} | Subject: {}", destinatario, asunto);
+            return;
+        }
         try {
-            if (mailSender != null) {
-                MimeMessage msg = mailSender.createMimeMessage();
-                MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
-                helper.setFrom(from);
-                helper.setTo(destinatario);
-                helper.setSubject(asunto);
-                helper.setText(html, true);
-                mailSender.send(msg);
-                log.info("[EMAIL] Enviado a {} | {}", destinatario, asunto);
-            } else {
-                log.info("[EMAIL SIMULADO] To: {} | Subject: {}", destinatario, asunto);
+            Resend resend = new Resend(resendApiKey);
+
+            CreateEmailOptions.Builder builder = CreateEmailOptions.builder()
+                .from(from)
+                .to(List.of(destinatario))
+                .subject(asunto)
+                .html(html);
+
+            if (adjuntoNombre != null && adjuntoBase64 != null) {
+                builder.attachments(List.of(
+                    Attachment.builder()
+                        .filename(adjuntoNombre)
+                        .content(adjuntoBase64)
+                        .build()
+                ));
             }
-        } catch (Exception e) {
+
+            resend.emails().send(builder.build());
+            log.info("[EMAIL] Enviado via Resend a {} | {}", destinatario, asunto);
+        } catch (ResendException e) {
             log.error("[EMAIL ERROR] To: {} | {}", destinatario, e.getMessage());
         }
     }
