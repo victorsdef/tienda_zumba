@@ -34,7 +34,9 @@ public class AuthUseCaseImpl implements AuthUseCase {
         if (u == null || !passwordEncoder.matches(password, u.getPassword())) {
             return Map.of();
         }
-        if (!u.isActivo() || !u.isEmailVerificado()) {
+        // Bloquear solo si se envió verificación pero no se completó (usuarios nuevos).
+        // Usuarios anteriores tienen emailVerificado=false pero tokenVerificacion=null → pueden entrar.
+        if (!u.isActivo() || (!u.isEmailVerificado() && u.getTokenVerificacion() != null)) {
             return Map.of();
         }
 
@@ -87,7 +89,11 @@ public class AuthUseCaseImpl implements AuthUseCase {
         carrito.setUsuario(created);
         carritoRepositoryPort.save(carrito);
 
-        emailUseCase.enviarVerificacion(created.getEmail(), created.getNombre(), token);
+        try {
+            emailUseCase.enviarVerificacion(created.getEmail(), created.getNombre(), token);
+        } catch (Exception e) {
+            // No fallar el registro si el email no se puede enviar
+        }
 
         return created;
     }

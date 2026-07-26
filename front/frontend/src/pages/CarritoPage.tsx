@@ -29,11 +29,19 @@ export default function CarritoPage() {
         <div className="lg:col-span-2 space-y-4">
           {carrito.items.map(item => (
             <div key={item.id} className="flex gap-4 border rounded-lg p-4">
-              <img
-                src={item.productoImagen || 'https://placehold.co/100x130/f3f4f6/9ca3af'}
-                alt={item.productoNombre}
-                className="w-24 h-32 object-cover rounded"
-              />
+              {item.productoImagen ? (
+                <img
+                  src={item.productoImagen}
+                  alt={item.productoNombre}
+                  className="w-24 h-32 object-cover rounded flex-shrink-0"
+                />
+              ) : (
+                <div className="w-24 h-32 rounded bg-[#f5ede6] flex flex-col items-center justify-center text-[#c4a882] flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
+                    <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" />
+                  </svg>
+                </div>
+              )}
               <div className="flex-1">
                 <h3 className="font-medium mb-1">{item.productoNombre}</h3>
                 {(item.talla || item.color) && (

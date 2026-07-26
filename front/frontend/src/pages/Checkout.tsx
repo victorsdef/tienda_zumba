@@ -371,11 +371,19 @@ export default function Checkout() {
             <div className="divide-y divide-[#ddd8d0]">
               {carritoActivo.items.map(item => (
                 <div key={item.id} className="flex gap-3 p-3">
-                  <img
-                    src={item.productoImagen || 'https://placehold.co/60x80/f3f4f6/9ca3af'}
-                    alt={item.productoNombre}
-                    className="w-12 h-16 object-cover rounded flex-shrink-0"
-                  />
+                  {item.productoImagen ? (
+                    <img
+                      src={item.productoImagen}
+                      alt={item.productoNombre}
+                      className="w-12 h-16 object-cover rounded flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-16 rounded bg-[#f5ede6] flex items-center justify-center text-[#c4a882] flex-shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
+                        <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" />
+                      </svg>
+                    </div>
+                  )}
                   <div className="flex-1 text-sm min-w-0">
                     <p className="font-medium text-[#4a3728] truncate">{item.productoNombre}</p>
                     <p className="text-gray-400 text-xs">

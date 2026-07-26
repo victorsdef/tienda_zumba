@@ -295,7 +295,7 @@ export default function DetalleProducto() {
     await agregarItem(producto!.id, cantidad, talla, color, {
       nombre: producto!.nombre,
       precio: precioMostrado,
-      imagen: producto!.imagenes?.[0],
+      imagen: imagenesActivas[0],
     })
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)

@@ -397,11 +397,19 @@ export default function DetalleOrden() {
             <div className="divide-y divide-[#f0ebe5]">
               {orden.items.map(item => (
                 <div key={item.id} className="flex gap-4 p-4 md:p-5">
-                  <img
-                    src={item.productoImagen || 'https://placehold.co/88x112/f3f4f6/9ca3af'}
-                    alt={item.nombreProducto}
-                    className="w-20 h-24 md:w-24 md:h-28 object-cover rounded-lg border border-[#ece7e1]"
-                  />
+                  {item.productoImagen ? (
+                    <img
+                      src={item.productoImagen}
+                      alt={item.nombreProducto}
+                      className="w-20 h-24 md:w-24 md:h-28 object-cover rounded-lg border border-[#ece7e1] flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-20 h-24 md:w-24 md:h-28 rounded-lg border border-[#ece7e1] bg-[#f5ede6] flex items-center justify-center text-[#c4a882] flex-shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
+                        <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" />
+                      </svg>
+                    </div>
+                  )}
 
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-[#4a3728]">{item.nombreProducto}</p>
