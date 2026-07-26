@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { crearOrden, crearOrdenInvitado } from '../api/ordenes'
+import { validarCupon } from '../api/admin'
 import { getDirecciones, crearDireccion } from '../api/direcciones'
 import type { DireccionRequest } from '../api/direcciones'
 import { useCartStore } from '../store/useCartStore'
@@ -37,6 +38,10 @@ export default function Checkout() {
   const [mostrarFormDir, setMostrarFormDir] = useState(false)
   const [procesando, setProcesando] = useState(false)
   const [ordenCreada, setOrdenCreada] = useState<Orden | null>(null)
+  const [codigoCupon, setCodigoCupon] = useState('')
+  const [cuponAplicado, setCuponAplicado] = useState<{ codigo: string; descuento: number } | null>(null)
+  const [cuponError, setCuponError] = useState('')
+  const [validandoCupon, setValidandoCupon] = useState(false)
 
   const [guestData, setGuestData] = useState({ nombre: '', email: '' })
   const [guestDirForm, setGuestDirForm] = useState<DireccionRequest | null>(null)
@@ -87,7 +92,28 @@ export default function Checkout() {
   const requierePago = tipoEntrega !== 'RETIRO'
   const subtotal = carritoActivo.total
   const costoEnvio = tipoEntrega === 'DOMICILIO' ? envioDomicilio : tipoEntrega === 'CUENCA' ? envioCuenca : 0
-  const total = subtotal + costoEnvio
+  const descuento = cuponAplicado?.descuento ?? 0
+  const total = subtotal + costoEnvio - descuento
+
+  const aplicarCupon = async () => {
+    if (!codigoCupon.trim()) return
+    setValidandoCupon(true)
+    setCuponError('')
+    try {
+      const res = await validarCupon(codigoCupon.trim(), subtotal)
+      if ('error' in res) {
+        setCuponError(res.error as string)
+        setCuponAplicado(null)
+      } else {
+        setCuponAplicado({ codigo: res.codigo, descuento: res.descuento })
+      }
+    } catch {
+      setCuponError('Cupón no válido')
+      setCuponAplicado(null)
+    } finally {
+      setValidandoCupon(false)
+    }
+  }
 
   const direccionSeleccionada: Direccion | undefined = direcciones.find(d => d.id === direccionId)
 
@@ -399,6 +425,36 @@ export default function Checkout() {
               ))}
             </div>
 
+            <div className="px-4 py-3 border-t border-[#ddd8d0]">
+              {cuponAplicado ? (
+                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                  <div>
+                    <span className="text-xs font-bold text-green-700 font-mono">{cuponAplicado.codigo}</span>
+                    <span className="text-xs text-green-600 ml-1">aplicado</span>
+                  </div>
+                  <button onClick={() => { setCuponAplicado(null); setCodigoCupon('') }} className="text-xs text-red-400 hover:text-red-600">Quitar</button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    value={codigoCupon}
+                    onChange={e => { setCodigoCupon(e.target.value.toUpperCase()); setCuponError('') }}
+                    onKeyDown={e => e.key === 'Enter' && aplicarCupon()}
+                    placeholder="Código de cupón"
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-xs font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30"
+                  />
+                  <button
+                    onClick={aplicarCupon}
+                    disabled={validandoCupon || !codigoCupon.trim()}
+                    className="px-3 py-2 bg-[#4a3728] text-white text-xs font-semibold rounded-lg hover:bg-[#3a2a1e] disabled:opacity-50"
+                  >
+                    {validandoCupon ? '...' : 'Aplicar'}
+                  </button>
+                </div>
+              )}
+              {cuponError && <p className="text-xs text-red-500 mt-1">{cuponError}</p>}
+            </div>
+
             <div className="p-4 bg-[#f5f0e8] space-y-2">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>Subtotal</span>
@@ -410,6 +466,12 @@ export default function Checkout() {
                   {costoEnvio === 0 ? 'Gratis' : `$${costoEnvio.toFixed(2)}`}
                 </span>
               </div>
+              {descuento > 0 && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Descuento ({cuponAplicado?.codigo})</span>
+                  <span>-${descuento.toFixed(2)}</span>
+                </div>
+              )}
               <div className="border-t border-[#ddd8d0] pt-2 flex justify-between font-bold text-lg text-[#4a3728]">
                 <span>Total</span>
                 <span>${total.toFixed(2)}</span>

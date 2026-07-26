@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import type { Producto } from '../../types'
 import { useUiStore } from '../../store/useUiStore'
+import { useAuthStore } from '../../store/useAuthStore'
+import { toggleWishlist } from '../../api/wishlist'
 
 interface Props {
   producto: Producto
@@ -13,6 +15,8 @@ export default function ProductCard({ producto, compact = false }: Props) {
   const tieneColores = colores.length > 0
 
   const { secuenciasActivas } = useUiStore()
+  const { user, isAuthenticated } = useAuthStore()
+  const [wishlist, setWishlist] = useState(false)
   const [colorIndex, setColorIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -126,6 +130,23 @@ export default function ProductCard({ producto, compact = false }: Props) {
               </svg>
             </button>
           </>
+        )}
+
+        {isAuthenticated && (
+          <button
+            onClick={async e => {
+              e.preventDefault()
+              e.stopPropagation()
+              if (!user?.id) return
+              setWishlist(w => !w)
+              await toggleWishlist(user.id, producto.id)
+            }}
+            className="absolute top-2 right-2 z-20 bg-white/90 rounded-full w-7 h-7 flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <svg className={`w-4 h-4 ${wishlist ? 'text-red-500' : 'text-gray-400'}`} fill={wishlist ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          </button>
         )}
 
         {/* Quick add */}

@@ -9,6 +9,7 @@ import ProductCard from '@entities/product/ProductCard'
 import { useCartStore } from '../store/useCartStore'
 import { useAuthStore } from '../store/useAuthStore'
 import womanSvg from '../assets/woman.svg'
+import ResenaSection from '@entities/product/ResenaSection'
 
 const COLORES_NOMBRES: Record<string, string> = {
   '#000000': 'Negro', '#FFFFFF': 'Blanco', '#9CA3AF': 'Gris', '#EF4444': 'Rojo',
@@ -551,6 +552,8 @@ export default function DetalleProducto() {
           </button>
         )}
       </div>
+
+      <ResenaSection productoId={producto!.id} />
 
       {/* Sugerencias */}
       {sugerencias.length > 0 && (

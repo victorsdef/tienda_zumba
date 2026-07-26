@@ -47,6 +47,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
         response.put("email", u.getEmail());
         response.put("nombre", u.getNombre());
         response.put("rol", u.getRol() != null ? u.getRol().name() : null);
+        if (u.getId() != null) response.put("id", u.getId().toString());
         return response;
     }
 

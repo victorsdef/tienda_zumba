@@ -114,6 +114,7 @@ export default function Navbar() {
                   </div>
                   <Link to="/cuenta" className={styles.userMenuLink} onClick={() => setMenuOpen(false)}>Mi cuenta</Link>
                   <Link to="/ordenes" className={styles.userMenuLink} onClick={() => setMenuOpen(false)}>Mis órdenes</Link>
+                  <Link to="/wishlist" className={styles.userMenuLink} onClick={() => setMenuOpen(false)}>Lista de deseos</Link>
                   {canAccessAdmin && <Link to="/admin" className={`${styles.userMenuLink} ${styles.userMenuLinkAccent}`} onClick={() => setMenuOpen(false)}>Panel de gestión</Link>}
                   <div className={styles.menuDivider} />
                   <button onClick={() => { logout(); setMenuOpen(false); navigate('/') }} className={styles.userMenuLogout}>Cerrar sesión</button>

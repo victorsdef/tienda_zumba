@@ -24,6 +24,9 @@ import AdminBanners from '@pages/admin/AdminBanners'
 import AdminConfiguracion from '@pages/admin/AdminConfiguracion'
 import AdminHomeEditor from '@pages/admin/AdminHomeEditor'
 import AdminReportes from '@pages/admin/AdminReportes'
+import AdminCupones from '@pages/admin/AdminCupones'
+import AdminResenas from '@pages/admin/AdminResenas'
+import WishlistPage from '@pages/WishlistPage'
 import VerificarEmail from '@pages/VerificarEmail'
 import OrdenConfirmada from '@pages/OrdenConfirmada'
 import MisDirecciones from '@pages/MisDirecciones'
@@ -31,6 +34,7 @@ import PagoConfirmado from '@pages/PagoConfirmado'
 import PagarOrden from '@pages/PagarOrden'
 import OlvidePassword from '@pages/OlvidePassword'
 import ResetPassword from '@pages/ResetPassword'
+import BienvenidaPopup from '@widgets/BienvenidaPopup'
 import shellStyles from './AppShell.module.scss'
 
 const queryClient = new QueryClient({
@@ -64,6 +68,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     <div className={shellStyles.mainLayout}>
       <Navbar />
       <CartDrawer />
+      <BienvenidaPopup />
       <main className={shellStyles.mainContent}>{children}</main>
       <Footer />
       <WhatsAppButton />
@@ -88,6 +93,8 @@ export default function App() {
             <Route path="banners" element={<AdminBanners />} />
             <Route path="configuracion" element={<AdminConfiguracion />} />
             <Route path="home-editor" element={<AdminHomeEditor />} />
+            <Route path="cupones" element={<AdminCupones />} />
+            <Route path="resenas" element={<AdminResenas />} />
           </Route>
 
           {/* Auth */}
@@ -110,6 +117,7 @@ export default function App() {
           <Route path="/mis-direcciones" element={<MainLayout><MisDirecciones /></MainLayout>} />
           <Route path="/pago-confirmado" element={<MainLayout><PagoConfirmado /></MainLayout>} />
           <Route path="/pagar" element={<PagarOrden />} />
+          <Route path="/wishlist" element={<MainLayout><WishlistPage /></MainLayout>} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

@@ -18,6 +18,8 @@ const NAV: Array<{
   { to: '/admin/home-editor',   label: 'Editor Home',   Icon: IconImage,    exact: false, permission: 'banners' },
   { to: '/admin/ordenes',       label: 'Órdenes',       Icon: IconPackage,  exact: false, permission: 'ordenes' },
   { to: '/admin/usuarios',      label: 'Usuarios',      Icon: IconUsers,    exact: false, permission: 'usuarios' },
+  { to: '/admin/cupones',       label: 'Cupones',       Icon: IconPackage,  exact: false, permission: 'cupones' },
+  { to: '/admin/resenas',       label: 'Reseñas',       Icon: IconGrid,     exact: false, permission: 'resenas' },
   { to: '/admin/configuracion', label: 'Configuración', Icon: IconSettings, exact: false, permission: 'configuracion' },
 ]
 
@@ -37,6 +39,8 @@ const ROUTE_PERMISSION_RULES: Array<{ startsWith: string; permission: AdminPermi
   { startsWith: '/admin/home-editor', permission: 'banners' },
   { startsWith: '/admin/productos', permission: 'productos' },
   { startsWith: '/admin/ordenes', permission: 'ordenes' },
+  { startsWith: '/admin/cupones', permission: 'cupones' },
+  { startsWith: '/admin/resenas', permission: 'resenas' },
   { startsWith: '/admin', permission: 'dashboard' },
 ]
 

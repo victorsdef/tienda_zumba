@@ -25,6 +25,7 @@ public interface AuthRestMapper {
     @Mapping(target = "rol", expression = "java(usuario.getRol() != null ? usuario.getRol().name() : null)")
     RegisterResponse toRegisterResponse(Usuario usuario);
 
+    @Mapping(target = "id", expression = "java(tokens.get(\"id\") != null ? Long.valueOf(tokens.get(\"id\")) : null)")
     @Mapping(target = "accessToken", expression = "java(tokens.get(\"accessToken\") != null ? tokens.get(\"accessToken\") : tokens.get(\"token\"))")
     @Mapping(target = "refreshToken", expression = "java(tokens.get(\"refreshToken\"))")
     @Mapping(target = "tokenType", constant = "Bearer")

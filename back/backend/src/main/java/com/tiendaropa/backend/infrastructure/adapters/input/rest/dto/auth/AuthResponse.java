@@ -2,6 +2,7 @@ package com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.auth;
 
 public class AuthResponse {
 
+    private Long id;
     private String accessToken;
     private String refreshToken;
     private String tokenType;
@@ -49,6 +50,14 @@ public class AuthResponse {
 
     public String getRol() {
         return rol;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public void setAccessToken(String accessToken) {

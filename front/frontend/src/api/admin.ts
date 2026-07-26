@@ -68,3 +68,43 @@ export const cambiarRolUsuario = (id: number, rol: string) =>
 
 export const toggleUsuario = (id: number) =>
   api.patch(`/admin/usuarios/${id}/toggle`).then(r => r.data)
+
+// ── Cupones ──────────────────────────────────────────────────────────
+export interface Cupon {
+  id?: number
+  codigo: string
+  tipo: 'PORCENTAJE' | 'MONTO_FIJO'
+  valor: number
+  montoMinimo?: number
+  maxUsos?: number
+  usos?: number
+  activo: boolean
+  fechaExpiracion?: string
+  fechaCreacion?: string
+}
+
+export const getCupones = () => api.get<Cupon[]>('/cupones/admin').then(r => r.data)
+export const crearCupon = (data: Cupon) => api.post<Cupon>('/cupones/admin', data).then(r => r.data)
+export const actualizarCupon = (id: number, data: Cupon) => api.put<Cupon>(`/cupones/admin/${id}`, data).then(r => r.data)
+export const eliminarCupon = (id: number) => api.delete(`/cupones/admin/${id}`)
+export const toggleCupon = (id: number) => api.patch<Cupon>(`/cupones/admin/${id}/toggle`).then(r => r.data)
+export const validarCupon = (codigo: string, subtotal: number) =>
+  api.get<{ id: number; codigo: string; tipo: string; valor: number; descuento: number } | { error: string }>(
+    `/cupones/validar?codigo=${encodeURIComponent(codigo)}&subtotal=${subtotal}`
+  ).then(r => r.data)
+
+// ── Reseñas admin ────────────────────────────────────────────────────
+export interface ResenaAdmin {
+  id: number
+  productoId: number
+  usuarioId: number
+  usuarioNombre: string
+  calificacion: number
+  comentario: string
+  aprobada: boolean
+  fechaCreacion: string
+}
+
+export const getResenasAdmin = () => api.get<ResenaAdmin[]>('/resenas/admin').then(r => r.data)
+export const aprobarResena = (id: number) => api.patch<ResenaAdmin>(`/resenas/admin/${id}/aprobar`).then(r => r.data)
+export const eliminarResena = (id: number) => api.delete(`/resenas/admin/${id}`)
