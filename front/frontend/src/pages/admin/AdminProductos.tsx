@@ -1347,9 +1347,9 @@ export default function AdminProductos() {
                                     <p className="text-xs text-gray-400 uppercase font-semibold mb-2">Precios por variante</p>
                                     <div className="rounded-xl border border-[#e7ddd0] overflow-hidden text-xs">
                                       <div className="grid bg-[#f5f0e8]" style={{ gridTemplateColumns: `140px repeat(${tallas.length}, 1fr)` }}>
-                                        <div className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase">{esSinColor ? 'Talla' : 'Color'}</div>
+                                        <div className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase">{esSinColor ? '—' : 'Color'}</div>
                                         {tallas.map(t => (
-                                          <div key={t} className="px-2 py-2 text-[10px] font-bold text-gray-500 uppercase text-center">{esSinColor ? '' : t}</div>
+                                          <div key={t} className="px-2 py-2 text-[10px] font-bold text-gray-500 uppercase text-center">Talla {t}</div>
                                         ))}
                                       </div>
                                       {filas.map(({ key, label, hex }) => (
