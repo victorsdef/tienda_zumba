@@ -253,8 +253,11 @@ export default function DetalleProducto() {
   const coloresDisponiblesParaTalla = talla && Object.keys(stockPorColorTalla).length > 0
     ? producto!.colores.filter(c => (stockPorColorTalla[c]?.[talla] ?? 0) > 0)
     : undefined
-  const stockColorTalla =
-    color && talla ? stockPorColorTalla[color]?.[talla] : undefined
+  const stockColorTalla = (() => {
+    if (color && talla) return stockPorColorTalla[color]?.[talla]
+    if (talla && stockPorColorTalla['_']) return stockPorColorTalla['_'][talla]  // sin-color
+    return undefined
+  })()
 
   // Stock del color seleccionado (si hay stockPorColor), si no usa stock total
   const stockColor = color && producto?.stockPorColor?.[color] !== undefined

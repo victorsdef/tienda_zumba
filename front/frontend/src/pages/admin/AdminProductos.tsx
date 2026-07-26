@@ -167,11 +167,18 @@ export default function AdminProductos() {
     if (tallas.length === 0) { setStockPorColorTalla({}); return }
     setStockPorColorTalla(prev => {
       const next: Record<string, Record<string, number>> = {}
-      colores.forEach(color => {
-        const actual = prev[color] ?? {}
-        next[color] = {}
-        tallas.forEach(talla => { next[color][talla] = Math.max(0, actual[talla] ?? 0) })
-      })
+      if (colores.length === 0) {
+        // sin color: usar llave '_'
+        const actual = prev['_'] ?? {}
+        next['_'] = {}
+        tallas.forEach(talla => { next['_'][talla] = Math.max(0, actual[talla] ?? 0) })
+      } else {
+        colores.forEach(color => {
+          const actual = prev[color] ?? {}
+          next[color] = {}
+          tallas.forEach(talla => { next[color][talla] = Math.max(0, actual[talla] ?? 0) })
+        })
+      }
       return next
     })
   }, [tallas, colores])
@@ -213,8 +220,9 @@ export default function AdminProductos() {
   const onSubmit = (d: FormData) => {
     const precioBase = d.precio ? Number(d.precio) : 0
     const stockTotal = tallas.length > 0
-      ? Object.values(stockPorColorTalla).reduce(
-          (acc, porTalla) => acc + Object.values(porTalla).reduce((a, b) => a + b, 0), 0)
+      ? colores.length === 0
+        ? Object.values(stockPorColorTalla['_'] ?? {}).reduce((a, b) => a + b, 0)
+        : Object.values(stockPorColorTalla).reduce((acc, m) => acc + Object.values(m).reduce((a, b) => a + b, 0), 0)
       : colores.length > 0
         ? Object.values(stockPorColor).reduce((a, b) => a + b, 0)
         : Number(d.stock)
@@ -236,7 +244,11 @@ export default function AdminProductos() {
       tallas,
       colores,
       stockPorColor: colores.length > 0 ? stockPorColor : undefined,
-      stockPorColorTalla: tallas.length > 0 ? stockPorColorTalla : undefined,
+      stockPorColorTalla: tallas.length > 0
+        ? colores.length === 0
+          ? (Object.keys(stockPorColorTalla['_'] ?? {}).length > 0 ? { '_': stockPorColorTalla['_'] } : undefined)
+          : stockPorColorTalla
+        : undefined,
       precioPorColorTalla: (() => {
         if (tallas.length > 0 && colores.length > 0 && Object.keys(precioPorColorTalla).length > 0) return precioPorColorTalla
         if (tallas.length > 0 && colores.length === 0 && Object.keys(precioPorColorTalla['_'] ?? {}).length > 0) return { '_': precioPorColorTalla['_'] }
@@ -256,7 +268,9 @@ export default function AdminProductos() {
     || ''
 
   const stockTotal = tallas.length > 0
-    ? Object.values(stockPorColorTalla).reduce((a, m) => a + Object.values(m).reduce((x, y) => x + y, 0), 0)
+    ? colores.length === 0
+      ? Object.values(stockPorColorTalla['_'] ?? {}).reduce((a, b) => a + b, 0)
+      : Object.values(stockPorColorTalla).reduce((a, m) => a + Object.values(m).reduce((x, y) => x + y, 0), 0)
     : colores.length > 0
       ? Object.values(stockPorColor).reduce((a, b) => a + b, 0)
       : 0
@@ -466,6 +480,41 @@ export default function AdminProductos() {
                       )
                     })}
                   </div>
+                </div>
+
+                {/* Stock por talla */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase mb-1.5">Stock por talla <span className="text-red-400">*</span></p>
+                  <div className="rounded-xl border border-[#e7ddd0] overflow-hidden">
+                    <div className="grid bg-[#f5f0e8]" style={{ gridTemplateColumns: `repeat(${tallas.length}, 1fr)` }}>
+                      {tallas.map(t => (
+                        <div key={t} className="px-2 py-2 text-[10px] font-bold uppercase text-gray-500 text-center">Talla {t}</div>
+                      ))}
+                    </div>
+                    <div className="grid bg-white" style={{ gridTemplateColumns: `repeat(${tallas.length}, 1fr)` }}>
+                      {tallas.map(t => {
+                        const val = stockPorColorTalla['_']?.[t] ?? 0
+                        return (
+                          <div key={t} className="px-2 py-2 border-r border-[#e7ddd0] last:border-r-0">
+                            <input
+                              type="number" min="0" step="1" placeholder="0"
+                              value={val === 0 ? '' : val}
+                              onChange={e => {
+                                const n = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value))
+                                setStockPorColorTalla(prev => ({ ...prev, '_': { ...(prev['_'] ?? {}), [t]: n } }))
+                              }}
+                              className={`w-full border rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:border-[#a37c64] transition-colors ${
+                                val > 0 ? 'border-[#a37c64] bg-[#faf7f2] font-semibold text-[#4a3728]' : 'border-gray-200'
+                              }`}
+                            />
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  {stockTotal > 0 && (
+                    <p className="text-xs text-gray-400 mt-1.5">Stock total: <strong className="text-[#4a3728]">{stockTotal} unidades</strong></p>
+                  )}
                 </div>
 
                 {/* Comisión PayPhone por talla */}
