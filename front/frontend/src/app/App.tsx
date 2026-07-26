@@ -34,7 +34,6 @@ import PagoConfirmado from '@pages/PagoConfirmado'
 import PagarOrden from '@pages/PagarOrden'
 import OlvidePassword from '@pages/OlvidePassword'
 import ResetPassword from '@pages/ResetPassword'
-import BienvenidaPopup from '@widgets/BienvenidaPopup'
 import shellStyles from './AppShell.module.scss'
 
 const queryClient = new QueryClient({
@@ -68,7 +67,6 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     <div className={shellStyles.mainLayout}>
       <Navbar />
       <CartDrawer />
-      <BienvenidaPopup />
       <main className={shellStyles.mainContent}>{children}</main>
       <Footer />
       <WhatsAppButton />
