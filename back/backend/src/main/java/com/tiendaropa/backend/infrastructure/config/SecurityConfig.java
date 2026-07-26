@@ -66,6 +66,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/pagos/confirmar", "/api/nueva-arquitectura/pagos/confirmar").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/pagos/preparar", "/api/nueva-arquitectura/pagos/preparar").permitAll()
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/api-docs/**", "/v3/api-docs", "/v3/api-docs/**", "/h2-console/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/admin/test-email", "/api/nueva-arquitectura/admin/test-email").permitAll()
                 .requestMatchers("/api/admin/**", "/api/nueva-arquitectura/admin/**").hasAnyRole("ADMIN", "VENDEDOR", "BODEGUERO")
                 .anyRequest().authenticated()
             )
