@@ -348,7 +348,13 @@ export default function AdminDescuentos() {
                                   {imgColor
                                     ? <img src={imgColor} alt={color} className="w-7 h-8 object-cover rounded-lg flex-shrink-0" />
                                     : <div className="w-7 h-8 bg-[#f0ebe3] rounded-lg flex-shrink-0" />}
-                                  <span className="text-xs font-semibold text-gray-700 leading-tight">{getNombreColor(color)}</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span
+                                      className="w-3.5 h-3.5 rounded-full flex-shrink-0 border border-black/10"
+                                      style={{ backgroundColor: color }}
+                                    />
+                                    <span className="text-xs font-semibold text-gray-700 leading-tight">{getNombreColor(color)}</span>
+                                  </div>
                                 </div>
                               </td>
 

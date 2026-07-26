@@ -42,8 +42,13 @@ export const getDashboard = () =>
 export const exportarReporteExcel = (data: ExportarReportePayload) =>
   api.post('/admin/reportes/exportar', data, { responseType: 'blob' }).then(r => r.data as Blob)
 
-export const getProductosAdmin = (page = 0, size = 20) =>
-  api.get<Page<Producto>>(`/admin/productos?page=${page}&size=${size}`).then(r => r.data)
+export const getProductosAdmin = (page = 0, size = 20, filtros?: { nombre?: string; activo?: boolean; categoriaId?: number }) => {
+  const params = new URLSearchParams({ page: String(page), size: String(size), sort: 'id,desc' })
+  if (filtros?.nombre) params.set('nombre', filtros.nombre)
+  if (filtros?.activo !== undefined) params.set('activo', String(filtros.activo))
+  if (filtros?.categoriaId) params.set('categoriaId', String(filtros.categoriaId))
+  return api.get<Page<Producto>>(`/admin/productos?${params}`).then(r => r.data)
+}
 
 export const toggleActivo = (id: number) =>
   api.patch<Producto>(`/admin/productos/${id}/toggle`).then(r => r.data)

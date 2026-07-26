@@ -58,6 +58,8 @@ export default function AdminProductos() {
   const [paso, setPaso] = useState(1)
   const [editStock, setEditStock] = useState<{ id: number; stock: number } | null>(null)
   const [filtroNombre, setFiltroNombre] = useState('')
+  const [filtroActivo, setFiltroActivo] = useState<boolean | undefined>(undefined)
+  const [filtroCategoria, setFiltroCategoria] = useState<number | undefined>(undefined)
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [genero, setGenero] = useState<Genero>('')
   const [colorExpandido, setColorExpandido] = useState<string | null>(null)
@@ -75,8 +77,8 @@ export default function AdminProductos() {
   const [aplicaIva, setAplicaIva] = useState(true)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-productos', page],
-    queryFn: () => getProductosAdmin(page, 20),
+    queryKey: ['admin-productos', page, filtroNombre, filtroActivo, filtroCategoria],
+    queryFn: () => getProductosAdmin(page, 20, { nombre: filtroNombre || undefined, activo: filtroActivo, categoriaId: filtroCategoria }),
   })
   const { data: cats = [] } = useQuery({
     queryKey: ['categorias'],
@@ -245,9 +247,7 @@ export default function AdminProductos() {
 
   const catsFiltradas = cats?.filter(c => c.activo && (genero === '' ? true : c.genero === genero)) ?? []
   const categoriaNombreActual = cats?.find(c => c.id === Number(categoriaIdActual))?.nombre ?? ''
-  const productos = data?.content.filter(p =>
-    !filtroNombre || p.nombre.toLowerCase().includes(filtroNombre.toLowerCase())
-  ) ?? []
+  const productos = data?.content ?? []
 
   const getPreviewImage = (producto: Producto) =>
     producto.imagenes?.[0]
@@ -1097,16 +1097,49 @@ export default function AdminProductos() {
         </div>
       )}
 
-      {/* ── BUSCADOR ─────────────────────────────────────────────── */}
-      <div className="bg-white border rounded-lg px-3 md:px-4 py-3 flex items-center gap-3">
-        <IconSearch size={16} className="text-gray-400 flex-shrink-0" />
-        <input
-          value={filtroNombre}
-          onChange={e => setFiltroNombre(e.target.value)}
-          placeholder="Buscar producto..."
-          className="flex-1 outline-none text-sm"
-        />
-        <span className="text-xs text-gray-400">{data?.totalElements ?? 0} total</span>
+      {/* ── FILTROS ──────────────────────────────────────────────── */}
+      <div className="space-y-2">
+        {/* Filtros de estado */}
+        <div className="bg-white border rounded-lg px-3 md:px-4 py-3 flex items-center gap-2 flex-wrap">
+          <button onClick={() => { setFiltroActivo(undefined); setPage(0) }}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${filtroActivo === undefined ? 'bg-gray-900 text-white border-gray-900' : 'border-gray-300 text-gray-600 hover:border-gray-400'}`}>
+            Todos
+          </button>
+          <button onClick={() => { setFiltroActivo(true); setPage(0) }}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${filtroActivo === true ? 'bg-green-100 text-green-800 border-transparent' : 'border-gray-300 text-gray-600 hover:border-gray-400'}`}>
+            Activos
+          </button>
+          <button onClick={() => { setFiltroActivo(false); setPage(0) }}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${filtroActivo === false ? 'bg-gray-100 text-gray-600 border-transparent' : 'border-gray-300 text-gray-600 hover:border-gray-400'}`}>
+            Inactivos
+          </button>
+          {cats && cats.length > 0 && (
+            <select
+              value={filtroCategoria ?? ''}
+              onChange={e => { setFiltroCategoria(e.target.value ? Number(e.target.value) : undefined); setPage(0) }}
+              className="ml-1 border border-gray-300 rounded-full px-3 py-1 text-xs text-gray-600 focus:outline-none hover:border-gray-400 bg-white"
+            >
+              <option value="">Todas las categorías</option>
+              {cats.filter(c => c.activo).map(c => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+            </select>
+          )}
+          <span className="ml-auto text-xs text-gray-400">{data?.totalElements ?? 0} total</span>
+        </div>
+        {/* Buscador */}
+        <div className="bg-white border rounded-lg px-3 md:px-4 py-2.5 flex items-center gap-3">
+          <IconSearch size={15} className="text-gray-400 flex-shrink-0" />
+          <input
+            value={filtroNombre}
+            onChange={e => { setFiltroNombre(e.target.value); setPage(0) }}
+            placeholder="Buscar producto..."
+            className="flex-1 outline-none text-sm"
+          />
+          {filtroNombre && (
+            <button onClick={() => setFiltroNombre('')} className="text-gray-400 hover:text-gray-600 text-xs">✕</button>
+          )}
+        </div>
       </div>
 
       {/* ── TABLA / CARDS ────────────────────────────────────────── */}
@@ -1157,8 +1190,29 @@ export default function AdminProductos() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="font-bold text-red-500">${p.precio.toFixed(2)}</span>
-                          {p.precioOriginal && <p className="text-xs text-gray-400 line-through">${p.precioOriginal.toFixed(2)}</p>}
+                          {(() => {
+                            const pct = p.precioPorColorTalla
+                            if (pct && Object.keys(pct).length > 0) {
+                              const todos = Object.values(pct).flatMap(t => Object.values(t))
+                              const min = Math.min(...todos)
+                              const max = Math.max(...todos)
+                              return (
+                                <div>
+                                  <p className="text-[10px] text-gray-400 font-medium uppercase leading-tight">Desde</p>
+                                  <span className="font-bold text-[#4a3728]">${min.toFixed(2)}</span>
+                                  {min !== max && <span className="text-xs text-gray-400 ml-1">– ${max.toFixed(2)}</span>}
+                                </div>
+                              )
+                            }
+                            return (
+                              <div>
+                                <span className="font-bold text-[#4a3728]">${p.precio.toFixed(2)}</span>
+                                {p.precioOriginal && p.precioOriginal > p.precio && (
+                                  <p className="text-xs text-gray-400 line-through">${p.precioOriginal.toFixed(2)}</p>
+                                )}
+                              </div>
+                            )
+                          })()}
                         </td>
                         <td className="px-4 py-3">
                           {p.stockPorColorTalla && Object.keys(p.stockPorColorTalla).length > 0 ? (
@@ -1274,6 +1328,52 @@ export default function AdminProductos() {
                                   <span>Categoría: <strong className="text-gray-700">{p.categoriaNombre ?? '—'}</strong></span>
                                 </div>
                               </div>
+
+                              {/* Tabla de precios por color × talla */}
+                              {p.precioPorColorTalla && Object.keys(p.precioPorColorTalla).length > 0 && (() => {
+                                const pct = p.precioPorColorTalla!
+                                const coloresPCT = Object.keys(pct).filter(k => k !== '_')
+                                const esSinColor = coloresPCT.length === 0 && !!pct['_']
+                                const tallasSet = new Set<string>()
+                                for (const [k, ts] of Object.entries(pct)) { if (k !== '_') Object.keys(ts).forEach(t => tallasSet.add(t)) }
+                                if (esSinColor) Object.keys(pct['_']).forEach(t => tallasSet.add(t))
+                                const tallas = Array.from(tallasSet).sort((a, b) => {
+                                  const n = (v: string) => isNaN(Number(v)) ? v.charCodeAt(0) : Number(v)
+                                  return n(a) - n(b)
+                                })
+                                const filas = esSinColor ? [{ key: '_', label: 'Sin color', hex: null }] : coloresPCT.map(hex => ({ key: hex, label: getColorLabel(hex), hex }))
+                                return (
+                                  <div className="w-full mt-2">
+                                    <p className="text-xs text-gray-400 uppercase font-semibold mb-2">Precios por variante</p>
+                                    <div className="rounded-xl border border-[#e7ddd0] overflow-hidden text-xs">
+                                      <div className="grid bg-[#f5f0e8]" style={{ gridTemplateColumns: `140px repeat(${tallas.length}, 1fr)` }}>
+                                        <div className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase">{esSinColor ? 'Talla' : 'Color'}</div>
+                                        {tallas.map(t => (
+                                          <div key={t} className="px-2 py-2 text-[10px] font-bold text-gray-500 uppercase text-center">{esSinColor ? '' : t}</div>
+                                        ))}
+                                      </div>
+                                      {filas.map(({ key, label, hex }) => (
+                                        <div key={key} className="grid border-t border-[#e7ddd0] bg-white" style={{ gridTemplateColumns: `140px repeat(${tallas.length}, 1fr)` }}>
+                                          <div className="flex items-center gap-1.5 px-3 py-2">
+                                            {hex && <span className="w-3 h-3 rounded-full border border-black/10 flex-shrink-0" style={{ backgroundColor: hex }} />}
+                                            <span className="font-medium text-gray-700 truncate">{label}</span>
+                                          </div>
+                                          {tallas.map(t => {
+                                            const pr = pct[key]?.[t]
+                                            return (
+                                              <div key={t} className="px-2 py-2 text-center border-l border-[#f0ebe3]">
+                                                {pr !== undefined
+                                                  ? <span className="font-semibold text-[#4a3728]">${pr.toFixed(2)}</span>
+                                                  : <span className="text-gray-300">—</span>}
+                                              </div>
+                                            )
+                                          })}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )
+                              })()}
                             </div>
                           </td>
                         </tr>

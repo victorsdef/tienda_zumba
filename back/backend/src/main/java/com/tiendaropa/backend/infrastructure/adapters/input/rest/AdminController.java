@@ -183,9 +183,16 @@ public class AdminController {
     @PreAuthorize("hasAnyRole('ADMIN','BODEGUERO')")
     public ResponseEntity<PageResponse<ProductoDTO>> listarProductos(
         @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "20") int size
+        @RequestParam(defaultValue = "20") int size,
+        @RequestParam(required = false) String nombre,
+        @RequestParam(required = false) Boolean activo,
+        @RequestParam(required = false) Long categoriaId
     ) {
         List<ProductoDTO> productos = productoUseCase.listarTodos().stream()
+            .filter(p -> nombre == null || nombre.isBlank() || p.getNombre().toLowerCase().contains(nombre.toLowerCase()))
+            .filter(p -> activo == null || p.isActivo() == activo)
+            .filter(p -> categoriaId == null || (p.getCategoria() != null && categoriaId.equals(p.getCategoria().getId())))
+            .sorted((a, b) -> Long.compare(b.getId(), a.getId()))
             .map(this::toProductoDto)
             .toList();
         return ResponseEntity.ok(paginar(productos, page, size));
