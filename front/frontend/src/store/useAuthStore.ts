@@ -14,6 +14,7 @@ export type AdminPermission =
   | 'configuracion'
   | 'cupones'
   | 'resenas'
+  | 'descuentos'
 
 interface AuthState {
   user: AuthResponse | null
@@ -31,8 +32,8 @@ const storedAccessToken = localStorage.getItem('accessToken')
 const parsedUser: AuthResponse | null = stored && storedAccessToken ? JSON.parse(stored) : null
 
 const rolePermissions: Record<AppRole, AdminPermission[]> = {
-  ADMIN: ['dashboard', 'reportes', 'productos', 'ordenes', 'usuarios', 'categorias', 'banners', 'configuracion', 'cupones', 'resenas'],
-  VENDEDOR: ['dashboard', 'ordenes', 'cupones', 'resenas'],
+  ADMIN: ['dashboard', 'reportes', 'productos', 'ordenes', 'usuarios', 'categorias', 'banners', 'configuracion', 'cupones', 'resenas', 'descuentos'],
+  VENDEDOR: ['dashboard', 'ordenes', 'cupones', 'resenas', 'descuentos'],
   BODEGUERO: ['dashboard', 'productos'],
   CLIENTE: [],
 }

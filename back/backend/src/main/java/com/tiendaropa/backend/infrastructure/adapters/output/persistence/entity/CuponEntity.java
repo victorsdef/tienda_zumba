@@ -40,6 +40,12 @@ public class CuponEntity {
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
+    @Column(name = "producto_id")
+    private Long productoId;
+
+    @Column(name = "categoria_id")
+    private Long categoriaId;
+
     @PrePersist
     public void prePersist() {
         if (fechaCreacion == null) fechaCreacion = LocalDateTime.now();

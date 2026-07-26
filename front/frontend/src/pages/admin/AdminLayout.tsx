@@ -19,6 +19,7 @@ const NAV: Array<{
   { to: '/admin/ordenes',       label: 'Órdenes',       Icon: IconPackage,  exact: false, permission: 'ordenes' },
   { to: '/admin/usuarios',      label: 'Usuarios',      Icon: IconUsers,    exact: false, permission: 'usuarios' },
   { to: '/admin/cupones',       label: 'Cupones',       Icon: IconPackage,  exact: false, permission: 'cupones' },
+  { to: '/admin/descuentos',    label: 'Descuentos',    Icon: IconHanger,   exact: false, permission: 'descuentos' },
   { to: '/admin/resenas',       label: 'Reseñas',       Icon: IconGrid,     exact: false, permission: 'resenas' },
   { to: '/admin/configuracion', label: 'Configuración', Icon: IconSettings, exact: false, permission: 'configuracion' },
 ]
@@ -40,6 +41,7 @@ const ROUTE_PERMISSION_RULES: Array<{ startsWith: string; permission: AdminPermi
   { startsWith: '/admin/productos', permission: 'productos' },
   { startsWith: '/admin/ordenes', permission: 'ordenes' },
   { startsWith: '/admin/cupones', permission: 'cupones' },
+  { startsWith: '/admin/descuentos', permission: 'descuentos' },
   { startsWith: '/admin/resenas', permission: 'resenas' },
   { startsWith: '/admin', permission: 'dashboard' },
 ]

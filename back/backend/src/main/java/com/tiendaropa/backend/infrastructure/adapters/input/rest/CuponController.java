@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +45,8 @@ public class CuponController {
             c.setMaxUsos(body.getMaxUsos());
             c.setActivo(body.isActivo());
             c.setFechaExpiracion(body.getFechaExpiracion());
+            c.setProductoId(body.getProductoId());
+            c.setCategoriaId(body.getCategoriaId());
             return ResponseEntity.ok(repo.save(c));
         }).orElse(ResponseEntity.notFound().build());
     }
@@ -67,7 +70,12 @@ public class CuponController {
     @GetMapping("/validar")
     public ResponseEntity<Map<String, Object>> validar(
             @RequestParam String codigo,
-            @RequestParam(required = false, defaultValue = "0") BigDecimal subtotal) {
+            @RequestParam(required = false, defaultValue = "0") BigDecimal subtotal,
+            @RequestParam(required = false) List<Long> productoIds,
+            @RequestParam(required = false) List<Long> categoriaIds) {
+
+        if (productoIds == null) productoIds = new ArrayList<>();
+        if (categoriaIds == null) categoriaIds = new ArrayList<>();
 
         Optional<CuponEntity> opt = repo.findByCodigoIgnoreCase(codigo.trim());
         if (opt.isEmpty()) {
@@ -93,6 +101,17 @@ public class CuponController {
             err.put("error", "El pedido mínimo para este cupón es $" + c.getMontoMinimo().toPlainString());
             return ResponseEntity.badRequest().body(err);
         }
+        // Verificar restricción por producto o categoría
+        if (c.getProductoId() != null && !productoIds.isEmpty() && !productoIds.contains(c.getProductoId())) {
+            Map<String, Object> err = new HashMap<>();
+            err.put("error", "Este cupón solo aplica a un producto específico que no está en tu carrito");
+            return ResponseEntity.badRequest().body(err);
+        }
+        if (c.getCategoriaId() != null && !categoriaIds.isEmpty() && !categoriaIds.contains(c.getCategoriaId())) {
+            Map<String, Object> err = new HashMap<>();
+            err.put("error", "Este cupón solo aplica a una categoría específica que no está en tu carrito");
+            return ResponseEntity.badRequest().body(err);
+        }
         BigDecimal descuento = "PORCENTAJE".equals(c.getTipo())
             ? subtotal.multiply(c.getValor()).divide(BigDecimal.valueOf(100))
             : c.getValor();
@@ -104,6 +123,8 @@ public class CuponController {
         body.put("tipo", c.getTipo());
         body.put("valor", c.getValor());
         body.put("descuento", descuento.setScale(2, java.math.RoundingMode.HALF_UP));
+        if (c.getProductoId() != null) body.put("productoId", c.getProductoId());
+        if (c.getCategoriaId() != null) body.put("categoriaId", c.getCategoriaId());
         return ResponseEntity.ok(body);
     }
 

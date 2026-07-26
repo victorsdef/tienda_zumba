@@ -99,8 +99,9 @@ export default function Checkout() {
     if (!codigoCupon.trim()) return
     setValidandoCupon(true)
     setCuponError('')
+    const productoIds = carritoActivo.items.map(i => i.productoId)
     try {
-      const res = await validarCupon(codigoCupon.trim(), subtotal)
+      const res = await validarCupon(codigoCupon.trim(), subtotal, productoIds)
       if ('error' in res) {
         setCuponError(res.error as string)
         setCuponAplicado(null)

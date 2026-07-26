@@ -26,6 +26,7 @@ import AdminHomeEditor from '@pages/admin/AdminHomeEditor'
 import AdminReportes from '@pages/admin/AdminReportes'
 import AdminCupones from '@pages/admin/AdminCupones'
 import AdminResenas from '@pages/admin/AdminResenas'
+import AdminDescuentos from '@pages/admin/AdminDescuentos'
 import WishlistPage from '@pages/WishlistPage'
 import VerificarEmail from '@pages/VerificarEmail'
 import OrdenConfirmada from '@pages/OrdenConfirmada'
@@ -93,6 +94,7 @@ export default function App() {
             <Route path="home-editor" element={<AdminHomeEditor />} />
             <Route path="cupones" element={<AdminCupones />} />
             <Route path="resenas" element={<AdminResenas />} />
+            <Route path="descuentos" element={<AdminDescuentos />} />
           </Route>
 
           {/* Auth */}

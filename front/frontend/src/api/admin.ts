@@ -81,6 +81,8 @@ export interface Cupon {
   activo: boolean
   fechaExpiracion?: string
   fechaCreacion?: string
+  productoId?: number
+  categoriaId?: number
 }
 
 export const getCupones = () => api.get<Cupon[]>('/cupones/admin').then(r => r.data)
@@ -88,10 +90,19 @@ export const crearCupon = (data: Cupon) => api.post<Cupon>('/cupones/admin', dat
 export const actualizarCupon = (id: number, data: Cupon) => api.put<Cupon>(`/cupones/admin/${id}`, data).then(r => r.data)
 export const eliminarCupon = (id: number) => api.delete(`/cupones/admin/${id}`)
 export const toggleCupon = (id: number) => api.patch<Cupon>(`/cupones/admin/${id}/toggle`).then(r => r.data)
-export const validarCupon = (codigo: string, subtotal: number) =>
-  api.get<{ id: number; codigo: string; tipo: string; valor: number; descuento: number } | { error: string }>(
-    `/cupones/validar?codigo=${encodeURIComponent(codigo)}&subtotal=${subtotal}`
+export const validarCupon = (
+  codigo: string,
+  subtotal: number,
+  productoIds: number[] = [],
+  categoriaIds: number[] = [],
+) => {
+  const params = new URLSearchParams({ codigo, subtotal: String(subtotal) })
+  productoIds.forEach(id => params.append('productoIds', String(id)))
+  categoriaIds.forEach(id => params.append('categoriaIds', String(id)))
+  return api.get<{ id: number; codigo: string; tipo: string; valor: number; descuento: number } | { error: string }>(
+    `/cupones/validar?${params}`
   ).then(r => r.data)
+}
 
 // ── Reseñas admin ────────────────────────────────────────────────────
 export interface ResenaAdmin {
