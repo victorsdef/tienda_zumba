@@ -92,7 +92,7 @@ public class CuponController {
                     "descuento", descuento.setScale(2, java.math.RoundingMode.HALF_UP)
                 ));
             })
-            .orElse(ResponseEntity.badRequest().body(Map.of("error", "Cupón no encontrado")));
+            .orElse(ResponseEntity.badRequest().<Map<String, Object>>body(Map.of("error", "Cupón no encontrado")));
     }
 
     // ── Aplicar uso (llamado internamente al crear orden) ───────────

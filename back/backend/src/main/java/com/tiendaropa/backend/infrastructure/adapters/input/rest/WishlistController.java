@@ -50,22 +50,28 @@ public class WishlistController {
         return repo.findByUsuarioIdAndProductoId(usuarioId, productoId)
             .map(item -> {
                 repo.delete(item);
-                return ResponseEntity.ok(Map.of("agregado", false));
+                Map<String, Object> body = new HashMap<>();
+                body.put("agregado", false);
+                return ResponseEntity.ok(body);
             })
             .orElseGet(() -> {
                 WishlistItemEntity item = new WishlistItemEntity();
                 item.setUsuarioId(usuarioId);
                 item.setProductoId(productoId);
                 repo.save(item);
-                return ResponseEntity.ok(Map.of("agregado", true));
+                Map<String, Object> body = new HashMap<>();
+                body.put("agregado", true);
+                return ResponseEntity.ok(body);
             });
     }
 
     @GetMapping("/check")
-    public ResponseEntity<Map<String, Boolean>> check(
+    public ResponseEntity<Map<String, Object>> check(
             @RequestParam Long usuarioId,
             @RequestParam Long productoId) {
         boolean existe = repo.findByUsuarioIdAndProductoId(usuarioId, productoId).isPresent();
-        return ResponseEntity.ok(Map.of("enWishlist", existe));
+        Map<String, Object> body = new HashMap<>();
+        body.put("enWishlist", existe);
+        return ResponseEntity.ok(body);
     }
 }
