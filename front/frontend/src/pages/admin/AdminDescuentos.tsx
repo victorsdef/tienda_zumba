@@ -1,7 +1,10 @@
 import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProductos, actualizarProducto } from '../../api/productos'
+import { hexToNombre } from '../../components/ui/colores'
 import type { Producto } from '../../types'
+
+const getNombreColor = (hex: string) => hexToNombre(hex)
 
 // clave única por celda: "prodId-color-talla"
 type CeldaKey = string
@@ -140,12 +143,15 @@ export default function AdminDescuentos() {
         <div className="space-y-3">
           {productos.map(p => {
             const pct = p.precioPorColorTalla
-            const esPorColor = pct && Object.keys(pct).length > 0
+            const coloresPCT = pct ? Object.keys(pct).filter(k => k !== '_') : []
+            // "_" = precios por talla sin colores
+            const esPorTallaSinColor = !!pct?.['_'] && coloresPCT.length === 0
+            const esPorColor = coloresPCT.length > 0
             const abierto = abiertos[p.id] ?? false
             const imagen = getImagen(p)
 
-            // ── Producto simple ────────────────────────────────────────
-            if (!esPorColor) {
+            // ── Producto simple (sin tallas ni colores con precio) ─────
+            if (!esPorColor && !esPorTallaSinColor) {
               const actual = p.precio ?? 0
               const lista = p.precioOriginal && p.precioOriginal > actual ? p.precioOriginal : actual
               const conDesc = lista > actual
@@ -203,11 +209,97 @@ export default function AdminDescuentos() {
               )
             }
 
+            // ── Producto con tallas sin color ─────────────────────────
+            if (esPorTallaSinColor) {
+              const preciosPorTalla = pct!['_']
+              const tallas = Object.keys(preciosPorTalla).sort((a, b) => {
+                const n = (v: string) => isNaN(Number(v)) ? v.charCodeAt(0) : Number(v)
+                return n(a) - n(b)
+              })
+              return (
+                <div key={p.id} className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all ${abierto ? 'border-[#7d5c48] ring-2 ring-[#7d5c48]/20' : 'border-gray-200 hover:border-gray-300'}`}>
+                  <button className="w-full flex items-center gap-3 p-4 text-left" onClick={() => setAbiertos(prev => ({ ...prev, [p.id]: !prev[p.id] }))}>
+                    {imagen ? <img src={imagen} alt={p.nombre} className="w-12 h-14 object-cover rounded-xl flex-shrink-0" /> : <div className="w-12 h-14 bg-[#f5ede6] rounded-xl flex-shrink-0" />}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-800 text-sm line-clamp-1">{p.nombre}</p>
+                      <span className="text-xs text-[#7d5c48] bg-[#f5f0e8] px-2 py-0.5 rounded font-medium mt-1 inline-block">
+                        {tallas.length} talla{tallas.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <svg className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${abierto ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {abierto && (
+                    <div className="border-t border-gray-100 overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-[#f5f0e8]">
+                            {tallas.map(t => (
+                              <th key={t} className="px-3 py-2.5 text-xs font-semibold text-[#4a3728] text-center min-w-[130px]">Talla {t}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            {tallas.map(talla => {
+                              const precioActual = preciosPorTalla[talla]
+                              const k = celdaKey(p.id, '_', talla)
+                              const est = getCelda(k)
+                              const conDesc = !!est.precioOriginal && est.precioOriginal > precioActual
+                              const pctActual = conDesc ? Math.round((1 - precioActual / est.precioOriginal!) * 100) : 0
+                              const nuevo = est.descuento && Number(est.descuento) > 0 && Number(est.descuento) < 100
+                                ? parseFloat(((est.precioOriginal ?? precioActual) * (1 - Number(est.descuento) / 100)).toFixed(2))
+                                : null
+                              return (
+                                <td key={talla} className="px-3 py-3 border-r border-gray-100 last:border-0">
+                                  <div className="flex flex-col items-center gap-1.5">
+                                    <div className="flex items-center gap-1.5">
+                                      {conDesc ? (
+                                        <>
+                                          <span className="text-red-500 font-bold text-xs">${precioActual.toFixed(2)}</span>
+                                          <span className="bg-red-100 text-red-600 text-[10px] font-bold px-1 py-0.5 rounded">-{pctActual}%</span>
+                                        </>
+                                      ) : (
+                                        <span className="text-gray-700 font-semibold text-xs">${precioActual.toFixed(2)}</span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <div className="relative">
+                                        <input type="number" min="1" max="99" value={est.descuento}
+                                          onChange={e => patchCelda(k, { descuento: e.target.value })}
+                                          onKeyDown={e => e.key === 'Enter' && aplicarCelda(p, '_', talla, precioActual)}
+                                          placeholder={conDesc ? String(pctActual) : '%'}
+                                          className="w-16 border border-gray-200 rounded-lg px-2 py-1 text-xs pr-5 focus:outline-none focus:ring-1 focus:ring-[#7d5c48]/40 text-center" />
+                                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">%</span>
+                                      </div>
+                                      <button onClick={() => aplicarCelda(p, '_', talla, precioActual)}
+                                        disabled={guardando(p.id) || !est.descuento}
+                                        className="text-[10px] bg-[#4a3728] text-white px-1.5 py-1 rounded-lg hover:bg-[#3a2a1e] disabled:opacity-40">OK</button>
+                                    </div>
+                                    {nuevo !== null && <span className="text-[10px] text-green-600 font-semibold">${nuevo.toFixed(2)}</span>}
+                                    {conDesc && (
+                                      <button onClick={() => quitarCelda(p, '_', talla, precioActual)}
+                                        className="text-[10px] text-red-400 hover:text-red-600">Quitar</button>
+                                    )}
+                                  </div>
+                                </td>
+                              )
+                            })}
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
             // ── Producto con colores: tabla color × talla ──────────────
-            const colores = Object.keys(pct)
+            const colores = coloresPCT
             // Unión de todas las tallas que aparecen en algún color
             const tallasSet = new Set<string>()
-            for (const ts of Object.values(pct)) Object.keys(ts).forEach(t => tallasSet.add(t))
+            for (const [k, ts] of Object.entries(pct!)) { if (k !== '_') Object.keys(ts).forEach(t => tallasSet.add(t)) }
             const tallas = Array.from(tallasSet).sort((a, b) => {
               const n = (v: string) => isNaN(Number(v)) ? v.charCodeAt(0) : Number(v)
               return n(a) - n(b)
@@ -256,7 +348,7 @@ export default function AdminDescuentos() {
                                   {imgColor
                                     ? <img src={imgColor} alt={color} className="w-7 h-8 object-cover rounded-lg flex-shrink-0" />
                                     : <div className="w-7 h-8 bg-[#f0ebe3] rounded-lg flex-shrink-0" />}
-                                  <span className="text-xs font-semibold text-gray-700 leading-tight">{color}</span>
+                                  <span className="text-xs font-semibold text-gray-700 leading-tight">{getNombreColor(color)}</span>
                                 </div>
                               </td>
 

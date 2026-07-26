@@ -234,8 +234,11 @@ export default function AdminProductos() {
       colores,
       stockPorColor: colores.length > 0 ? stockPorColor : undefined,
       stockPorColorTalla: tallas.length > 0 ? stockPorColorTalla : undefined,
-      precioPorColorTalla: (tallas.length > 0 && colores.length > 0 && Object.keys(precioPorColorTalla).length > 0)
-        ? precioPorColorTalla : undefined,
+      precioPorColorTalla: (() => {
+        if (tallas.length > 0 && colores.length > 0 && Object.keys(precioPorColorTalla).length > 0) return precioPorColorTalla
+        if (tallas.length > 0 && colores.length === 0 && Object.keys(precioPorColorTalla['_'] ?? {}).length > 0) return { '_': precioPorColorTalla['_'] }
+        return undefined
+      })(),
     }
     editando ? updateMut.mutate({ id: editando.id, data: payload }) : createMut.mutate(payload)
   }
@@ -395,6 +398,101 @@ export default function AdminProductos() {
             onStockChange={setStockPorColor}
             onStockMatrixChange={setStockPorColorTalla}
           />
+
+          {/* Precio por talla sin color */}
+          {colores.length === 0 && tallas.length > 0 && (() => {
+            const preciosPorTalla = precioPorColorTalla['_'] ?? {}
+            const hayPrecios = Object.values(preciosPorTalla).some(v => v > 0)
+            const variantesConPrecio = tallas.filter(t => (preciosPorTalla[t] ?? 0) > 0)
+            return (
+              <div className="space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold text-gray-600 uppercase mb-0.5">Precio por talla</p>
+                    {!hayPrecios ? (
+                      <p className="text-xs text-gray-400">Opcional. Dejá vacío para usar un precio único para todo el producto.</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {variantesConPrecio.map(t => (
+                          <span key={t} className="inline-flex items-center gap-1 bg-[#f0e9df] border border-[#d9ccbb] rounded-full px-2 py-0.5 text-[11px] font-medium text-[#4a3728]">
+                            Talla {t}: <strong>${preciosPorTalla[t].toFixed(2)}</strong>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {hayPrecios && (
+                    <button type="button" onClick={() => setPrecioPorColorTalla(prev => { const n = { ...prev }; delete n['_']; return n })}
+                      className="text-[11px] text-red-400 hover:text-red-600 flex-shrink-0 mt-0.5">
+                      Limpiar todo
+                    </button>
+                  )}
+                </div>
+                <div className="rounded-xl border border-[#e7ddd0] overflow-hidden">
+                  <div className="grid bg-[#f5f0e8]" style={{ gridTemplateColumns: `repeat(${tallas.length}, 1fr)` }}>
+                    {tallas.map(t => (
+                      <div key={t} className="px-2 py-2 text-[10px] font-bold uppercase text-gray-500 text-center">Talla {t}</div>
+                    ))}
+                  </div>
+                  <div className="grid bg-white" style={{ gridTemplateColumns: `repeat(${tallas.length}, 1fr)` }}>
+                    {tallas.map(t => {
+                      const tienePrecio = (preciosPorTalla[t] ?? 0) > 0
+                      return (
+                        <div key={t} className="px-2 py-2 border-r border-[#e7ddd0] last:border-r-0">
+                          <div className="relative">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">$</span>
+                            <input
+                              type="number" step="0.01" min="0" placeholder="—"
+                              value={preciosPorTalla[t] ?? ''}
+                              onChange={e => {
+                                const val = e.target.value === '' ? undefined : Number(e.target.value)
+                                setPrecioPorColorTalla(prev => {
+                                  const next = { ...prev }
+                                  if (val === undefined || val === 0) {
+                                    if (next['_']) { const c = { ...next['_'] }; delete c[t]; next['_'] = c }
+                                  } else {
+                                    next['_'] = { ...(next['_'] ?? {}), [t]: val }
+                                  }
+                                  return next
+                                })
+                              }}
+                              className={`w-full border rounded-lg pl-5 pr-1 py-1.5 text-xs text-center focus:outline-none focus:border-[#a37c64] bg-transparent transition-colors ${
+                                tienePrecio ? 'border-[#a37c64] bg-[#faf7f2] font-semibold text-[#4a3728]' : 'border-gray-200'
+                              }`}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Comisión PayPhone por talla */}
+                {hayPrecios && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-sm">💳</span>
+                      <p className="text-xs font-semibold text-amber-800">Comisión PayPhone ({comisionPct}%) — lo que recibirás por talla</p>
+                    </div>
+                    <div className="grid gap-1">
+                      {variantesConPrecio.map(t => {
+                        const precio = preciosPorTalla[t]
+                        const cobran = precio * (comisionPct / 100)
+                        return (
+                          <div key={t} className="flex items-center gap-2 text-xs">
+                            <span className="text-amber-800 font-medium">Talla {t}</span>
+                            <span className="text-amber-600">${precio.toFixed(2)}</span>
+                            <span className="text-amber-500">− ${cobran.toFixed(2)}</span>
+                            <span className="ml-auto font-bold text-green-700">= ${(precio - cobran).toFixed(2)}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           {/* Precio por color + talla */}
           {colores.length > 0 && tallas.length > 0 && (() => {
