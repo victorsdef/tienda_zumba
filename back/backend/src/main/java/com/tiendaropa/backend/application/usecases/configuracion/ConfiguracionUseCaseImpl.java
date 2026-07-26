@@ -34,7 +34,11 @@ public class ConfiguracionUseCaseImpl implements ConfiguracionUseCase {
 
     @Override
     public Configuracion update(String clave, String valor) {
-        Configuracion c = repo.findById(clave).orElseThrow(() -> new RuntimeException("Clave no encontrada: " + clave));
+        Configuracion c = repo.findById(clave).orElseGet(() -> {
+            Configuracion nueva = new Configuracion();
+            nueva.setClave(clave);
+            return nueva;
+        });
         c.setValor(valor);
         return repo.save(c);
     }

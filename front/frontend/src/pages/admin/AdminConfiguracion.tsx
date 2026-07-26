@@ -104,11 +104,12 @@ export default function AdminConfiguracion() {
 
       {/* Tarjetas numéricas */}
       <div className="space-y-3">
-        {items.filter(i => LABELS[i.clave]?.tipo === 'numero').map(item => {
-          const meta = LABELS[item.clave] as Extract<ConfigMeta, { tipo: 'numero' }>
-          const estandoEditando = editando === item.clave
+        {Object.entries(LABELS).filter(([, m]) => m.tipo === 'numero').map(([clave, metaBase]) => {
+          const meta = metaBase as Extract<ConfigMeta, { tipo: 'numero' }>
+          const item = items.find(i => i.clave === clave)
+          const estandoEditando = editando === clave
           return (
-            <div key={item.clave} className={`bg-white border rounded-lg p-4 transition-all ${estandoEditando ? 'border-[#7d5c48] shadow-sm' : 'border-gray-200'}`}>
+            <div key={clave} className={`bg-white border rounded-lg p-4 transition-all ${estandoEditando ? 'border-[#7d5c48] shadow-sm' : 'border-gray-200'}`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-800 text-sm">{meta.label}</p>
@@ -117,10 +118,13 @@ export default function AdminConfiguracion() {
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {!estandoEditando ? (
                     <>
-                      <span className="text-lg font-bold text-[#7d5c48]">
-                        {meta.prefix}{Number(item.valor).toFixed(2)}{meta.suffix}
-                      </span>
-                      <button onClick={() => iniciarEdicion(item.clave, item.valor)} className="text-xs text-blue-600 hover:underline px-2 py-1">Editar</button>
+                      {item
+                        ? <span className="text-lg font-bold text-[#7d5c48]">{meta.prefix}{Number(item.valor).toFixed(2)}{meta.suffix}</span>
+                        : <span className="text-xs text-gray-400 italic">Sin configurar</span>
+                      }
+                      <button onClick={() => iniciarEdicion(clave, item?.valor ?? '')} className="text-xs text-blue-600 hover:underline px-2 py-1">
+                        {item ? 'Editar' : 'Agregar'}
+                      </button>
                     </>
                   ) : (
                     <div className="flex items-center gap-2">
@@ -131,15 +135,15 @@ export default function AdminConfiguracion() {
                           onChange={e => setValor(e.target.value)}
                           className={`input-field w-24 text-right ${meta.prefix ? 'pl-5' : ''}`}
                           autoFocus
-                          onKeyDown={e => { if (e.key === 'Enter') guardar(item.clave); if (e.key === 'Escape') setEditando(null) }}
+                          onKeyDown={e => { if (e.key === 'Enter') guardar(clave); if (e.key === 'Escape') setEditando(null) }}
                         />
                         {meta.suffix && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{meta.suffix}</span>}
                       </div>
-                      <button onClick={() => guardar(item.clave)} disabled={updateMut.isPending} className="btn-primary text-xs py-1.5 px-3">Guardar</button>
+                      <button onClick={() => guardar(clave)} disabled={updateMut.isPending} className="btn-primary text-xs py-1.5 px-3">Guardar</button>
                       <button onClick={() => setEditando(null)} className="text-xs text-gray-400 hover:text-gray-600">X</button>
                     </div>
                   )}
-                  {ok === item.clave && <span className="text-xs text-green-600 font-medium">Guardado</span>}
+                  {ok === clave && <span className="text-xs text-green-600 font-medium">Guardado</span>}
                 </div>
               </div>
             </div>
@@ -152,21 +156,25 @@ export default function AdminConfiguracion() {
         <h2 className="text-base font-bold text-gray-800 mb-1">Retiro en tienda — Cuenca</h2>
         <p className="text-xs text-gray-400 mb-3">Esta información se muestra al cliente cuando elige retirar en tienda y en el mensaje de WhatsApp.</p>
         <div className="space-y-3">
-          {items.filter(i => LABELS[i.clave]?.tipo === 'texto').map(item => {
-            const meta = LABELS[item.clave] as Extract<ConfigMeta, { tipo: 'texto' }>
-            const estandoEditando = editando === item.clave
+          {Object.entries(LABELS).filter(([, m]) => m.tipo === 'texto').map(([clave, metaBase]) => {
+            const meta = metaBase as Extract<ConfigMeta, { tipo: 'texto' }>
+            const item = items.find(i => i.clave === clave)
+            const estandoEditando = editando === clave
             return (
-              <div key={item.clave} className={`bg-white border rounded-lg p-4 transition-all ${estandoEditando ? 'border-[#7d5c48] shadow-sm' : 'border-gray-200'}`}>
+              <div key={clave} className={`bg-white border rounded-lg p-4 transition-all ${estandoEditando ? 'border-[#7d5c48] shadow-sm' : 'border-gray-200'}`}>
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-800 text-sm">{meta.label}</p>
                     <p className="text-xs text-gray-400 mt-0.5">{meta.hint}</p>
+                    {item && <p className="text-sm text-[#7d5c48] font-medium mt-1 break-words">{item.valor}</p>}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {!estandoEditando ? (
                       <>
-                        <span className="text-sm text-[#7d5c48] font-medium max-w-xs truncate">{item.valor}</span>
-                        <button onClick={() => iniciarEdicion(item.clave, item.valor)} className="text-xs text-blue-600 hover:underline px-2 py-1">Editar</button>
+                        {!item && <span className="text-xs text-gray-400 italic">Sin configurar</span>}
+                        <button onClick={() => iniciarEdicion(clave, item?.valor ?? '')} className="text-xs text-blue-600 hover:underline px-2 py-1">
+                          {item ? 'Editar' : 'Agregar'}
+                        </button>
                       </>
                     ) : (
                       <div className="flex items-center gap-2">
@@ -176,13 +184,13 @@ export default function AdminConfiguracion() {
                           placeholder={meta.placeholder}
                           className="input-field w-64 text-sm"
                           autoFocus
-                          onKeyDown={e => { if (e.key === 'Enter') guardar(item.clave); if (e.key === 'Escape') setEditando(null) }}
+                          onKeyDown={e => { if (e.key === 'Enter') guardar(clave); if (e.key === 'Escape') setEditando(null) }}
                         />
-                        <button onClick={() => guardar(item.clave)} disabled={updateMut.isPending} className="btn-primary text-xs py-1.5 px-3">Guardar</button>
+                        <button onClick={() => guardar(clave)} disabled={updateMut.isPending} className="btn-primary text-xs py-1.5 px-3">Guardar</button>
                         <button onClick={() => setEditando(null)} className="text-xs text-gray-400 hover:text-gray-600">X</button>
                       </div>
                     )}
-                    {ok === item.clave && <span className="text-xs text-green-600 font-medium">Guardado</span>}
+                    {ok === clave && <span className="text-xs text-green-600 font-medium">Guardado</span>}
                   </div>
                 </div>
               </div>
