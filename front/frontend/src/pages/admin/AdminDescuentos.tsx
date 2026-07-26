@@ -3,16 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProductos, actualizarProducto } from '../../api/productos'
 import type { Producto } from '../../types'
 
-// Una "fila" puede ser el producto simple o una variante de color
-type FilaSimple = { tipo: 'simple'; producto: Producto }
-type FilaColor  = { tipo: 'color';  producto: Producto; color: string; precios: Record<string, number> }
-type Fila = FilaSimple | FilaColor
-
-type FilaEstado = {
-  descuento: string
-  abierto: boolean
-  originalPrecios?: Record<string, number> // para restaurar colores individuales
-}
+// clave única por celda: "prodId-color-talla"
+type CeldaKey = string
+type EstadoCelda = { descuento: string; precioOriginal?: number }
 
 function getImagen(p: Producto, color?: string): string | null {
   if (color && p.imagenesPorColor?.[color]?.[0]) return p.imagenesPorColor[color][0]
@@ -20,31 +13,17 @@ function getImagen(p: Producto, color?: string): string | null {
   return Object.values(p.imagenesPorColor ?? {}).find(imgs => imgs?.length)?.[0] ?? null
 }
 
-function precioMinimoDeColor(precios: Record<string, number>): number {
-  const vals = Object.values(precios)
-  return vals.length ? Math.min(...vals) : 0
-}
-
-// Calcula precio actual y precio lista para la fila
-function getPreciosFilaSimple(p: Producto): { actual: number; lista: number; conDesc: boolean } {
-  const actual = p.precio ?? 0
-  const lista = p.precioOriginal && p.precioOriginal > actual ? p.precioOriginal : actual
-  return { actual, lista, conDesc: lista > actual }
-}
-
-// clave única para el estado de cada fila
-function keyFila(f: Fila): string {
-  return f.tipo === 'simple' ? `s-${f.producto.id}` : `c-${f.producto.id}-${f.color}`
-}
-
 export default function AdminDescuentos() {
   const qc = useQueryClient()
   const [pagina, setPagina] = useState(0)
   const [inputBusqueda, setInputBusqueda] = useState('')
   const [busqueda, setBusqueda] = useState('')
-  const [estados, setEstados] = useState<Record<string, FilaEstado>>({})
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [abiertos, setAbiertos] = useState<Record<number, boolean>>({})
+  const [celdas, setCeldas] = useState<Record<CeldaKey, EstadoCelda>>({})
+  // para productos simples
+  const [simples, setSimples] = useState<Record<number, string>>({})
 
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const handleBusqueda = (val: string) => {
     setInputBusqueda(val)
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -55,114 +34,88 @@ export default function AdminDescuentos() {
     queryKey: ['productos-desc', pagina, busqueda],
     queryFn: () => getProductos({ page: pagina, size: 20, nombre: busqueda || undefined }),
   })
-
   const productos = data?.content ?? []
   const totalPaginas = data?.totalPages ?? 1
-
-  // Expandir productos con colores en filas separadas
-  const filas: Fila[] = productos.flatMap((p): Fila[] => {
-    const pct = p.precioPorColorTalla
-    if (pct && Object.keys(pct).length > 0) {
-      return Object.entries(pct).map(([color, precios]): FilaColor => ({
-        tipo: 'color',
-        producto: p,
-        color,
-        precios,
-      }))
-    }
-    return [{ tipo: 'simple', producto: p }]
-  })
 
   const actualizarMut = useMutation({
     mutationFn: ({ id, upd }: { id: number; upd: Partial<Producto> }) => actualizarProducto(id, upd),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['productos-desc'] }),
   })
 
-  const getEstado = (key: string, descInicial: string): FilaEstado =>
-    estados[key] ?? { descuento: descInicial, abierto: false }
+  const guardando = (id: number) =>
+    actualizarMut.isPending && (actualizarMut.variables as { id: number })?.id === id
 
-  const patchEstado = (key: string, patch: Partial<FilaEstado>) =>
-    setEstados(prev => ({ ...prev, [key]: { ...(prev[key] ?? { descuento: '', abierto: false }), ...patch } }))
+  const celdaKey = (prodId: number, color: string, talla: string): CeldaKey => `${prodId}|${color}|${talla}`
 
-  // ── Aplicar descuento ──────────────────────────────────────────────
+  const getCelda = (k: CeldaKey): EstadoCelda => celdas[k] ?? { descuento: '' }
 
-  const aplicarSimple = (p: Producto, pct: number) => {
-    const lista = p.precioOriginal && p.precioOriginal > (p.precio ?? 0) ? p.precioOriginal : (p.precio ?? 0)
-    const nuevo = parseFloat((lista * (1 - pct / 100)).toFixed(2))
-    actualizarMut.mutate({ id: p.id, upd: { precio: nuevo, precioOriginal: lista } })
-  }
+  const patchCelda = (k: CeldaKey, patch: Partial<EstadoCelda>) =>
+    setCeldas(prev => ({ ...prev, [k]: { ...getCelda(k), ...patch } }))
 
-  const aplicarColor = (p: Producto, color: string, preciosActuales: Record<string, number>, pct: number) => {
-    // precios lista de este color = los actuales (si hay precioOriginal ya aplicado, usar eso; sino actuales)
-    // guardamos los originales en estado antes de sobreescribir
-    const factor = 1 - pct / 100
-    const nuevosPrecios: Record<string, number> = {}
-    for (const [talla, precio] of Object.entries(preciosActuales)) {
-      nuevosPrecios[talla] = parseFloat((precio * factor).toFixed(2))
-    }
+  // Aplica descuento a UNA celda (color+talla)
+  const aplicarCelda = (p: Producto, color: string, talla: string, precioActual: number) => {
+    const k = celdaKey(p.id, color, talla)
+    const est = getCelda(k)
+    const pct = Number(est.descuento)
+    if (!pct || pct <= 0 || pct >= 100) return
+
+    const precioLista = est.precioOriginal ?? precioActual
+    const nuevo = parseFloat((precioLista * (1 - pct / 100)).toFixed(2))
+
     const nuevoPCT = {
       ...(p.precioPorColorTalla ?? {}),
-      [color]: nuevosPrecios,
+      [color]: { ...(p.precioPorColorTalla?.[color] ?? {}), [talla]: nuevo },
     }
-    // precio general = mínimo de todos los colores con el nuevo
-    const todosPrecios = Object.values(nuevoPCT).flatMap(t => Object.values(t))
-    const minPrecio = Math.min(...todosPrecios)
-    const minOriginal = precioMinimoDeColor(preciosActuales)
-    const precioOrigGlobal = p.precioOriginal && p.precioOriginal > 0 ? p.precioOriginal : minOriginal
+    const todos = Object.values(nuevoPCT).flatMap(t => Object.values(t))
 
+    patchCelda(k, { precioOriginal: precioLista })
     actualizarMut.mutate({
       id: p.id,
       upd: {
         precioPorColorTalla: nuevoPCT,
-        precioOriginal: Math.max(precioOrigGlobal, minOriginal),
-        precio: minPrecio,
+        precio: Math.min(...todos),
+        precioOriginal: p.precioOriginal && p.precioOriginal > 0 ? p.precioOriginal : precioLista,
       },
     })
   }
 
-  const handleAplicar = (fila: Fila, key: string) => {
-    const estado = getEstado(key, '')
-    const pct = Number(estado.descuento)
-    if (!pct || pct <= 0 || pct >= 100) return
-    patchEstado(key, { abierto: false, originalPrecios: fila.tipo === 'color' ? fila.precios : undefined })
-    if (fila.tipo === 'simple') aplicarSimple(fila.producto, pct)
-    else aplicarColor(fila.producto, fila.color, fila.precios, pct)
-  }
+  // Quita el descuento de UNA celda
+  const quitarCelda = (p: Producto, color: string, talla: string, precioActual: number) => {
+    const k = celdaKey(p.id, color, talla)
+    const est = getCelda(k)
+    const original = est.precioOriginal ?? precioActual
 
-  // ── Quitar descuento ───────────────────────────────────────────────
+    const nuevoPCT = {
+      ...(p.precioPorColorTalla ?? {}),
+      [color]: { ...(p.precioPorColorTalla?.[color] ?? {}), [talla]: original },
+    }
+    const todos = Object.values(nuevoPCT).flatMap(t => Object.values(t))
 
-  const quitarSimple = (p: Producto) => {
-    actualizarMut.mutate({ id: p.id, upd: { precio: p.precioOriginal ?? p.precio, precioOriginal: 0 } })
-  }
-
-  const quitarColor = (p: Producto, color: string, preciosActuales: Record<string, number>, key: string) => {
-    const estado = getEstado(key, '')
-    const pct = Number(estado.descuento) || 0
-    const factor = pct > 0 ? 1 / (1 - pct / 100) : 1
-    const originales = estado.originalPrecios
-      ?? Object.fromEntries(Object.entries(preciosActuales).map(([t, pr]) => [t, parseFloat((pr * factor).toFixed(2))]))
-    const nuevoPCT = { ...(p.precioPorColorTalla ?? {}), [color]: originales }
-    const todosPrecios = Object.values(nuevoPCT).flatMap(t => Object.values(t))
     actualizarMut.mutate({
       id: p.id,
-      upd: { precioPorColorTalla: nuevoPCT, precio: Math.min(...todosPrecios), precioOriginal: 0 },
+      upd: { precioPorColorTalla: nuevoPCT, precio: Math.min(...todos) },
     })
-    setEstados(prev => { const n = { ...prev }; delete n[key]; return n })
+    setCeldas(prev => { const n = { ...prev }; delete n[k]; return n })
   }
 
-  const handleQuitar = (fila: Fila, key: string) => {
-    if (fila.tipo === 'simple') quitarSimple(fila.producto)
-    else quitarColor(fila.producto, fila.color, fila.precios, key)
-    setEstados(prev => { const n = { ...prev }; delete n[key]; return n })
+  // Producto simple
+  const aplicarSimple = (p: Producto) => {
+    const pct = Number(simples[p.id] ?? '')
+    if (!pct || pct <= 0 || pct >= 100) return
+    const lista = p.precioOriginal && p.precioOriginal > (p.precio ?? 0) ? p.precioOriginal : (p.precio ?? 0)
+    actualizarMut.mutate({ id: p.id, upd: { precio: parseFloat((lista * (1 - pct / 100)).toFixed(2)), precioOriginal: lista } })
+    setAbiertos(prev => ({ ...prev, [p.id]: false }))
+  }
+  const quitarSimple = (p: Producto) => {
+    actualizarMut.mutate({ id: p.id, upd: { precio: p.precioOriginal ?? p.precio, precioOriginal: 0 } })
+    setSimples(prev => { const n = { ...prev }; delete n[p.id]; return n })
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto">
       <div className="mb-6">
         <h1 className="text-xl font-bold text-gray-800">Descuentos en productos</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Los productos con colores se muestran por variante. Haz clic para abrir las opciones.
-        </p>
+        <p className="text-sm text-gray-500 mt-0.5">Aplica descuentos por producto, color o talla individual</p>
       </div>
 
       <div className="mb-5">
@@ -175,140 +128,212 @@ export default function AdminDescuentos() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {[1,2,3,4,5,6].map(i => <div key={i} className="h-20 bg-gray-100 rounded-2xl animate-pulse" />)}
+        <div className="space-y-3">
+          {[1,2,3,4].map(i => <div key={i} className="h-20 bg-gray-100 rounded-2xl animate-pulse" />)}
         </div>
-      ) : filas.length === 0 ? (
+      ) : productos.length === 0 ? (
         <div className="text-center py-20 text-gray-400">
           <p className="text-4xl mb-3">🏷️</p>
           <p className="font-medium">No se encontraron productos</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {filas.map(fila => {
-            const key = keyFila(fila)
-            const p = fila.producto
+        <div className="space-y-3">
+          {productos.map(p => {
+            const pct = p.precioPorColorTalla
+            const esPorColor = pct && Object.keys(pct).length > 0
+            const abierto = abiertos[p.id] ?? false
+            const imagen = getImagen(p)
 
-            // ── Fila simple ──────────────────────────────────────────
-            if (fila.tipo === 'simple') {
-              const { actual, lista, conDesc } = getPreciosFilaSimple(p)
-              const pct = conDesc ? Math.round((1 - actual / lista) * 100) : 0
-              const estado = getEstado(key, pct > 0 ? String(pct) : '')
-              const imagen = getImagen(p)
-              const guardando = actualizarMut.isPending && (actualizarMut.variables as {id:number})?.id === p.id
+            // ── Producto simple ────────────────────────────────────────
+            if (!esPorColor) {
+              const actual = p.precio ?? 0
+              const lista = p.precioOriginal && p.precioOriginal > actual ? p.precioOriginal : actual
+              const conDesc = lista > actual
+              const descPct = conDesc ? Math.round((1 - actual / lista) * 100) : 0
+              const descInput = simples[p.id] ?? (descPct > 0 ? String(descPct) : '')
 
               return (
-                <div key={key} className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all ${estado.abierto ? 'border-[#7d5c48] ring-2 ring-[#7d5c48]/20' : 'border-gray-200 hover:border-gray-300'}`}>
-                  <button className="w-full flex items-center gap-3 p-3 text-left" onClick={() => patchEstado(key, { abierto: !estado.abierto })}>
-                    {imagen
-                      ? <img src={imagen} alt={p.nombre} className="w-12 h-14 object-cover rounded-xl flex-shrink-0" />
-                      : <div className="w-12 h-14 bg-[#f5ede6] rounded-xl flex-shrink-0" />}
+                <div key={p.id} className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all ${abierto ? 'border-[#7d5c48] ring-2 ring-[#7d5c48]/20' : 'border-gray-200 hover:border-gray-300'}`}>
+                  <button className="w-full flex items-center gap-3 p-4 text-left" onClick={() => setAbiertos(prev => ({ ...prev, [p.id]: !prev[p.id] }))}>
+                    {imagen ? <img src={imagen} alt={p.nombre} className="w-12 h-14 object-cover rounded-xl flex-shrink-0" /> : <div className="w-12 h-14 bg-[#f5ede6] rounded-xl flex-shrink-0" />}
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-800 text-sm line-clamp-2">{p.nombre}</p>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <p className="font-semibold text-gray-800 text-sm line-clamp-1">{p.nombre}</p>
+                      <div className="flex items-center gap-2 mt-1">
                         {conDesc ? (
                           <>
                             <span className="text-red-500 font-bold text-sm">${actual.toFixed(2)}</span>
                             <span className="text-gray-400 line-through text-xs">${lista.toFixed(2)}</span>
-                            <span className="bg-red-100 text-red-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">-{pct}%</span>
+                            <span className="bg-red-100 text-red-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">-{descPct}%</span>
                           </>
                         ) : (
                           <span className="text-gray-700 font-semibold text-sm">${actual.toFixed(2)}</span>
                         )}
                       </div>
                     </div>
-                    <svg className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${estado.abierto ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${abierto ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
-
-                  {estado.abierto && (
+                  {abierto && (
                     <div className="border-t border-gray-100 px-4 py-4 bg-[#fafaf9]">
-                      <PanelDescuento
-                        descuento={estado.descuento}
-                        conDesc={conDesc}
-                        pctActual={pct}
-                        precioLista={lista}
-                        guardando={guardando}
-                        onChange={v => patchEstado(key, { descuento: v })}
-                        onAplicar={() => handleAplicar(fila, key)}
-                        onQuitar={() => handleQuitar(fila, key)}
-                      />
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <input type="number" min="1" max="99" value={descInput}
+                            onChange={e => setSimples(prev => ({ ...prev, [p.id]: e.target.value }))}
+                            onKeyDown={e => e.key === 'Enter' && aplicarSimple(p)}
+                            placeholder="0" autoFocus
+                            className="w-24 border border-gray-200 rounded-xl px-3 py-2 text-sm pr-7 focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30"
+                          />
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+                        </div>
+                        <button onClick={() => aplicarSimple(p)} disabled={guardando(p.id) || !descInput}
+                          className="bg-[#4a3728] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#3a2a1e] disabled:opacity-40">
+                          {guardando(p.id) ? '...' : conDesc ? 'Cambiar' : 'Aplicar'}
+                        </button>
+                        {conDesc && <button onClick={() => quitarSimple(p)} className="text-sm text-red-500 hover:text-red-700">Quitar</button>}
+                      </div>
+                      {descInput && Number(descInput) > 0 && Number(descInput) < 100 && (
+                        <p className="text-xs text-gray-400 mt-2">
+                          Precio resultante: <strong className="text-gray-700">${(lista * (1 - Number(descInput) / 100)).toFixed(2)}</strong>
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
               )
             }
 
-            // ── Fila color ───────────────────────────────────────────
-            const { color, precios } = fila
-            const imagen = getImagen(p, color)
-            const minPrecio = precioMinimoDeColor(precios)
-            // detectar si este color tiene descuento: comparar vs originalPrecios en estado
-            const estadoColor = getEstado(key, '')
-            const guardando = actualizarMut.isPending && (actualizarMut.variables as {id:number})?.id === p.id
-
-            // Para mostrar si ya tiene descuento: si hay originalPrecios guardados los comparamos
-            const originalPrecios = estadoColor.originalPrecios
-            const minOriginal = originalPrecios ? precioMinimoDeColor(originalPrecios) : minPrecio
-            const conDesc = minOriginal > minPrecio
-            const pct = conDesc && minOriginal > 0 ? Math.round((1 - minPrecio / minOriginal) * 100) : 0
-
-            const tallas = Object.keys(precios)
+            // ── Producto con colores: tabla color × talla ──────────────
+            const colores = Object.keys(pct)
+            // Unión de todas las tallas que aparecen en algún color
+            const tallasSet = new Set<string>()
+            for (const ts of Object.values(pct)) Object.keys(ts).forEach(t => tallasSet.add(t))
+            const tallas = Array.from(tallasSet).sort((a, b) => {
+              const n = (v: string) => isNaN(Number(v)) ? v.charCodeAt(0) : Number(v)
+              return n(a) - n(b)
+            })
 
             return (
-              <div key={key} className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all ${estadoColor.abierto ? 'border-[#7d5c48] ring-2 ring-[#7d5c48]/20' : 'border-gray-200 hover:border-gray-300'}`}>
-                <button className="w-full flex items-center gap-3 p-3 text-left" onClick={() => patchEstado(key, { abierto: !estadoColor.abierto })}>
-                  {imagen
-                    ? <img src={imagen} alt={`${p.nombre} ${color}`} className="w-12 h-14 object-cover rounded-xl flex-shrink-0" />
-                    : <div className="w-12 h-14 bg-[#f5ede6] rounded-xl flex-shrink-0" />}
+              <div key={p.id} className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all ${abierto ? 'border-[#7d5c48] ring-2 ring-[#7d5c48]/20' : 'border-gray-200 hover:border-gray-300'}`}>
+                {/* Cabecera */}
+                <button className="w-full flex items-center gap-3 p-4 text-left" onClick={() => setAbiertos(prev => ({ ...prev, [p.id]: !prev[p.id] }))}>
+                  {imagen ? <img src={imagen} alt={p.nombre} className="w-12 h-14 object-cover rounded-xl flex-shrink-0" /> : <div className="w-12 h-14 bg-[#f5ede6] rounded-xl flex-shrink-0" />}
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-800 text-sm line-clamp-1">{p.nombre}</p>
-                    <p className="text-xs text-[#7d5c48] font-medium mt-0.5">{color}</p>
-                    {/* Precios por talla */}
-                    <div className="flex flex-wrap gap-1.5 mt-1.5">
-                      {tallas.map(t => (
-                        <span key={t} className={`text-[11px] px-1.5 py-0.5 rounded border ${conDesc ? 'bg-red-50 border-red-100 text-red-600' : 'bg-gray-50 border-gray-100 text-gray-600'}`}>
-                          T{t}: <strong>${precios[t].toFixed(2)}</strong>
-                        </span>
-                      ))}
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className="text-xs text-[#7d5c48] bg-[#f5f0e8] px-2 py-0.5 rounded font-medium">
+                        {colores.length} color{colores.length !== 1 ? 'es' : ''} · {tallas.length} talla{tallas.length !== 1 ? 's' : ''}
+                      </span>
                     </div>
-                    {conDesc && (
-                      <span className="inline-block mt-1 bg-red-100 text-red-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">-{pct}%</span>
-                    )}
                   </div>
-                  <svg className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${estadoColor.abierto ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${abierto ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
 
-                {estadoColor.abierto && (
-                  <div className="border-t border-gray-100 px-4 py-4 bg-[#fafaf9]">
-                    <p className="text-xs text-gray-400 mb-3">El descuento se aplica a todas las tallas de este color</p>
-                    <PanelDescuento
-                      descuento={estadoColor.descuento}
-                      conDesc={conDesc}
-                      pctActual={pct}
-                      precioLista={minOriginal}
-                      guardando={guardando}
-                      onChange={v => patchEstado(key, { descuento: v })}
-                      onAplicar={() => handleAplicar(fila, key)}
-                      onQuitar={() => handleQuitar(fila, key)}
-                      mostrarPrevisualizacion={false}
-                    />
-                    {/* Previsualización de precios por talla */}
-                    {estadoColor.descuento && Number(estadoColor.descuento) > 0 && Number(estadoColor.descuento) < 100 && (
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {tallas.map(t => {
-                          const nuevo = parseFloat((precios[t] * (1 - Number(estadoColor.descuento) / 100)).toFixed(2))
+                {/* Tabla color × talla */}
+                {abierto && (
+                  <div className="border-t border-gray-100 overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-[#f5f0e8]">
+                          <th className="text-left px-4 py-2.5 text-xs font-semibold text-[#4a3728] min-w-[100px]">Color</th>
+                          {tallas.map(t => (
+                            <th key={t} className="px-3 py-2.5 text-xs font-semibold text-[#4a3728] text-center min-w-[130px]">
+                              Talla {t}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {colores.map(color => {
+                          const imgColor = getImagen(p, color)
                           return (
-                            <span key={t} className="text-[11px] px-2 py-1 rounded border border-green-100 bg-green-50 text-green-700">
-                              T{t}: <strong>${nuevo.toFixed(2)}</strong>
-                            </span>
+                            <tr key={color} className="hover:bg-gray-50/50">
+                              {/* Columna de color */}
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  {imgColor
+                                    ? <img src={imgColor} alt={color} className="w-7 h-8 object-cover rounded-lg flex-shrink-0" />
+                                    : <div className="w-7 h-8 bg-[#f0ebe3] rounded-lg flex-shrink-0" />}
+                                  <span className="text-xs font-semibold text-gray-700 leading-tight">{color}</span>
+                                </div>
+                              </td>
+
+                              {/* Celdas por talla */}
+                              {tallas.map(talla => {
+                                const precioActual = pct[color]?.[talla]
+                                if (precioActual === undefined) {
+                                  return (
+                                    <td key={talla} className="px-3 py-3 text-center">
+                                      <span className="text-gray-300 text-xs">—</span>
+                                    </td>
+                                  )
+                                }
+                                const k = celdaKey(p.id, color, talla)
+                                const est = getCelda(k)
+                                const conDesc = !!est.precioOriginal && est.precioOriginal > precioActual
+                                const pctActual = conDesc ? Math.round((1 - precioActual / est.precioOriginal!) * 100) : 0
+                                const nuevo = est.descuento && Number(est.descuento) > 0 && Number(est.descuento) < 100
+                                  ? parseFloat(((est.precioOriginal ?? precioActual) * (1 - Number(est.descuento) / 100)).toFixed(2))
+                                  : null
+
+                                return (
+                                  <td key={talla} className="px-3 py-3">
+                                    <div className="flex flex-col items-center gap-1.5">
+                                      {/* Precio actual */}
+                                      <div className="flex items-center gap-1.5">
+                                        {conDesc ? (
+                                          <>
+                                            <span className="text-red-500 font-bold text-xs">${precioActual.toFixed(2)}</span>
+                                            <span className="bg-red-100 text-red-600 text-[10px] font-bold px-1 py-0.5 rounded">-{pctActual}%</span>
+                                          </>
+                                        ) : (
+                                          <span className="text-gray-700 font-semibold text-xs">${precioActual.toFixed(2)}</span>
+                                        )}
+                                      </div>
+
+                                      {/* Input de descuento */}
+                                      <div className="flex items-center gap-1">
+                                        <div className="relative">
+                                          <input
+                                            type="number" min="1" max="99"
+                                            value={est.descuento}
+                                            onChange={e => patchCelda(k, { descuento: e.target.value })}
+                                            onKeyDown={e => e.key === 'Enter' && aplicarCelda(p, color, talla, precioActual)}
+                                            placeholder={conDesc ? String(pctActual) : '%'}
+                                            className="w-16 border border-gray-200 rounded-lg px-2 py-1 text-xs pr-5 focus:outline-none focus:ring-1 focus:ring-[#7d5c48]/40 text-center"
+                                          />
+                                          <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">%</span>
+                                        </div>
+                                        <button
+                                          onClick={() => aplicarCelda(p, color, talla, precioActual)}
+                                          disabled={guardando(p.id) || !est.descuento}
+                                          className="text-[10px] bg-[#4a3728] text-white px-1.5 py-1 rounded-lg hover:bg-[#3a2a1e] disabled:opacity-40"
+                                        >OK</button>
+                                      </div>
+
+                                      {/* Previsualización */}
+                                      {nuevo !== null && (
+                                        <span className="text-[10px] text-green-600 font-semibold">${nuevo.toFixed(2)}</span>
+                                      )}
+
+                                      {/* Quitar */}
+                                      {conDesc && (
+                                        <button onClick={() => quitarCelda(p, color, talla, precioActual)}
+                                          className="text-[10px] text-red-400 hover:text-red-600">
+                                          Quitar
+                                        </button>
+                                      )}
+                                    </div>
+                                  </td>
+                                )
+                              })}
+                            </tr>
                           )
                         })}
-                      </div>
-                    )}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
@@ -320,75 +345,12 @@ export default function AdminDescuentos() {
       {totalPaginas > 1 && (
         <div className="mt-6 flex items-center justify-between">
           <button disabled={pagina === 0} onClick={() => setPagina(p => p - 1)}
-            className="text-sm text-[#7d5c48] disabled:opacity-40 hover:underline font-medium">
-            ← Anterior
-          </button>
+            className="text-sm text-[#7d5c48] disabled:opacity-40 hover:underline font-medium">← Anterior</button>
           <span className="text-sm text-gray-500">Página {pagina + 1} de {totalPaginas}</span>
           <button disabled={pagina >= totalPaginas - 1} onClick={() => setPagina(p => p + 1)}
-            className="text-sm text-[#7d5c48] disabled:opacity-40 hover:underline font-medium">
-            Siguiente →
-          </button>
+            className="text-sm text-[#7d5c48] disabled:opacity-40 hover:underline font-medium">Siguiente →</button>
         </div>
       )}
     </div>
-  )
-}
-
-// ── Componente panel de descuento reutilizable ────────────────────────
-function PanelDescuento({
-  descuento, conDesc, pctActual, precioLista, guardando,
-  onChange, onAplicar, onQuitar, mostrarPrevisualizacion = true,
-}: {
-  descuento: string
-  conDesc: boolean
-  pctActual: number
-  precioLista: number
-  guardando: boolean
-  onChange: (v: string) => void
-  onAplicar: () => void
-  onQuitar: () => void
-  mostrarPrevisualizacion?: boolean
-}) {
-  return (
-    <>
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-        {conDesc ? `Descuento actual: ${pctActual}%` : 'Aplicar descuento'}
-      </p>
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-[140px]">
-          <input
-            type="number" min="1" max="99"
-            value={descuento}
-            onChange={e => onChange(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && onAplicar()}
-            placeholder={conDesc ? String(pctActual) : '0'}
-            autoFocus
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30"
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">%</span>
-        </div>
-        <button
-          onClick={onAplicar}
-          disabled={guardando || !descuento}
-          className="bg-[#4a3728] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#3a2a1e] disabled:opacity-40 transition-colors"
-        >
-          {guardando ? '...' : conDesc ? 'Cambiar' : 'Aplicar'}
-        </button>
-        {conDesc && (
-          <button onClick={onQuitar} disabled={guardando}
-            className="text-sm text-red-500 hover:text-red-700 font-medium disabled:opacity-40">
-            Quitar
-          </button>
-        )}
-      </div>
-      {mostrarPrevisualizacion && descuento && Number(descuento) > 0 && Number(descuento) < 100 && (
-        <p className="text-xs text-gray-400 mt-2">
-          Precio con descuento:{' '}
-          <strong className="text-gray-700">
-            ${(precioLista * (1 - Number(descuento) / 100)).toFixed(2)}
-          </strong>
-        </p>
-      )}
-    </>
   )
 }
