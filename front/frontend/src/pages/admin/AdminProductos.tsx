@@ -673,8 +673,8 @@ export default function AdminProductos() {
             )
           })()}
 
-          {/* Stock general si no hay colores */}
-          {colores.length === 0 && (
+          {/* Stock general — solo cuando no hay tallas ni colores */}
+          {colores.length === 0 && tallas.length === 0 && (
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase">
                 Stock disponible <span className="text-red-500">*</span>

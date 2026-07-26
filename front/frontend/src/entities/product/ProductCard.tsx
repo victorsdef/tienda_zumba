@@ -104,11 +104,15 @@ export default function ProductCard({ producto, compact = false }: Props) {
           </span>
         )}
 
-        {producto.stock === 0 && (
-          <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10">
-            <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">Agotado</span>
-          </div>
-        )}
+        {(() => {
+          const stockEfectivo = producto.stock > 0 ? producto.stock
+            : Object.values(producto.stockPorColorTalla?.['_'] ?? {}).reduce((a: number, b: number) => a + b, 0)
+          return stockEfectivo === 0 ? (
+            <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10">
+              <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">Agotado</span>
+            </div>
+          ) : null
+        })()}
 
         {/* Flechas — solo si hay 2+ colores */}
         {tieneColores && colores.length > 1 && (
