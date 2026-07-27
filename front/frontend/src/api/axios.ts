@@ -20,6 +20,16 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+let refreshPromise: Promise<string> | null = null
+
+function clearSessionAndRedirect() {
+  localStorage.removeItem('accessToken')
+  localStorage.removeItem('refreshToken')
+  localStorage.removeItem('user')
+  const returnTo = `${window.location.pathname}${window.location.search}`
+  window.location.href = `/login?sesion=expirada&returnTo=${encodeURIComponent(returnTo)}`
+}
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('accessToken')
   if (token) config.headers.Authorization = `Bearer ${token}`
@@ -35,17 +45,23 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem('refreshToken')
       if (refreshToken) {
         try {
-          const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken })
-          localStorage.setItem('accessToken', data.accessToken)
-          localStorage.setItem('refreshToken', data.refreshToken)
-          original.headers.Authorization = `Bearer ${data.accessToken}`
+          refreshPromise ??= axios
+            .post(`${API_BASE_URL}/auth/refresh`, { refreshToken })
+            .then(({ data }) => {
+              if (!data.accessToken) throw new Error('El backend no devolvió un token de acceso')
+              localStorage.setItem('accessToken', data.accessToken)
+              if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken)
+              return data.accessToken as string
+            })
+            .finally(() => { refreshPromise = null })
+          const accessToken = await refreshPromise
+          original.headers.Authorization = `Bearer ${accessToken}`
           return api(original)
         } catch {
-          localStorage.removeItem('accessToken')
-          localStorage.removeItem('refreshToken')
-          localStorage.removeItem('user')
-          window.location.href = '/login'
+          clearSessionAndRedirect()
         }
+      } else {
+        clearSessionAndRedirect()
       }
     }
     return Promise.reject(error)

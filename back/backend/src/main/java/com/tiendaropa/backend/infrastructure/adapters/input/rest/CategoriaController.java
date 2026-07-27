@@ -31,24 +31,30 @@ public class CategoriaController {
         return categoriaRestMapper.toDtoList(categoriaUseCase.listarTodas());
     }
 
-    @GetMapping("/{id}")
+    @GetMapping({"/api/categorias/{id}", "/api/nueva-arquitectura/categorias/{id}"})
     public CategoriaDTO obtener(@PathVariable Long id) {
         return categoriaRestMapper.toDto(categoriaUseCase.obtenerPorId(id));
     }
 
-    @PostMapping
+    @PostMapping({"/api/admin/categorias", "/api/nueva-arquitectura/admin/categorias"})
     @PreAuthorize("hasRole('ADMIN')")
     public CategoriaDTO crear(@RequestBody CategoriaRequest categoria) {
         return categoriaRestMapper.toDto(categoriaUseCase.crear(categoriaRestMapper.toDomain(categoria)));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping({"/api/admin/categorias/{id}", "/api/nueva-arquitectura/admin/categorias/{id}"})
     @PreAuthorize("hasRole('ADMIN')")
     public CategoriaDTO actualizar(@PathVariable Long id, @RequestBody CategoriaRequest categoria) {
         return categoriaRestMapper.toDto(categoriaUseCase.actualizar(id, categoriaRestMapper.toDomain(categoria)));
     }
 
-    @DeleteMapping("/{id}")
+    @PatchMapping({"/api/admin/categorias/{id}/toggle", "/api/nueva-arquitectura/admin/categorias/{id}/toggle"})
+    @PreAuthorize("hasRole('ADMIN')")
+    public CategoriaDTO toggle(@PathVariable Long id) {
+        return categoriaRestMapper.toDto(categoriaUseCase.toggleActivo(id));
+    }
+
+    @DeleteMapping({"/api/admin/categorias/{id}", "/api/nueva-arquitectura/admin/categorias/{id}"})
     @PreAuthorize("hasRole('ADMIN')")
     public void eliminar(@PathVariable Long id) {
         categoriaUseCase.eliminar(id);

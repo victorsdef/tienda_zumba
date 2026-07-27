@@ -47,4 +47,11 @@ public class CategoriaUseCaseImpl implements CategoriaUseCase {
         obtenerPorId(id);
         categoriaRepositoryPort.deleteById(id);
     }
+
+    @Override
+    public Categoria toggleActivo(Long id) {
+        Categoria categoria = obtenerPorId(id);
+        categoria.setActivo(!categoria.isActivo());
+        return categoriaRepositoryPort.save(categoria);
+    }
 }

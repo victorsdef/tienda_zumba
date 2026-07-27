@@ -18,6 +18,7 @@ export default function AdminCategorias() {
   const [nombreWatch, setNombreWatch] = useState('')
   const [genero, setGenero] = useState('')
   const [busqueda, setBusqueda] = useState('')
+  const [saveError, setSaveError] = useState('')
 
   const GENEROS = [
     { value: 'MUJER',      label: 'Mujer' },
@@ -51,15 +52,25 @@ export default function AdminCategorias() {
   }, [busqueda, categorias])
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['categorias-admin'] })
-  const createMut = useMutation({ mutationFn: crearCategoria, onSuccess: () => { invalidate(); cerrar() } })
+  const mutationError = (error: unknown) => {
+    const status = (error as { response?: { status?: number } })?.response?.status
+    setSaveError(status === 401
+      ? 'Tu sesión venció. Inicia sesión nuevamente y vuelve a guardar.'
+      : status === 403
+        ? 'Tu usuario no tiene permiso para modificar categorías.'
+        : 'No se pudo guardar la categoría. Intenta nuevamente.')
+  }
+  const createMut = useMutation({ mutationFn: crearCategoria, onSuccess: () => { invalidate(); cerrar() }, onError: mutationError })
   const updateMut = useMutation({
     mutationFn: ({ id, d }: { id: number; d: Partial<Categoria> }) => actualizarCategoria(id, d),
     onSuccess: () => { invalidate(); cerrar() },
+    onError: mutationError,
   })
   const deleteMut = useMutation({ mutationFn: eliminarCategoria, onSuccess: invalidate })
   const toggleMut = useMutation({ mutationFn: toggleCategoria, onSuccess: invalidate })
 
   const abrir = (c?: Categoria) => {
+    setSaveError('')
     setEditando(c ?? null)
     setImagen(c?.imagen ?? '')
     setTallas(c?.tallasDisponibles ?? [])
@@ -70,6 +81,7 @@ export default function AdminCategorias() {
   }
 
   const cerrar = () => {
+    setSaveError('')
     setMostrarForm(false)
     setEditando(null)
     setImagen('')
@@ -178,8 +190,11 @@ export default function AdminCategorias() {
             </div>
 
             <div className="flex gap-3 pt-2 border-t border-gray-100">
-              <button type="submit" disabled={isSubmitting} className="btn-primary text-sm">
-                {isSubmitting ? 'Guardando...' : 'Guardar'}
+              {saveError && <p className="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">{saveError}</p>}
+            </div>
+            <div className="flex gap-3">
+              <button type="submit" disabled={isSubmitting || createMut.isPending || updateMut.isPending} className="btn-primary text-sm">
+                {createMut.isPending || updateMut.isPending ? 'Guardando...' : 'Guardar'}
               </button>
               <button type="button" onClick={cerrar} className="btn-outline text-sm">Cancelar</button>
             </div>

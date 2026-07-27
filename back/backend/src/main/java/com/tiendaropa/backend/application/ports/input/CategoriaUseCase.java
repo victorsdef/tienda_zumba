@@ -9,5 +9,6 @@ public interface CategoriaUseCase {
     Categoria obtenerPorId(Long id);
     Categoria crear(Categoria categoria);
     Categoria actualizar(Long id, Categoria categoria);
+    Categoria toggleActivo(Long id);
     void eliminar(Long id);
 }
