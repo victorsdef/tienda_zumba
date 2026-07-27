@@ -299,6 +299,19 @@ export default function DetalleProducto() {
   const precioMostrado = precioVariante ?? producto?.precio ?? 0
   const hayPrecioVariante = precioVariante !== undefined && precioVariante !== producto?.precio
 
+  // Precio original de la variante seleccionada (si tiene descuento)
+  const precioOriginalVariante: number | undefined = (() => {
+    const poct = producto?.precioOriginalPorColorTalla
+    if (!poct) return undefined
+    if (color && talla) return poct[color]?.[talla]
+    if (talla && poct['_']) return poct['_'][talla]
+    return undefined
+  })()
+  const tieneDescuentoVariante = precioOriginalVariante !== undefined && precioOriginalVariante > precioMostrado
+  const descuentoVariantePct = tieneDescuentoVariante
+    ? Math.round((1 - precioMostrado / precioOriginalVariante!) * 100)
+    : 0
+
   const handleAgregar = async () => {
     if (!puedeAgregar) return
     await agregarItem(producto!.id, cantidad, talla, color, {
@@ -366,12 +379,21 @@ export default function DetalleProducto() {
           </h1>
 
           {/* Precio */}
-          <div className="flex items-end gap-3 mb-5">
+          <div className="flex items-end gap-3 mb-5 flex-wrap">
             <span className="text-3xl font-black text-red-600 transition-all duration-200">
               ${precioMostrado.toFixed(2)}
             </span>
-            {/* Precio original (descuento general) — solo si no hay precio de variante */}
-            {!hayPrecioVariante && producto.precioOriginal && producto.precioOriginal > producto.precio && (
+            {/* Descuento por variante (color/talla específica) */}
+            {tieneDescuentoVariante && (
+              <>
+                <span className="text-base text-gray-400 line-through mb-0.5">${precioOriginalVariante!.toFixed(2)}</span>
+                <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded-full">
+                  -{descuentoVariantePct}% OFF
+                </span>
+              </>
+            )}
+            {/* Descuento global (aplica a todo el producto) — solo si no hay descuento por variante */}
+            {!tieneDescuentoVariante && !hayPrecioVariante && producto.precioOriginal && producto.precioOriginal > producto.precio && (
               <>
                 <span className="text-base text-gray-400 line-through mb-0.5">${producto.precioOriginal.toFixed(2)}</span>
                 <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded-full">
