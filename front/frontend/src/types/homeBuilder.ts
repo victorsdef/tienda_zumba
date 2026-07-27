@@ -1,4 +1,4 @@
-export type HomeBlockType = 'hero' | 'categories' | 'products' | 'promo' | 'textImage' | 'spacer'
+export type HomeBlockType = 'hero' | 'bannerCarousel' | 'categories' | 'products' | 'promo' | 'textImage' | 'spacer'
 
 export interface HomeBlock {
   id: string

@@ -1,9 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { getCategorias } from '../../api/categorias'
 import { getProductos, getProductosTrending } from '../../api/productos'
 import ProductCard from '../../entities/product/ProductCard'
 import type { HomeBlock, HomeLayout } from '../../types/homeBuilder'
+import { getBannersPublic } from '../../api/banners'
+import HeroBannerPreview from '../banners/HeroBannerPreview'
 
 interface Props {
   layout: HomeLayout
@@ -116,6 +119,74 @@ function HeroBlock({ block, preview }: { block: HomeBlock; preview: boolean }) {
   )
 }
 
+function BannerCarouselBlock({ preview }: { preview: boolean }) {
+  const { data: banners = [] } = useQuery({
+    queryKey: ['banners-public'],
+    queryFn: getBannersPublic,
+  })
+  const ordered = [...banners].sort((a, b) => a.orden - b.orden)
+  const [current, setCurrent] = useState(0)
+  const active = ordered[current] ?? ordered[0]
+
+  useEffect(() => {
+    if (preview || ordered.length <= 1) return
+    const timer = window.setInterval(() => setCurrent(value => (value + 1) % ordered.length), 5000)
+    return () => window.clearInterval(timer)
+  }, [ordered.length, preview])
+
+  useEffect(() => {
+    if (current >= ordered.length) setCurrent(0)
+  }, [current, ordered.length])
+
+  if (!active) {
+    return (
+      <section className="bg-[#f5eee8] px-4 py-16 text-center text-sm text-[#7d5c48]">
+        No hay banners activos. Crea uno en Administración → Banners.
+      </section>
+    )
+  }
+
+  const link = active.tipoDestino === 'GENERO'
+    ? `/catalogo?genero=${active.destinoValor}`
+    : active.tipoDestino === 'CATEGORIA'
+      ? `/catalogo?categoriaId=${active.destinoValor}`
+      : active.tipoDestino === 'PRODUCTO'
+        ? `/producto/${active.destinoValor}`
+        : active.tipoDestino === 'URL'
+          ? active.destinoValor || '/catalogo'
+          : '/catalogo'
+
+  return (
+    <section className={preview ? 'p-3' : 'px-4 py-8 md:px-8'}>
+      <div className="mx-auto max-w-7xl overflow-hidden rounded-2xl">
+        <HeroBannerPreview
+          tag={active.tag}
+          titulo={active.titulo}
+          subtitulo={active.subtitulo}
+          ctaTexto={active.ctaTexto}
+          imagen={active.imagen}
+          colorDesde={active.colorDesde}
+          colorHasta={active.colorHasta}
+          ctaHref={link}
+        />
+        {ordered.length > 1 && (
+          <div className="-mt-8 relative z-10 flex justify-center gap-2 pb-4">
+            {ordered.map((banner, index) => (
+              <button
+                key={banner.id}
+                type="button"
+                onClick={() => setCurrent(index)}
+                aria-label={`Mostrar banner ${index + 1}`}
+                className={`h-2.5 rounded-full shadow transition-all ${current === index ? 'w-7 bg-white' : 'w-2.5 bg-white/60'}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
 function PromoBlock({ block, preview }: { block: HomeBlock; preview: boolean }) {
   return (
     <section style={{ background: block.background, color: block.textColor, textAlign: block.textAlign, borderRadius: block.borderRadius }} className={`${preview ? 'px-5 py-8' : 'px-6 py-14'} ${block.textAlign === 'center' ? 'text-center' : block.textAlign === 'right' ? 'text-right' : 'text-left'}`}>
@@ -154,6 +225,7 @@ export default function HomeBuilderRenderer({ layout, preview = false }: Props) 
       )}
       {layout.blocks.filter(block => block.visible).map(block => {
         if (block.type === 'hero') return <HeroBlock key={block.id} block={block} preview={preview} />
+        if (block.type === 'bannerCarousel') return <BannerCarouselBlock key={block.id} preview={preview} />
         if (block.type === 'categories') return <CategoriesBlock key={block.id} block={block} preview={preview} />
         if (block.type === 'products') return <ProductsBlock key={block.id} block={block} preview={preview} />
         if (block.type === 'promo') return <PromoBlock key={block.id} block={block} preview={preview} />

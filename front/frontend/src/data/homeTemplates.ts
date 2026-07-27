@@ -51,7 +51,7 @@ export const HOME_TEMPLATES: HomeLayout[] = [
     templateId: 'original',
     announcement: 'Envíos a todo Ecuador · Compra segura',
     blocks: [
-      createBlock('hero', { title: 'Pantalones que realzan tu esencia', subtitle: 'Diseños elegantes para mujer, hombre y familia con una presencia más cuidada.', buttonText: 'Comprar ahora', background: '#4a3728', textColor: '#ffffff' }),
+      createBlock('bannerCarousel', { title: 'Banners de la tienda', subtitle: 'Utiliza los banners creados en Administración → Banners.' }),
       createBlock('categories', { title: 'Compra por categoría', subtitle: 'Mujer, hombre, niños, calzado, accesorios y belleza.' }),
       createBlock('products', { title: 'Nueva colección', subtitle: 'Lo último que llegó a la boutique.', productMode: 'new' }),
       createBlock('textImage', {

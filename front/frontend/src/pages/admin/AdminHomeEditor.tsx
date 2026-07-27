@@ -9,7 +9,8 @@ import HomeBuilderRenderer from '../../widgets/homeBuilder/HomeBuilderRenderer'
 type Tab = 'templates' | 'editor' | 'preview'
 
 const blockLabels: Record<HomeBlockType, string> = {
-  hero: 'Portada principal',
+  hero: 'Banner personalizado',
+  bannerCarousel: 'Carrusel de banners',
   categories: 'Categorías',
   products: 'Productos',
   promo: 'Franja promocional',
@@ -19,6 +20,7 @@ const blockLabels: Record<HomeBlockType, string> = {
 
 const blockIcons: Record<HomeBlockType, string> = {
   hero: '▣',
+  bannerCarousel: '▤',
   categories: '◉',
   products: '▦',
   promo: '★',
@@ -159,7 +161,9 @@ export default function AdminHomeEditor() {
 
   const addBlock = (type: HomeBlockType) => {
     const presets: Partial<HomeBlock> = type === 'hero'
-      ? { title: 'Nuevo banner principal', subtitle: 'Escribe aquí tu mensaje.' }
+      ? { title: 'Nuevo banner personalizado', subtitle: 'Escribe aquí tu mensaje.' }
+      : type === 'bannerCarousel'
+        ? { title: 'Banners de la tienda', subtitle: 'Muestra automáticamente los banners activos.' }
       : type === 'products'
         ? { title: 'Productos destacados' }
         : type === 'categories'
@@ -359,7 +363,7 @@ export default function AdminHomeEditor() {
                     </label>
                   </div>
 
-                  {selected.type !== 'spacer' && (
+                  {selected.type !== 'spacer' && selected.type !== 'bannerCarousel' && (
                     <>
                       <label className="block">
                         <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Título</span>
@@ -432,7 +436,7 @@ export default function AdminHomeEditor() {
                     </label>
                   )}
 
-                  {selected.type !== 'spacer' && (
+                  {selected.type !== 'spacer' && selected.type !== 'bannerCarousel' && (
                     <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
                       <p className="text-[10px] font-bold uppercase tracking-wide text-gray-500">Diseño avanzado</p>
                       <div className="grid grid-cols-2 gap-2">
@@ -471,6 +475,11 @@ export default function AdminHomeEditor() {
                     <ColorField label="Texto" value={selected.textColor} onChange={textColor => patchBlock(selected.id, { textColor })} />
                   </div>
                   <ColorField label="Color destacado" value={selected.accentColor} onChange={accentColor => patchBlock(selected.id, { accentColor })} />
+                  {selected.type === 'bannerCarousel' && (
+                    <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs leading-relaxed text-blue-700">
+                      Este bloque toma automáticamente los banners activos de <strong>Administración → Banners</strong>. Edita allí sus imágenes, textos, colores, enlaces y orden.
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-400">Selecciona un bloque para editar sus opciones.</div>
