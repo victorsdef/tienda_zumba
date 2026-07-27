@@ -7,6 +7,8 @@ import type { HomeBlock, HomeBlockType, HomeLayout } from '../../types/homeBuild
 import HomeBuilderRenderer from '../../widgets/homeBuilder/HomeBuilderRenderer'
 import { getProductos } from '../../api/productos'
 import StorefrontTheme from '../../app/StorefrontTheme'
+import { getCategorias } from '../../api/categorias'
+import type { Categoria, Producto } from '../../types'
 
 type Tab = 'templates' | 'editor' | 'preview'
 
@@ -96,6 +98,121 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
   )
 }
 
+type DestinationType =
+  | 'HOME'
+  | 'CATALOG'
+  | 'NEW'
+  | 'OFFERS'
+  | 'GENDER'
+  | 'CATEGORY'
+  | 'PRODUCT'
+  | 'WISHLIST'
+  | 'CART'
+  | 'ACCOUNT'
+  | 'ORDERS'
+  | 'CUSTOM'
+
+const destinationOptions: Array<{ value: DestinationType; label: string }> = [
+  { value: 'CATALOG', label: 'Catálogo completo' },
+  { value: 'NEW', label: 'Novedades' },
+  { value: 'OFFERS', label: 'Ofertas' },
+  { value: 'GENDER', label: 'Productos por grupo' },
+  { value: 'CATEGORY', label: 'Categoría específica' },
+  { value: 'PRODUCT', label: 'Producto específico' },
+  { value: 'WISHLIST', label: 'Lista de deseos' },
+  { value: 'CART', label: 'Carrito' },
+  { value: 'ACCOUNT', label: 'Mi cuenta' },
+  { value: 'ORDERS', label: 'Mis órdenes' },
+  { value: 'HOME', label: 'Página de inicio' },
+  { value: 'CUSTOM', label: 'Enlace personalizado' },
+]
+
+function parseDestination(link: string): { type: DestinationType; value: string } {
+  if (link === '/') return { type: 'HOME', value: '' }
+  if (link === '/catalogo') return { type: 'CATALOG', value: '' }
+  if (link === '/catalogo?sort=id,desc') return { type: 'NEW', value: '' }
+  if (link === '/catalogo?sort=precio,asc') return { type: 'OFFERS', value: '' }
+  if (link === '/wishlist') return { type: 'WISHLIST', value: '' }
+  if (link === '/carrito') return { type: 'CART', value: '' }
+  if (link === '/cuenta') return { type: 'ACCOUNT', value: '' }
+  if (link === '/ordenes') return { type: 'ORDERS', value: '' }
+  if (link.startsWith('/catalogo?genero=')) return { type: 'GENDER', value: link.split('=')[1] ?? '' }
+  if (link.startsWith('/catalogo?categoriaId=')) return { type: 'CATEGORY', value: link.split('=')[1] ?? '' }
+  if (link.startsWith('/producto/')) return { type: 'PRODUCT', value: link.slice('/producto/'.length) }
+  return { type: 'CUSTOM', value: link }
+}
+
+function defaultDestination(type: DestinationType) {
+  return {
+    HOME: '/',
+    CATALOG: '/catalogo',
+    NEW: '/catalogo?sort=id,desc',
+    OFFERS: '/catalogo?sort=precio,asc',
+    WISHLIST: '/wishlist',
+    CART: '/carrito',
+    ACCOUNT: '/cuenta',
+    ORDERS: '/ordenes',
+    GENDER: '/catalogo?genero=MUJER',
+    CATEGORY: '/catalogo?categoriaId=',
+    PRODUCT: '/producto/',
+    CUSTOM: '',
+  }[type]
+}
+
+function DestinationPicker({
+  link,
+  onChange,
+  categories,
+  products,
+}: {
+  link: string
+  onChange: (link: string) => void
+  categories: Categoria[]
+  products: Producto[]
+}) {
+  const destination = parseDestination(link || '/catalogo')
+  return (
+    <div className="space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
+      <div>
+        <label className="block text-[10px] font-bold uppercase text-gray-500">¿A dónde llevará el botón?</label>
+        <select
+          value={destination.type}
+          onChange={event => onChange(defaultDestination(event.target.value as DestinationType))}
+          className="input-field mt-1"
+        >
+          {destinationOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+        </select>
+      </div>
+      {destination.type === 'GENDER' && (
+        <select value={destination.value} onChange={event => onChange(`/catalogo?genero=${event.target.value}`)} className="input-field">
+          <option value="MUJER">Mujer</option>
+          <option value="HOMBRE">Hombre</option>
+          <option value="NINO">Niño/a</option>
+          <option value="CALZADO">Calzado</option>
+          <option value="ACCESORIOS">Accesorios</option>
+          <option value="BELLEZA">Belleza</option>
+        </select>
+      )}
+      {destination.type === 'CATEGORY' && (
+        <select value={destination.value} onChange={event => onChange(`/catalogo?categoriaId=${event.target.value}`)} className="input-field">
+          <option value="">Seleccionar categoría…</option>
+          {categories.map(category => <option key={category.id} value={category.id}>{category.nombre}</option>)}
+        </select>
+      )}
+      {destination.type === 'PRODUCT' && (
+        <select value={destination.value} onChange={event => onChange(`/producto/${event.target.value}`)} className="input-field">
+          <option value="">Seleccionar producto…</option>
+          {products.map(product => <option key={product.id} value={product.slug ?? product.id}>{product.nombre}</option>)}
+        </select>
+      )}
+      {destination.type === 'CUSTOM' && (
+        <input value={destination.value} onChange={event => onChange(event.target.value)} className="input-field font-mono text-xs" placeholder="https://ejemplo.com o /ruta" />
+      )}
+      <p className="break-all text-[10px] text-gray-400">Destino: {link || 'Sin configurar'}</p>
+    </div>
+  )
+}
+
 export default function AdminHomeEditor() {
   const qc = useQueryClient()
   const [tab, setTab] = useState<Tab>('templates')
@@ -114,6 +231,10 @@ export default function AdminHomeEditor() {
     queryFn: () => getProductos({ size: 100, sort: 'id,desc' }),
   })
   const productOptions = productsData?.content ?? []
+  const { data: categoryOptions = [] } = useQuery({
+    queryKey: ['home-builder-category-options'],
+    queryFn: getCategorias,
+  })
   const customTemplates = useMemo(
     () => parseCustomTemplates(config.find(item => item.clave === 'home_builder_plantillas')?.valor),
     [config]
@@ -287,40 +408,41 @@ export default function AdminHomeEditor() {
 
   return (
     <div className="min-h-screen bg-[#f4f1ed]">
-      <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 px-4 py-3 backdrop-blur md:px-6">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Constructor del Home</h1>
-            <p className="text-xs text-gray-500">Plantillas y edición libre por bloques</p>
+      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur md:px-6">
+        <div className="mx-auto max-w-[1600px] space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Constructor del Home</h1>
+              <p className="text-xs text-gray-500">Plantillas y edición libre por bloques</p>
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {message && <span className="hidden text-xs font-semibold text-green-700 sm:inline">{message}</span>}
+              <button onClick={() => saveMutation.mutate(layout)} disabled={saveMutation.isPending} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                {saveMutation.isPending ? 'Guardando…' : 'Guardar borrador'}
+              </button>
+              <button onClick={saveAsTemplate} disabled={customTemplatesMutation.isPending} className="rounded-lg border border-[#7d5c48] bg-[#faf7f2] px-4 py-2 text-sm font-semibold text-[#4a3728] hover:bg-[#f2e9df] disabled:opacity-50">
+                Guardar como plantilla
+              </button>
+              <button onClick={() => publishMutation.mutate(layout)} disabled={publishMutation.isPending} className="rounded-lg bg-[#4a3728] px-4 py-2 text-sm font-semibold text-white hover:bg-[#35271d] disabled:opacity-50">
+                {publishMutation.isPending ? 'Publicando…' : 'Publicar'}
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            {message && <span className="hidden text-xs font-semibold text-green-700 sm:inline">{message}</span>}
-            <button onClick={() => saveMutation.mutate(layout)} disabled={saveMutation.isPending} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-              {saveMutation.isPending ? 'Guardando…' : 'Guardar borrador'}
-            </button>
-            <button onClick={saveAsTemplate} disabled={customTemplatesMutation.isPending} className="rounded-lg border border-[#7d5c48] bg-[#faf7f2] px-4 py-2 text-sm font-semibold text-[#4a3728] hover:bg-[#f2e9df] disabled:opacity-50">
-              Guardar como plantilla
-            </button>
-            <button onClick={() => publishMutation.mutate(layout)} disabled={publishMutation.isPending} className="rounded-lg bg-[#4a3728] px-4 py-2 text-sm font-semibold text-white hover:bg-[#35271d] disabled:opacity-50">
-              {publishMutation.isPending ? 'Publicando…' : 'Publicar'}
-            </button>
+          <div className="flex gap-1 rounded-xl border border-gray-200 bg-[#f7f5f2] p-1">
+            {([
+              ['templates', 'Plantillas'],
+              ['editor', 'Editar libre'],
+              ['preview', 'Vista previa'],
+            ] as Array<[Tab, string]>).map(([value, label]) => (
+              <button key={value} onClick={() => setTab(value)} className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${tab === value ? 'bg-[#4a3728] text-white shadow-sm' : 'text-gray-500 hover:bg-white'}`}>
+                {label}
+              </button>
+            ))}
           </div>
         </div>
       </header>
 
       <div className="mx-auto max-w-[1600px] p-4 md:p-6">
-        <div className="mb-5 flex gap-1 rounded-xl border border-gray-200 bg-white p-1">
-          {([
-            ['templates', 'Plantillas'],
-            ['editor', 'Editar libre'],
-            ['preview', 'Vista previa'],
-          ] as Array<[Tab, string]>).map(([value, label]) => (
-            <button key={value} onClick={() => setTab(value)} className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${tab === value ? 'bg-[#4a3728] text-white' : 'text-gray-500 hover:bg-gray-50'}`}>
-              {label}
-            </button>
-          ))}
-        </div>
-
         {tab === 'templates' && (
           <div>
             <div className="mb-5">
@@ -520,10 +642,12 @@ export default function AdminHomeEditor() {
                         <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Texto del botón</span>
                         <input value={selected.buttonText} onChange={event => patchBlock(selected.id, { buttonText: event.target.value })} className="input-field" />
                       </label>
-                      <label className="block">
-                        <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Enlace</span>
-                        <input value={selected.link} onChange={event => patchBlock(selected.id, { link: event.target.value })} className="input-field font-mono text-xs" />
-                      </label>
+                      <DestinationPicker
+                        link={selected.link}
+                        onChange={link => patchBlock(selected.id, { link })}
+                        categories={categoryOptions}
+                        products={productOptions}
+                      />
                     </>
                   )}
 
@@ -569,6 +693,12 @@ export default function AdminHomeEditor() {
                         })}
                       </div>
                     )}
+                    <DestinationPicker
+                      link={selected.link}
+                      onChange={link => patchBlock(selected.id, { link })}
+                      categories={categoryOptions}
+                      products={productOptions}
+                    />
                     </div>
                   )}
 

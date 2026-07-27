@@ -19,6 +19,8 @@ export default function AdminCategorias() {
   const [genero, setGenero] = useState('')
   const [busqueda, setBusqueda] = useState('')
   const [saveError, setSaveError] = useState('')
+  const [filtroEstado, setFiltroEstado] = useState<'TODAS' | 'ACTIVAS' | 'INACTIVAS'>('TODAS')
+  const [filtroGenero, setFiltroGenero] = useState('')
 
   const GENEROS = [
     { value: 'MUJER',      label: 'Mujer' },
@@ -34,22 +36,31 @@ export default function AdminCategorias() {
 
   const categoriasFiltradas = useMemo(() => {
     const termino = busqueda.trim().toLowerCase()
-    if (!termino) return categorias ?? []
-
     return (categorias ?? []).filter(c => {
       const nombre = c.nombre?.toLowerCase() ?? ''
       const descripcion = c.descripcion?.toLowerCase() ?? ''
       const generoCategoria = c.genero?.toLowerCase() ?? ''
       const estado = c.activo === false ? 'inactiva' : 'activa'
 
-      return (
+      const coincideBusqueda = !termino || (
         nombre.includes(termino) ||
         descripcion.includes(termino) ||
         generoCategoria.includes(termino) ||
         estado.includes(termino)
       )
+      const coincideEstado =
+        filtroEstado === 'TODAS' ||
+        (filtroEstado === 'ACTIVAS' && c.activo !== false) ||
+        (filtroEstado === 'INACTIVAS' && c.activo === false)
+      const coincideGenero = !filtroGenero || c.genero === filtroGenero
+      return coincideBusqueda && coincideEstado && coincideGenero
     })
-  }, [busqueda, categorias])
+  }, [busqueda, categorias, filtroEstado, filtroGenero])
+
+  const totalCategorias = categorias?.length ?? 0
+  const totalActivas = categorias?.filter(c => c.activo !== false).length ?? 0
+  const totalInactivas = totalCategorias - totalActivas
+  const totalConImagen = categorias?.filter(c => Boolean(c.imagen)).length ?? 0
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['categorias-admin'] })
   const mutationError = (error: unknown) => {
@@ -97,39 +108,89 @@ export default function AdminCategorias() {
   }
 
   return (
-    <div className="p-4 md:p-8 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold">Categorías</h1>
-          <p className="text-xs text-gray-500 mt-0.5">La imagen aparece en el círculo de categorías del inicio</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#9a7a63]">Catálogo</p>
+          <h1 className="mt-1 text-2xl md:text-3xl font-bold text-gray-900">Categorías</h1>
+          <p className="text-sm text-gray-500 mt-1">Organiza tus productos y controla qué categorías ven tus clientes.</p>
         </div>
-        <button onClick={() => abrir()} className="btn-primary text-sm">+ Nueva categoría</button>
+        <button onClick={() => abrir()} className="btn-primary inline-flex items-center justify-center gap-2 px-5 py-3 text-sm shadow-sm">
+          <span className="text-lg leading-none">+</span> Nueva categoría
+        </button>
       </div>
 
-      <div className="bg-white border rounded-lg p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative w-full lg:max-w-md">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+          { label: 'Total', value: totalCategorias, detail: 'categorías creadas', color: 'bg-gray-900 text-white' },
+          { label: 'Activas', value: totalActivas, detail: 'visibles en la tienda', color: 'bg-emerald-50 text-emerald-700' },
+          { label: 'Inactivas', value: totalInactivas, detail: 'ocultas temporalmente', color: 'bg-amber-50 text-amber-700' },
+          { label: 'Con imagen', value: totalConImagen, detail: 'con portada configurada', color: 'bg-blue-50 text-blue-700' },
+        ].map(item => (
+          <div key={item.label} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold text-gray-500">{item.label}</p>
+                <p className="mt-1 text-2xl font-bold text-gray-900">{item.value}</p>
+              </div>
+              <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold ${item.color}`}>{item.value}</span>
+            </div>
+            <p className="mt-2 text-[11px] text-gray-400">{item.detail}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm space-y-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="relative w-full lg:flex-1">
             <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               value={busqueda}
               onChange={e => setBusqueda(e.target.value)}
               className="input-field w-full pl-9"
-              placeholder="Buscar por nombre, descripción, grupo o estado"
+              placeholder="Buscar categorías por nombre o descripción…"
             />
           </div>
-          <div className="text-sm text-gray-500">
-            Mostrando <span className="font-semibold text-gray-800">{categoriasFiltradas.length}</span> de{' '}
-            <span className="font-semibold text-gray-800">{categorias?.length ?? 0}</span> categorías
+          <select value={filtroGenero} onChange={e => setFiltroGenero(e.target.value)} className="input-field w-full lg:w-52">
+            <option value="">Todos los grupos</option>
+            {GENEROS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+          </select>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
+          <div className="flex gap-2">
+            {([
+              ['TODAS', 'Todas', totalCategorias],
+              ['ACTIVAS', 'Activas', totalActivas],
+              ['INACTIVAS', 'Inactivas', totalInactivas],
+            ] as const).map(([value, label, count]) => (
+              <button key={value} type="button" onClick={() => setFiltroEstado(value)}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${filtroEstado === value ? 'bg-[#4a3728] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                {label} <span className="ml-1 opacity-70">{count}</span>
+              </button>
+            ))}
           </div>
+          <p className="text-xs text-gray-500">
+            Mostrando <strong className="text-gray-800">{categoriasFiltradas.length}</strong> resultados
+          </p>
         </div>
       </div>
 
       {mostrarForm && (
-        <div className="bg-white border rounded-lg p-5 max-w-2xl">
-          <h2 className="font-bold mb-4 text-gray-800">{editando ? 'Editar' : 'Nueva'} categoría</h2>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center sm:p-5">
+          <button type="button" aria-label="Cerrar" onClick={cerrar} className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+          <div className="relative max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:max-w-3xl sm:rounded-3xl">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-gray-100 bg-white px-5 py-4 sm:px-6">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-[#9a7a63]">{editando ? 'Actualizar información' : 'Agregar al catálogo'}</p>
+                <h2 className="mt-1 text-xl font-bold text-gray-900">{editando ? `Editar ${editando.nombre}` : 'Nueva categoría'}</h2>
+                <p className="mt-1 text-xs text-gray-500">Completa los datos principales. Puedes modificarlos después.</p>
+              </div>
+              <button type="button" onClick={cerrar} className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-xl text-gray-500 hover:bg-gray-200">×</button>
+            </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-5 sm:p-6">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase">Grupo *</label>
+              <label className="block text-sm font-semibold text-gray-800 mb-1">¿A quién está dirigida? *</label>
+              <p className="mb-3 text-xs text-gray-400">Esto ayuda a organizar los filtros del catálogo.</p>
               <div className="flex flex-wrap gap-2">
                 {GENEROS.map(g => (
                   <button
@@ -138,8 +199,8 @@ export default function AdminCategorias() {
                     onClick={() => setGenero(g.value)}
                     className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
                       genero === g.value
-                        ? 'bg-gray-900 text-white border-gray-900'
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                        ? 'bg-[#4a3728] text-white border-[#4a3728] shadow-sm'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-[#9a7a63]'
                     }`}
                   >
                     {g.label}
@@ -148,8 +209,9 @@ export default function AdminCategorias() {
               </div>
             </div>
 
+            <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase">Nombre *</label>
+              <label className="block text-sm font-semibold text-gray-800 mb-1">Nombre de la categoría *</label>
               <input
                 {...register('nombre', { required: 'El nombre es requerido' })}
                 className={`input-field ${errors.nombre ? 'border-red-400 bg-red-50' : ''}`}
@@ -162,13 +224,14 @@ export default function AdminCategorias() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase">Descripción</label>
+              <label className="block text-sm font-semibold text-gray-800 mb-1">Descripción</label>
               <input {...register('descripcion')} className="input-field" placeholder="Descripción opcional..." />
+            </div>
             </div>
 
             {/* Tallas disponibles para esta categoría */}
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase">Tallas disponibles</label>
+              <label className="block text-sm font-semibold text-gray-800 mb-1">Tallas disponibles</label>
               <p className="text-xs text-gray-400 mb-2">
                 Se detectan automáticamente según el nombre · podés agregar o quitar las que quieras
               </p>
@@ -181,8 +244,8 @@ export default function AdminCategorias() {
 
             {/* Imagen */}
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase">Imagen</label>
-              <p className="text-xs text-gray-500 mb-2">Aparece en el círculo de categorías del Home · máx 1 imagen</p>
+              <label className="block text-sm font-semibold text-gray-800 mb-1">Imagen de portada</label>
+              <p className="text-xs text-gray-500 mb-2">Se mostrará en el Home y ayudará a reconocer la categoría. Máximo 1 imagen.</p>
               <ImageManager
                 value={imagen ? [imagen] : []}
                 onChange={urls => setImagen(urls[urls.length - 1] ?? '')}
@@ -192,69 +255,79 @@ export default function AdminCategorias() {
             <div className="flex gap-3 pt-2 border-t border-gray-100">
               {saveError && <p className="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">{saveError}</p>}
             </div>
-            <div className="flex gap-3">
-              <button type="submit" disabled={isSubmitting || createMut.isPending || updateMut.isPending} className="btn-primary text-sm">
+            <div className="sticky bottom-0 -mx-5 -mb-5 flex flex-col-reverse gap-2 border-t border-gray-100 bg-white p-5 sm:-mx-6 sm:-mb-6 sm:flex-row sm:justify-end sm:p-6">
+              <button type="button" onClick={cerrar} className="btn-outline px-5 py-2.5 text-sm">Cancelar</button>
+              <button type="submit" disabled={isSubmitting || createMut.isPending || updateMut.isPending} className="btn-primary px-6 py-2.5 text-sm">
                 {createMut.isPending || updateMut.isPending ? 'Guardando...' : 'Guardar'}
               </button>
-              <button type="button" onClick={cerrar} className="btn-outline text-sm">Cancelar</button>
             </div>
           </form>
+          </div>
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {categoriasFiltradas.map(c => (
-          <div key={c.id} className={`bg-white border rounded-lg overflow-hidden group hover:shadow-md transition-shadow ${c.activo === false ? 'opacity-50' : ''}`}>
-            <div className="h-28 bg-gray-100 flex items-center justify-center overflow-hidden relative">
+          <article key={c.id} className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${c.activo === false ? 'border-dashed border-amber-300' : 'border-gray-200'}`}>
+            <div className="h-40 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden relative">
               {c.imagen
                 ? <img src={c.imagen} alt={c.nombre} className="w-full h-full object-cover" />
-                : <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-2xl font-bold">
+                : <div className="w-20 h-20 rounded-2xl bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 text-3xl font-bold">
                     {c.nombre.charAt(0).toUpperCase()}
                   </div>
               }
-              {c.activo === false && (
-                <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
-                  <span className="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded border">INACTIVO</span>
-                </div>
-              )}
+              <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+                <span className="rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gray-600 shadow-sm backdrop-blur">
+                  {GENEROS.find(g => g.value === c.genero)?.label ?? 'Sin grupo'}
+                </span>
+              </div>
+              <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-bold shadow-sm ${c.activo === false ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                {c.activo === false ? 'Inactiva' : 'Activa'}
+              </span>
             </div>
-            <div className="p-3">
-              <h3 className="font-semibold text-sm text-gray-800">{c.nombre}</h3>
-              {c.descripcion && <p className="text-xs text-gray-500 mt-0.5 truncate">{c.descripcion}</p>}
+            <div className="p-4">
+              <h3 className="font-bold text-base text-gray-900">{c.nombre}</h3>
+              <p className="mt-1 min-h-8 text-xs leading-relaxed text-gray-500 line-clamp-2">
+                {c.descripcion || 'Sin descripción. Puedes agregar una para orientar mejor a tus clientes.'}
+              </p>
               {c.tallasDisponibles && c.tallasDisponibles.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {c.tallasDisponibles.slice(0, 4).map(t => (
-                    <span key={t} className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{t}</span>
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {c.tallasDisponibles.slice(0, 5).map(t => (
+                    <span key={t} className="text-[10px] font-medium bg-gray-100 text-gray-600 px-2 py-1 rounded-md">{t}</span>
                   ))}
-                  {c.tallasDisponibles.length > 4 && (
-                    <span className="text-[10px] text-gray-400">+{c.tallasDisponibles.length - 4}</span>
+                  {c.tallasDisponibles.length > 5 && (
+                    <span className="text-[10px] px-1 py-1 text-gray-400">+{c.tallasDisponibles.length - 5} más</span>
                   )}
                 </div>
               )}
-              <div className="flex flex-wrap gap-2 mt-3">
-                <button onClick={() => abrir(c)} className="flex items-center gap-1 text-blue-600 text-xs hover:underline">
-                  <IconEdit size={12} /> Editar
+            </div>
+            <div className="grid grid-cols-3 border-t border-gray-100 bg-gray-50/70">
+                <button onClick={() => abrir(c)} className="flex items-center justify-center gap-1.5 border-r border-gray-100 px-2 py-3 text-xs font-semibold text-blue-600 hover:bg-blue-50">
+                  <IconEdit size={13} /> Editar
                 </button>
                 <button
                   onClick={() => toggleMut.mutate(c.id)}
-                  className={`flex items-center gap-1 text-xs hover:underline ${c.activo === false ? 'text-green-600' : 'text-orange-500'}`}
+                  className={`flex items-center justify-center gap-1 border-r border-gray-100 px-2 py-3 text-xs font-semibold hover:bg-white ${c.activo === false ? 'text-emerald-600' : 'text-amber-600'}`}
                 >
-                  {c.activo === false ? '● Activar' : '● Desactivar'}
+                  {c.activo === false ? 'Activar' : 'Ocultar'}
                 </button>
                 <button onClick={() => { if (confirm('¿Eliminar?')) deleteMut.mutate(c.id) }}
-                  className="flex items-center gap-1 text-red-500 text-xs hover:underline">
-                  <IconTrash size={12} /> Eliminar
+                  className="flex items-center justify-center gap-1.5 px-2 py-3 text-xs font-semibold text-red-500 hover:bg-red-50">
+                  <IconTrash size={13} /> Eliminar
                 </button>
-              </div>
             </div>
-          </div>
+          </article>
         ))}
       </div>
 
       {categoriasFiltradas.length === 0 && (
         <div className="bg-white border rounded-lg p-8 text-center">
-          <h3 className="text-base font-semibold text-gray-800">No encontré categorías con esa búsqueda</h3>
-          <p className="text-sm text-gray-500 mt-1">Prueba con otro nombre, grupo o estado.</p>
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-xl">⌕</div>
+          <h3 className="mt-3 text-base font-semibold text-gray-800">No encontramos categorías</h3>
+          <p className="text-sm text-gray-500 mt-1">Prueba cambiando la búsqueda o los filtros seleccionados.</p>
+          <button type="button" onClick={() => { setBusqueda(''); setFiltroGenero(''); setFiltroEstado('TODAS') }} className="mt-4 text-sm font-semibold text-[#7d5c48] hover:underline">
+            Limpiar filtros
+          </button>
         </div>
       )}
     </div>
