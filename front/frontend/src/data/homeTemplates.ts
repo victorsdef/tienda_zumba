@@ -17,12 +17,23 @@ export function createBlock(type: HomeBlockType, values: Partial<HomeBlock> = {}
     accentColor: '#7d5c48',
     productMode: 'new',
     productCount: 4,
+    productIds: [],
     height: 48,
     imagePosition: 'right',
     textAlign: 'left',
     contentWidth: 'normal',
     borderRadius: 0,
     overlayOpacity: 35,
+    paddingY: 48,
+    marginY: 0,
+    shadow: 'none',
+    animation: 'none',
+    hideMobile: false,
+    hideDesktop: false,
+    columns: 3,
+    images: [],
+    endDate: '',
+    items: ['Envíos a todo Ecuador', 'Pago seguro', 'Atención personalizada'],
   }
   return { ...defaults, ...values, id: id() }
 }

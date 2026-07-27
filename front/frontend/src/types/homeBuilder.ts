@@ -1,4 +1,18 @@
-export type HomeBlockType = 'hero' | 'bannerCarousel' | 'categories' | 'products' | 'promo' | 'textImage' | 'spacer'
+export type HomeBlockType =
+  | 'hero'
+  | 'bannerCarousel'
+  | 'categories'
+  | 'products'
+  | 'promo'
+  | 'textImage'
+  | 'spacer'
+  | 'coupon'
+  | 'countdown'
+  | 'reviews'
+  | 'benefits'
+  | 'gallery'
+  | 'whatsapp'
+  | 'newsletter'
 
 export interface HomeBlock {
   id: string
@@ -12,14 +26,25 @@ export interface HomeBlock {
   background: string
   textColor: string
   accentColor: string
-  productMode: 'new' | 'trending' | 'offers'
+  productMode: 'new' | 'trending' | 'offers' | 'manual'
   productCount: number
+  productIds: number[]
   height: number
   imagePosition: 'left' | 'right'
   textAlign: 'left' | 'center' | 'right'
   contentWidth: 'normal' | 'wide' | 'full'
   borderRadius: number
   overlayOpacity: number
+  paddingY: number
+  marginY: number
+  shadow: 'none' | 'soft' | 'strong'
+  animation: 'none' | 'fade' | 'slide' | 'zoom'
+  hideMobile: boolean
+  hideDesktop: boolean
+  columns: number
+  images: string[]
+  endDate: string
+  items: string[]
 }
 
 export interface HomeLayout {

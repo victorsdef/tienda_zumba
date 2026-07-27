@@ -21,6 +21,25 @@ public class CuponController {
 
     private final CuponJpaRepository repo;
 
+    @GetMapping("/destacado")
+    public ResponseEntity<Map<String, Object>> destacado() {
+        return repo.findAll().stream()
+            .filter(CuponEntity::isActivo)
+            .filter(c -> c.getFechaExpiracion() == null || c.getFechaExpiracion().isAfter(LocalDateTime.now()))
+            .filter(c -> c.getMaxUsos() == null || c.getUsos() < c.getMaxUsos())
+            .findFirst()
+            .map(c -> {
+                Map<String, Object> result = new HashMap<>();
+                result.put("codigo", c.getCodigo());
+                result.put("tipo", c.getTipo());
+                result.put("valor", c.getValor());
+                result.put("montoMinimo", c.getMontoMinimo() == null ? BigDecimal.ZERO : c.getMontoMinimo());
+                result.put("fechaExpiracion", c.getFechaExpiracion() == null ? "" : c.getFechaExpiracion().toString());
+                return ResponseEntity.ok(result);
+            })
+            .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
     // ── Admin CRUD ──────────────────────────────────────────────────
 
     @GetMapping("/admin")

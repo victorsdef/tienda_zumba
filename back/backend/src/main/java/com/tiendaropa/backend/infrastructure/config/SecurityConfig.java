@@ -61,6 +61,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/banners", "/api/banner", "/api/nueva-arquitectura/banner", "/api/nueva-arquitectura/banners").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/cupones/validar", "/api/nueva-arquitectura/cupones/validar").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/resenas/producto/**", "/api/nueva-arquitectura/resenas/producto/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/resenas/destacadas", "/api/nueva-arquitectura/resenas/destacadas").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/cupones/destacado", "/api/nueva-arquitectura/cupones/destacado").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/newsletter", "/api/nueva-arquitectura/newsletter").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/resenas/admin/stats/**", "/api/nueva-arquitectura/resenas/admin/stats/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/configuracion/retiro", "/api/nueva-arquitectura/configuracion/retiro").permitAll()
                 .requestMatchers(HttpMethod.GET,

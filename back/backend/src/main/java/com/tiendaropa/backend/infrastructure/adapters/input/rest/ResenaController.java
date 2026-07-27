@@ -16,6 +16,23 @@ public class ResenaController {
 
     private final ResenaJpaRepository repo;
 
+    @GetMapping("/destacadas")
+    public List<Map<String, Object>> destacadas(@RequestParam(defaultValue = "6") int limit) {
+        return repo.findAllByOrderByFechaCreacionDesc().stream()
+            .filter(ResenaEntity::isAprobada)
+            .limit(Math.max(1, Math.min(limit, 12)))
+            .map(r -> {
+                Map<String, Object> item = new java.util.LinkedHashMap<>();
+                item.put("id", r.getId());
+                item.put("nombreUsuario", r.getUsuarioNombre() == null ? "Cliente verificado" : r.getUsuarioNombre());
+                item.put("comentario", r.getComentario());
+                item.put("calificacion", r.getCalificacion());
+                item.put("productoId", r.getProductoId());
+                return item;
+            })
+            .toList();
+    }
+
     // ── Público: ver reseñas aprobadas de un producto ───────────────
 
     @GetMapping("/producto/{productoId}")

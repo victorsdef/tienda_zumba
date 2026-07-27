@@ -5,6 +5,7 @@ import ImageManager from '../../components/ui/ImageManager'
 import { HOME_TEMPLATES, cloneTemplate, createBlock } from '../../data/homeTemplates'
 import type { HomeBlock, HomeBlockType, HomeLayout } from '../../types/homeBuilder'
 import HomeBuilderRenderer from '../../widgets/homeBuilder/HomeBuilderRenderer'
+import { getProductos } from '../../api/productos'
 
 type Tab = 'templates' | 'editor' | 'preview'
 
@@ -16,6 +17,13 @@ const blockLabels: Record<HomeBlockType, string> = {
   promo: 'Franja promocional',
   textImage: 'Texto + imagen',
   spacer: 'Espacio',
+  coupon: 'Cupón destacado',
+  countdown: 'Cuenta regresiva',
+  reviews: 'Reseñas',
+  benefits: 'Beneficios',
+  gallery: 'Galería',
+  whatsapp: 'WhatsApp',
+  newsletter: 'Suscripción',
 }
 
 const blockIcons: Record<HomeBlockType, string> = {
@@ -26,6 +34,13 @@ const blockIcons: Record<HomeBlockType, string> = {
   promo: '★',
   textImage: '◫',
   spacer: '↕',
+  coupon: '✂',
+  countdown: '◷',
+  reviews: '★',
+  benefits: '✓',
+  gallery: '▦',
+  whatsapp: '◉',
+  newsletter: '✉',
 }
 
 function parseLayout(raw: string | undefined): HomeLayout | null {
@@ -67,16 +82,41 @@ export default function AdminHomeEditor() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [initialized, setInitialized] = useState(false)
   const [message, setMessage] = useState('')
+  const [templateSearch, setTemplateSearch] = useState('')
 
   const { data: config = [], isLoading } = useQuery({
     queryKey: ['configuracion'],
     queryFn: getConfiguracion,
   })
+  const { data: productsData } = useQuery({
+    queryKey: ['home-builder-product-options'],
+    queryFn: () => getProductos({ size: 100, sort: 'id,desc' }),
+  })
+  const productOptions = productsData?.content ?? []
   const customTemplates = useMemo(
     () => parseCustomTemplates(config.find(item => item.clave === 'home_builder_plantillas')?.valor),
     [config]
   )
   const allTemplates = useMemo(() => [...HOME_TEMPLATES, ...customTemplates], [customTemplates])
+  const filteredTemplates = useMemo(() => {
+    const query = templateSearch.trim().toLocaleLowerCase('es')
+    if (!query) return allTemplates
+    return allTemplates.filter(template => {
+      const searchable = [
+        template.name,
+        template.templateId,
+        template.announcement,
+        ...template.blocks.flatMap(block => [
+          blockLabels[block.type],
+          block.title,
+          block.subtitle,
+          block.type === 'hero' || block.type === 'bannerCarousel' ? 'banner' : '',
+          block.type === 'products' ? 'productos ofertas colección' : '',
+        ]),
+      ].join(' ').toLocaleLowerCase('es')
+      return searchable.includes(query)
+    })
+  }, [allTemplates, templateSearch])
 
   useEffect(() => {
     if (initialized || config.length === 0) return
@@ -172,6 +212,20 @@ export default function AdminHomeEditor() {
             ? { title: 'Promoción especial', subtitle: 'Agrega los detalles de tu promoción.' }
             : type === 'textImage'
               ? { title: 'Cuenta una historia', subtitle: 'Combina una imagen con un mensaje para tus clientes.' }
+              : type === 'coupon'
+                ? { title: 'Cupón especial', subtitle: 'Copia el código y úsalo en tu compra.' }
+                : type === 'countdown'
+                  ? { title: 'La promoción termina en', endDate: new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 16), background: '#4a3728', textColor: '#ffffff' }
+                  : type === 'reviews'
+                    ? { title: 'Lo que dicen nuestras clientas', productCount: 6 }
+                    : type === 'benefits'
+                      ? { title: 'Compra con confianza', items: ['Envíos a todo Ecuador', 'Pago seguro', 'Atención personalizada'] }
+                      : type === 'gallery'
+                        ? { title: 'Inspiración Sofia Couture', images: [], columns: 3 }
+                        : type === 'whatsapp'
+                          ? { title: '¿Necesitas ayuda?', subtitle: 'Habla con una asesora.', link: '593983934596' }
+                          : type === 'newsletter'
+                            ? { title: 'Recibe nuestras novedades', subtitle: 'Colecciones y promociones directamente en tu correo.' }
               : {}
     const block = createBlock(type, presets)
     setLayout(current => ({ ...current, blocks: [...current.blocks, block] }))
@@ -249,8 +303,25 @@ export default function AdminHomeEditor() {
               <h2 className="text-2xl font-bold text-gray-900">Elige un punto de partida</h2>
               <p className="mt-1 text-sm text-gray-500">Aplicar una plantilla reemplaza el borrador actual. La tienda no cambia hasta presionar Publicar.</p>
             </div>
+            <div className="mb-5 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
+              <div className="flex items-center gap-3">
+                <span className="text-gray-400">⌕</span>
+                <input
+                  type="search"
+                  value={templateSearch}
+                  onChange={event => setTemplateSearch(event.target.value)}
+                  placeholder="Buscar Navidad, Cuenca, banner, ofertas…"
+                  className="min-w-0 flex-1 border-0 bg-transparent py-2 text-sm text-gray-800 outline-none"
+                />
+                {templateSearch && (
+                  <button type="button" onClick={() => setTemplateSearch('')} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-100">
+                    Limpiar
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {allTemplates.map(template => {
+              {filteredTemplates.map(template => {
                 const hero = template.blocks.find(block => block.type === 'hero')
                 const isCustom = template.templateId.startsWith('custom-')
                 const isBlank = template.templateId === 'blank'
@@ -277,6 +348,12 @@ export default function AdminHomeEditor() {
                 )
               })}
             </div>
+            {filteredTemplates.length === 0 && (
+              <div className="rounded-2xl border-2 border-dashed border-gray-200 bg-white p-12 text-center">
+                <p className="font-semibold text-gray-600">No encontramos plantillas para “{templateSearch}”.</p>
+                <button type="button" onClick={() => setTemplateSearch('')} className="mt-3 text-sm font-semibold text-[#7d5c48]">Ver todas las plantillas</button>
+              </div>
+            )}
           </div>
         )}
 
@@ -390,6 +467,7 @@ export default function AdminHomeEditor() {
                   )}
 
                   {selected.type === 'products' && (
+                    <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-2">
                       <label>
                         <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Contenido</span>
@@ -397,6 +475,7 @@ export default function AdminHomeEditor() {
                           <option value="new">Nuevos</option>
                           <option value="trending">Favoritos</option>
                           <option value="offers">Ofertas</option>
+                          <option value="manual">Selección manual</option>
                         </select>
                       </label>
                       <label>
@@ -408,6 +487,28 @@ export default function AdminHomeEditor() {
                         </select>
                       </label>
                     </div>
+                    {selected.productMode === 'manual' && (
+                      <div className="max-h-56 space-y-1 overflow-y-auto rounded-xl border border-gray-200 p-2">
+                        {productOptions.map(product => {
+                          const checked = (selected.productIds ?? []).includes(product.id)
+                          return (
+                            <label key={product.id} className="flex cursor-pointer items-center gap-2 rounded-lg p-2 hover:bg-gray-50">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => patchBlock(selected.id, {
+                                  productIds: checked
+                                    ? (selected.productIds ?? []).filter(id => id !== product.id)
+                                    : [...(selected.productIds ?? []), product.id],
+                                })}
+                              />
+                              <span className="min-w-0 truncate text-xs text-gray-700">{product.nombre}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    )}
+                    </div>
                   )}
 
                   {['hero', 'textImage'].includes(selected.type) && (
@@ -417,6 +518,51 @@ export default function AdminHomeEditor() {
                       label="Imagen del bloque"
                       maxImages={1}
                     />
+                  )}
+
+                  {selected.type === 'gallery' && (
+                    <>
+                      <ImageManager
+                        value={selected.images ?? []}
+                        onChange={images => patchBlock(selected.id, { images })}
+                        label="Imágenes de la galería"
+                      />
+                      <label>
+                        <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Columnas</span>
+                        <select value={selected.columns ?? 3} onChange={event => patchBlock(selected.id, { columns: Number(event.target.value) })} className="input-field">
+                          <option value={1}>1 columna</option>
+                          <option value={2}>2 columnas</option>
+                          <option value={3}>3 columnas</option>
+                          <option value={4}>4 columnas</option>
+                        </select>
+                      </label>
+                    </>
+                  )}
+
+                  {selected.type === 'countdown' && (
+                    <label>
+                      <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Fecha de finalización</span>
+                      <input type="datetime-local" value={selected.endDate ?? ''} onChange={event => patchBlock(selected.id, { endDate: event.target.value })} className="input-field" />
+                    </label>
+                  )}
+
+                  {selected.type === 'benefits' && (
+                    <label>
+                      <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Beneficios, uno por línea</span>
+                      <textarea
+                        value={(selected.items ?? []).join('\n')}
+                        onChange={event => patchBlock(selected.id, { items: event.target.value.split('\n') })}
+                        rows={5}
+                        className="input-field resize-none"
+                      />
+                    </label>
+                  )}
+
+                  {selected.type === 'whatsapp' && (
+                    <label>
+                      <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Número con código de país</span>
+                      <input value={selected.link} onChange={event => patchBlock(selected.id, { link: event.target.value })} className="input-field" placeholder="593983934596" />
+                    </label>
                   )}
 
                   {selected.type === 'textImage' && (
@@ -461,6 +607,39 @@ export default function AdminHomeEditor() {
                         <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Esquinas: {selected.borderRadius ?? 0}px</span>
                         <input type="range" min={0} max={48} value={selected.borderRadius ?? 0} onChange={event => patchBlock(selected.id, { borderRadius: Number(event.target.value) })} className="w-full" />
                       </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <label>
+                          <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Sombra</span>
+                          <select value={selected.shadow ?? 'none'} onChange={event => patchBlock(selected.id, { shadow: event.target.value as HomeBlock['shadow'] })} className="input-field">
+                            <option value="none">Sin sombra</option>
+                            <option value="soft">Suave</option>
+                            <option value="strong">Intensa</option>
+                          </select>
+                        </label>
+                        <label>
+                          <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Animación</span>
+                          <select value={selected.animation ?? 'none'} onChange={event => patchBlock(selected.id, { animation: event.target.value as HomeBlock['animation'] })} className="input-field">
+                            <option value="none">Ninguna</option>
+                            <option value="fade">Aparecer</option>
+                            <option value="slide">Deslizar</option>
+                            <option value="zoom">Acercar</option>
+                          </select>
+                        </label>
+                      </div>
+                      <label className="block">
+                        <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Margen vertical: {selected.marginY ?? 0}px</span>
+                        <input type="range" min={0} max={120} value={selected.marginY ?? 0} onChange={event => patchBlock(selected.id, { marginY: Number(event.target.value) })} className="w-full" />
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-2 text-xs font-semibold text-gray-600">
+                          <input type="checkbox" checked={selected.hideMobile ?? false} onChange={event => patchBlock(selected.id, { hideMobile: event.target.checked })} />
+                          Ocultar en celular
+                        </label>
+                        <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-2 text-xs font-semibold text-gray-600">
+                          <input type="checkbox" checked={selected.hideDesktop ?? false} onChange={event => patchBlock(selected.id, { hideDesktop: event.target.checked })} />
+                          Ocultar en escritorio
+                        </label>
+                      </div>
                       {selected.type === 'hero' && (
                         <label className="block">
                           <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Oscurecer imagen: {selected.overlayOpacity ?? 35}%</span>
