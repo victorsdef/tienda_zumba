@@ -245,11 +245,44 @@ export default function ImageManager({ value, onChange, renderCropPreview, label
   const [uploadError, setUploadError] = useState('')
   const [editIdx, setEditIdx] = useState<number | null>(null)
 
+  // Detecta HEIC/HEIF por MIME o extensión (iOS a veces no envía MIME correcto)
+  const esHeic = (file: File) => {
+    const t = file.type.toLowerCase()
+    const n = file.name.toLowerCase()
+    return t === 'image/heic' || t === 'image/heif' || n.endsWith('.heic') || n.endsWith('.heif')
+  }
+
+  // Convierte HEIC/HEIF a JPEG usando heic2any (lazy import)
+  const convertirHeic = async (file: File): Promise<File> => {
+    try {
+      const heic2any = (await import('heic2any')).default
+      const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 })
+      const jpegBlob = Array.isArray(blob) ? blob[0] : blob
+      const nombreJpeg = file.name.replace(/\.(heic|heif)$/i, '.jpg')
+      return new File([jpegBlob], nombreJpeg, { type: 'image/jpeg' })
+    } catch (err) {
+      throw new Error('No se pudo convertir la imagen HEIC. Prueba enviándola como JPG desde tu iPhone.')
+    }
+  }
+
   // ── Selección de archivo → abre modal de crop (GIF sube directo) ──
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    let file = e.target.files?.[0]
     if (!file) return
     e.target.value = ''
+
+    // iPhone HEIC/HEIF: convertir a JPEG antes de procesar
+    if (esHeic(file)) {
+      setUploading(true)
+      try {
+        file = await convertirHeic(file)
+      } catch (err: any) {
+        setUploadError(err?.message ?? 'Error al convertir HEIC')
+        setUploading(false)
+        return
+      }
+      setUploading(false)
+    }
 
     if (file.type === 'image/gif') {
       // GIF: mostrar preview antes de subir
@@ -419,7 +452,7 @@ export default function ImageManager({ value, onChange, renderCropPreview, label
               onClick={() => fileRef.current?.click()}
               className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-red-400 transition-colors"
             >
-              <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
+              <input ref={fileRef} type="file" accept="image/*,image/heic,image/heif,.heic,.heif" multiple className="hidden" onChange={handleFileChange} />
               {uploading ? (
                 <div className="flex flex-col items-center gap-2">
                   <div className="w-6 h-6 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
@@ -431,7 +464,7 @@ export default function ImageManager({ value, onChange, renderCropPreview, label
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   <p className="text-sm text-gray-500">Hacé click para seleccionar</p>
-                  <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP, GIF · Máx 10MB · GIF se sube sin recortar</p>
+                  <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP, GIF, HEIC (iPhone) · Máx 10MB · GIF se sube sin recortar</p>
                 </>
               )}
             </div>

@@ -7,6 +7,8 @@ export interface WishlistProducto {
   precioOriginal?: number
   slug?: string
   imagenes?: string[]
+  imagenesPorColorJson?: string
+  precioPorColorTallaJson?: string
 }
 
 export interface WishlistItem {

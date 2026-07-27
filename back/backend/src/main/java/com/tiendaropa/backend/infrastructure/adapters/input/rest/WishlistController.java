@@ -37,6 +37,8 @@ public class WishlistController {
                 prod.put("precioOriginal", p.getPrecioOriginal());
                 prod.put("slug", p.getSlug());
                 prod.put("imagenes", p.getImagenes());
+                prod.put("imagenesPorColorJson", p.getImagenesPorColorJson());
+                prod.put("precioPorColorTallaJson", p.getPrecioPorColorTallaJson());
                 result.put("producto", prod);
             });
             return result;

@@ -65,8 +65,32 @@ export default function WishlistPage() {
         {items.map((item: WishlistItem) => {
           const p = item.producto
           if (!p) return null
-          const imagen = p.imagenes?.[0] || null
           const slug = p.slug ?? p.id
+
+          // Imagen: primero imagenes[], si no primera imagen por color
+          let imagen: string | null = p.imagenes?.[0] ?? null
+          if (!imagen && p.imagenesPorColorJson) {
+            try {
+              const iporcol: Record<string, string[]> = JSON.parse(p.imagenesPorColorJson)
+              imagen = Object.values(iporcol).find(imgs => imgs?.length)?.[0] ?? null
+            } catch {}
+          }
+
+          // Precio: si viene 0 pero tiene precioPorColorTalla, mostrar el mínimo
+          let precioMostrado = Number(p.precio) || 0
+          let esRango = false
+          let precioMax: number | null = null
+          if (precioMostrado === 0 && p.precioPorColorTallaJson) {
+            try {
+              const pct: Record<string, Record<string, number>> = JSON.parse(p.precioPorColorTallaJson)
+              const todos = Object.values(pct).flatMap(t => Object.values(t)).filter(v => v > 0)
+              if (todos.length) {
+                precioMostrado = Math.min(...todos)
+                precioMax = Math.max(...todos)
+                esRango = precioMax !== precioMostrado
+              }
+            } catch {}
+          }
 
           return (
             <div key={item.id} className="group relative bg-white shadow-sm hover:shadow-md transition-shadow rounded-xl overflow-hidden">
@@ -84,7 +108,13 @@ export default function WishlistPage() {
                 </div>
                 <div className="p-3">
                   <p className="text-xs text-gray-700 line-clamp-2 mb-1">{p.nombre}</p>
-                  <span className="font-bold text-red-500 text-sm">${Number(p.precio).toFixed(2)}</span>
+                  <div className="flex items-baseline gap-1 flex-wrap">
+                    {esRango && <span className="text-[9px] text-gray-400 font-semibold uppercase">desde</span>}
+                    <span className="font-bold text-red-500 text-sm">${precioMostrado.toFixed(2)}</span>
+                    {esRango && precioMax !== null && (
+                      <span className="text-[11px] text-gray-400">– ${precioMax.toFixed(2)}</span>
+                    )}
+                  </div>
                 </div>
               </Link>
               <button
