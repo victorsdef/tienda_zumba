@@ -33,9 +33,15 @@ export default function ProductCard({ producto, compact = false }: Props) {
   }
 
   const getPrecio = (color: string | null) => {
-    if (color && producto.precioPorColorTalla?.[color]) {
-      const valores = Object.values(producto.precioPorColorTalla[color])
-      if (valores.length) return valores[0]
+    const pct = producto.precioPorColorTalla
+    if (color && pct?.[color]) {
+      const valores = Object.values(pct[color])
+      if (valores.length) return Math.min(...valores)
+    }
+    // sin color: leer desde llave '_'
+    if (!color && pct?.['_']) {
+      const valores = Object.values(pct['_'])
+      if (valores.length) return Math.min(...valores)
     }
     return producto.precio
   }
@@ -186,9 +192,23 @@ export default function ProductCard({ producto, compact = false }: Props) {
 
         {/* Price */}
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className={`font-bold text-red-500 ${compact ? 'text-sm' : 'text-sm'} transition-all duration-300`}>
-            ${Number(precioMostrado).toFixed(2)}
-          </span>
+          {(() => {
+            const pct = producto.precioPorColorTalla
+            const tallaVals = pct?.['_'] ? Object.values(pct['_']) : []
+            const colorVals = colorActual && pct?.[colorActual] ? Object.values(pct[colorActual]) : []
+            const vals = tallaVals.length ? tallaVals : colorVals
+            if (vals.length > 1) {
+              const min = Math.min(...vals), max = Math.max(...vals)
+              return <>
+                <span className="text-[9px] text-gray-400 font-semibold uppercase tracking-wide">desde</span>
+                <span className={`font-bold text-red-500 ${compact ? 'text-sm' : 'text-sm'}`}>${min.toFixed(2)}</span>
+                {min !== max && <span className="text-[11px] text-gray-400">– ${max.toFixed(2)}</span>}
+              </>
+            }
+            return <span className={`font-bold text-red-500 ${compact ? 'text-sm' : 'text-sm'} transition-all duration-300`}>
+              ${Number(precioMostrado).toFixed(2)}
+            </span>
+          })()}
           {producto.precioOriginal && producto.precioOriginal > producto.precio && (
             <span className="text-[11px] text-gray-400 line-through">
               ${Number(producto.precioOriginal).toFixed(2)}
