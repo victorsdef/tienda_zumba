@@ -55,22 +55,22 @@ public class ProductoUseCaseImpl implements ProductoUseCase {
         Producto p = obtenerPorId(id);
         String nombreAnterior = p.getNombre();
         Long categoriaAnteriorId = p.getCategoria() != null ? p.getCategoria().getId() : null;
-        // actualizar campos básicos
-        p.setNombre(producto.getNombre());
-        p.setDescripcion(producto.getDescripcion());
-        p.setPrecio(producto.getPrecio());
-        p.setPrecioOriginal(producto.getPrecioOriginal());
+        // merge parcial: solo actualizar campos no-null (permite PATCH desde AdminDescuentos)
+        if (producto.getNombre() != null) p.setNombre(producto.getNombre());
+        if (producto.getDescripcion() != null) p.setDescripcion(producto.getDescripcion());
+        if (producto.getPrecio() != null) p.setPrecio(producto.getPrecio());
+        if (producto.getPrecioOriginal() != null) p.setPrecioOriginal(producto.getPrecioOriginal());
         p.setActivo(producto.isActivo());
-        p.setAplicaIva(producto.getAplicaIva());
-        p.setImagenes(producto.getImagenes());
-        p.setTallas(producto.getTallas());
-        p.setColores(producto.getColores());
-        p.setStockPorColor(producto.getStockPorColor());
-        p.setStockPorColorTallaJson(producto.getStockPorColorTallaJson());
-        p.setImagenesPorColorJson(producto.getImagenesPorColorJson());
-        p.setPrecioPorColorTallaJson(producto.getPrecioPorColorTallaJson());
-        p.setCaracteristicaTitulo(producto.getCaracteristicaTitulo());
-        p.setCaracteristicaDescripcion(producto.getCaracteristicaDescripcion());
+        if (producto.getAplicaIva() != null) p.setAplicaIva(producto.getAplicaIva());
+        if (producto.getImagenes() != null) p.setImagenes(producto.getImagenes());
+        if (producto.getTallas() != null) p.setTallas(producto.getTallas());
+        if (producto.getColores() != null) p.setColores(producto.getColores());
+        if (producto.getStockPorColor() != null) p.setStockPorColor(producto.getStockPorColor());
+        if (producto.getStockPorColorTallaJson() != null) p.setStockPorColorTallaJson(producto.getStockPorColorTallaJson());
+        if (producto.getImagenesPorColorJson() != null) p.setImagenesPorColorJson(producto.getImagenesPorColorJson());
+        if (producto.getPrecioPorColorTallaJson() != null) p.setPrecioPorColorTallaJson(producto.getPrecioPorColorTallaJson());
+        if (producto.getCaracteristicaTitulo() != null) p.setCaracteristicaTitulo(producto.getCaracteristicaTitulo());
+        if (producto.getCaracteristicaDescripcion() != null) p.setCaracteristicaDescripcion(producto.getCaracteristicaDescripcion());
         if (producto.getCategoria() != null && producto.getCategoria().getId() != null) {
             Categoria cat = categoriaRepositoryPort.findById(producto.getCategoria().getId())
                 .orElseThrow(() -> new IllegalArgumentException("Categoría no encontrada"));

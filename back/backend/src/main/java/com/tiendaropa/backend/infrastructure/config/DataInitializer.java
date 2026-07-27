@@ -21,7 +21,7 @@ import com.tiendaropa.backend.domain.model.Usuario;
 import lombok.RequiredArgsConstructor;
 
 @Configuration
-@Profile("prod")
+@Profile("!test")
 @RequiredArgsConstructor
 public class DataInitializer {
 
@@ -35,7 +35,17 @@ public class DataInitializer {
         return args -> {
             String emailAdmin = "gsofiiazaru@gmail.com";
 
-            if (usuarioRepositoryPort.findByEmail(emailAdmin).isPresent()) {
+            var existente = usuarioRepositoryPort.findByEmail(emailAdmin);
+            if (existente.isPresent()) {
+                Usuario u = existente.get();
+                boolean cambio = false;
+                if (u.getRol() != Rol.ADMIN) { u.setRol(Rol.ADMIN); cambio = true; }
+                if (!u.isEmailVerificado()) { u.setEmailVerificado(true); cambio = true; }
+                if (!u.isActivo()) { u.setActivo(true); cambio = true; }
+                if (cambio) {
+                    usuarioRepositoryPort.save(u);
+                    System.out.println("✔ Admin actualizado: " + emailAdmin);
+                }
                 return;
             }
 
