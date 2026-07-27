@@ -9,8 +9,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.UUID;
 
 @Component
 @ConditionalOnMissingBean(CloudinaryStorageAdapter.class)
@@ -30,13 +28,12 @@ public class LocalFileStorageAdapter implements FileStoragePort {
 
     @Override
     public String store(MultipartFile file) {
-        String ext = "";
-        String original = file.getOriginalFilename();
-        if (original != null && original.contains(".")) ext = original.substring(original.lastIndexOf('.'));
-        String name = UUID.randomUUID().toString() + ext;
-        Path target = uploadsDir.resolve(name);
         try {
-            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+            byte[] bytes = file.getBytes();
+            String extension = StorageFileKey.safeExtension(file.getOriginalFilename(), file.getContentType());
+            String name = StorageFileKey.sha256(bytes) + extension;
+            Path target = uploadsDir.resolve(name);
+            if (!Files.exists(target)) Files.write(target, bytes);
             return appBaseUrl + "/uploads/" + name;
         } catch (IOException e) {
             throw new RuntimeException("No se pudo guardar archivo", e);

@@ -34,11 +34,27 @@ public class CloudinaryStorageAdapter implements FileStoragePort {
     @SuppressWarnings("unchecked")
     public String store(MultipartFile file) {
         try {
+            byte[] bytes = file.getBytes();
+            String publicId = "sofia-couture/" + StorageFileKey.sha256(bytes);
+
+            try {
+                Map<String, Object> existing = cloudinary.api().resource(
+                    publicId,
+                    ObjectUtils.asMap("resource_type", "image")
+                );
+                Object existingUrl = existing.get("secure_url");
+                if (existingUrl instanceof String url && !url.isBlank()) return url;
+            } catch (Exception ignored) {
+                // El recurso no existe: se crea usando la huella como identificador.
+            }
+
             Map<String, Object> result = cloudinary.uploader().upload(
-                file.getBytes(),
+                bytes,
                 ObjectUtils.asMap(
-                    "folder",        "sofia-couture",
-                    "resource_type", "auto"
+                    "public_id",       publicId,
+                    "resource_type",  "image",
+                    "overwrite",      false,
+                    "unique_filename", false
                 )
             );
             return (String) result.get("secure_url");
