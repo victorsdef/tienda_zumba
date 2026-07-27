@@ -36,15 +36,21 @@ const layout = (values: Partial<HomeLayout> & Pick<HomeLayout, 'name' | 'templat
 
 export const HOME_TEMPLATES: HomeLayout[] = [
   layout({
-    name: 'Sofia Couture',
-    templateId: 'default',
+    name: 'Diseño original',
+    templateId: 'original',
     announcement: 'Envíos a todo Ecuador · Compra segura',
     blocks: [
-      createBlock('hero', { title: 'Elegancia para cada momento', subtitle: 'Descubre nuestra nueva colección.', background: '#efe5dc' }),
-      createBlock('categories', { title: 'Compra por categoría', subtitle: 'Encuentra tu estilo ideal.' }),
+      createBlock('hero', { title: 'Pantalones que realzan tu esencia', subtitle: 'Diseños elegantes para mujer, hombre y familia con una presencia más cuidada.', buttonText: 'Comprar ahora', background: '#4a3728', textColor: '#ffffff' }),
+      createBlock('categories', { title: 'Compra por categoría', subtitle: 'Mujer, hombre, niños, calzado, accesorios y belleza.' }),
       createBlock('products', { title: 'Nueva colección', subtitle: 'Lo último que llegó a la boutique.', productMode: 'new' }),
-      createBlock('textImage', { title: 'Moda que te hace sentir única', subtitle: 'Piezas seleccionadas para resaltar tu estilo.', background: '#f5eee8' }),
-      createBlock('products', { title: 'Favoritos de la boutique', productMode: 'trending' }),
+      createBlock('textImage', {
+        title: 'Moda que te hace sentir única en cada ocasión.',
+        subtitle: 'Descubrí piezas pensadas para resaltar tu estilo. Envíos a todo Ecuador, atención personalizada y los mejores precios de la temporada.',
+        buttonText: 'Ver catálogo completo',
+        background: '#f5eee8',
+      }),
+      createBlock('products', { title: 'Favoritos de la boutique', subtitle: 'Los más elegidos por nuestras clientas.', productMode: 'trending' }),
+      createBlock('products', { title: 'Precios irresistibles', subtitle: 'Las mejores piezas al mejor precio, solo por tiempo limitado.', productMode: 'offers', productCount: 8, background: '#f5eee8' }),
     ],
   }),
   layout({
