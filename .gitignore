@@ -5,8 +5,9 @@
 # El ejemplo sí se sube (no tiene valores reales)
 !.env.production.example
 
-# Storage local
-storage/
+# Storage local en la raíz del proyecto.
+# La barra inicial evita ignorar paquetes Java llamados "storage".
+/storage/
 
 # Docker
 *.log

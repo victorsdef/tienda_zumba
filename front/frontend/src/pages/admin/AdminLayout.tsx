@@ -117,7 +117,7 @@ export default function AdminLayout() {
   )
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex h-screen overflow-hidden bg-gray-100">
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setSidebarOpen(false)} />
@@ -131,7 +131,7 @@ export default function AdminLayout() {
         <SidebarContent />
       </aside>
 
-      <main className="flex-1 overflow-auto min-w-0">
+      <main className="h-screen flex-1 overflow-y-auto overflow-x-hidden min-w-0">
         <div className="lg:hidden sticky top-0 z-30 bg-white border-b border-gray-200 px-4 h-12 flex items-center gap-3 shadow-sm">
           <button onClick={() => setSidebarOpen(true)} className="text-gray-600 hover:text-gray-900">
             <IconMenu size={22} />

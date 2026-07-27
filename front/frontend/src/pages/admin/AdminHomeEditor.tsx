@@ -170,7 +170,7 @@ function DestinationPicker({
   categories: Categoria[]
   products: Producto[]
 }) {
-  const destination = parseDestination(link || '/catalogo')
+  const destination = parseDestination(link)
   return (
     <div className="space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
       <div>
@@ -206,7 +206,16 @@ function DestinationPicker({
         </select>
       )}
       {destination.type === 'CUSTOM' && (
-        <input value={destination.value} onChange={event => onChange(event.target.value)} className="input-field font-mono text-xs" placeholder="https://ejemplo.com o /ruta" />
+        <div className="space-y-1">
+          <input
+            type="text"
+            value={destination.value}
+            onChange={event => onChange(event.target.value)}
+            className="input-field font-mono text-xs"
+            placeholder="https://ejemplo.com o /ruta"
+          />
+          <p className="text-[10px] text-gray-500">Puedes pegar una página externa completa o escribir una ruta de la tienda.</p>
+        </div>
       )}
       <p className="break-all text-[10px] text-gray-400">Destino: {link || 'Sin configurar'}</p>
     </div>
@@ -408,7 +417,7 @@ export default function AdminHomeEditor() {
 
   return (
     <div className="min-h-screen bg-[#f4f1ed]">
-      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur md:px-6">
+      <header className="sticky top-12 z-40 border-b border-gray-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur md:px-6 lg:top-0">
         <div className="mx-auto max-w-[1600px] space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
