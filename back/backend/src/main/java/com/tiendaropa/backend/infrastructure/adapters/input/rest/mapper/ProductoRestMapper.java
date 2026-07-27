@@ -26,6 +26,7 @@ public abstract class ProductoRestMapper {
     @Mapping(target = "stockPorColorTalla", ignore = true)
     @Mapping(target = "imagenesPorColor", ignore = true)
     @Mapping(target = "precioPorColorTalla", ignore = true)
+    @Mapping(target = "precioOriginalPorColorTalla", ignore = true)
     public abstract ProductoDTO toDto(Producto producto);
 
     public abstract List<ProductoDTO> toDtoList(List<Producto> productos);
@@ -56,6 +57,14 @@ public abstract class ProductoRestMapper {
                 ));
             } catch (Exception ignored) {}
         }
+        if (producto.getPrecioOriginalPorColorTallaJson() != null && !producto.getPrecioOriginalPorColorTallaJson().isBlank()) {
+            try {
+                dto.setPrecioOriginalPorColorTalla(objectMapper.readValue(
+                    producto.getPrecioOriginalPorColorTallaJson(),
+                    new TypeReference<Map<String, Map<String, BigDecimal>>>() {}
+                ));
+            } catch (Exception ignored) {}
+        }
     }
 
     @Mapping(target = "id", ignore = true)
@@ -64,6 +73,7 @@ public abstract class ProductoRestMapper {
     @Mapping(target = "categoria", source = "categoriaId", qualifiedByName = "categoriaFromId")
     @Mapping(target = "stockPorColorTallaJson", ignore = true)
     @Mapping(target = "imagenesPorColorJson", ignore = true)
+    @Mapping(target = "precioOriginalPorColorTallaJson", ignore = true)
     public abstract Producto toDomain(ProductoRequest request);
 
     @Named("categoriaFromId")

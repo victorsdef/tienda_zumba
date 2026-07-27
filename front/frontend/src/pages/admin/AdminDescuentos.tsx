@@ -6,14 +6,18 @@ import type { Producto } from '../../types'
 
 const getNombreColor = (hex: string) => hexToNombre(hex)
 
-// clave única por celda: "prodId-color-talla"
 type CeldaKey = string
-type EstadoCelda = { descuento: string; precioOriginal?: number }
+type EstadoCelda = { descuento: string }
 
 function getImagen(p: Producto, color?: string): string | null {
   if (color && p.imagenesPorColor?.[color]?.[0]) return p.imagenesPorColor[color][0]
   if (p.imagenes?.[0]) return p.imagenes[0]
   return Object.values(p.imagenesPorColor ?? {}).find(imgs => imgs?.length)?.[0] ?? null
+}
+
+// Precio original de una celda: primero mira precioOriginalPorColorTalla, luego el precio actual
+function getPrecioOriginalCelda(p: Producto, color: string, talla: string): number | undefined {
+  return p.precioOriginalPorColorTalla?.[color]?.[talla]
 }
 
 export default function AdminDescuentos() {
@@ -23,7 +27,6 @@ export default function AdminDescuentos() {
   const [busqueda, setBusqueda] = useState('')
   const [abiertos, setAbiertos] = useState<Record<number, boolean>>({})
   const [celdas, setCeldas] = useState<Record<CeldaKey, EstadoCelda>>({})
-  // para productos simples
   const [simples, setSimples] = useState<Record<number, string>>({})
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -49,84 +52,148 @@ export default function AdminDescuentos() {
     actualizarMut.isPending && (actualizarMut.variables as { id: number })?.id === id
 
   const celdaKey = (prodId: number, color: string, talla: string): CeldaKey => `${prodId}|${color}|${talla}`
-
   const getCelda = (k: CeldaKey): EstadoCelda => celdas[k] ?? { descuento: '' }
-
   const patchCelda = (k: CeldaKey, patch: Partial<EstadoCelda>) =>
     setCeldas(prev => ({ ...prev, [k]: { ...getCelda(k), ...patch } }))
 
-  // Aplica descuento a UNA celda (color+talla)
-  const aplicarCelda = (p: Producto, color: string, talla: string, precioActual: number) => {
+  // Aplica descuento a UNA celda — persiste original en precioOriginalPorColorTalla
+  const aplicarCelda = (p: Producto, color: string, talla: string) => {
     const k = celdaKey(p.id, color, talla)
-    const est = getCelda(k)
-    const pct = Number(est.descuento)
+    const pct = Number(getCelda(k).descuento)
     if (!pct || pct <= 0 || pct >= 100) return
 
-    const precioLista = est.precioOriginal ?? precioActual
+    const precioActual = p.precioPorColorTalla?.[color]?.[talla] ?? 0
+    // El "precio lista" es el original ya guardado, si no existe usamos el actual como base
+    const precioLista = getPrecioOriginalCelda(p, color, talla) ?? precioActual
     const nuevo = parseFloat((precioLista * (1 - pct / 100)).toFixed(2))
 
     const nuevoPCT = {
       ...(p.precioPorColorTalla ?? {}),
       [color]: { ...(p.precioPorColorTalla?.[color] ?? {}), [talla]: nuevo },
     }
-    const todos = Object.values(nuevoPCT).flatMap(t => Object.values(t))
-
-    patchCelda(k, { precioOriginal: precioLista })
-    actualizarMut.mutate({
-      id: p.id,
-      upd: {
-        precioPorColorTalla: nuevoPCT,
-        precio: Math.min(...todos),
-        precioOriginal: p.precioOriginal && p.precioOriginal > 0 ? p.precioOriginal : precioLista,
-      },
-    })
-  }
-
-  // Quita el descuento de UNA celda
-  const quitarCelda = (p: Producto, color: string, talla: string, precioActual: number) => {
-    const k = celdaKey(p.id, color, talla)
-    const est = getCelda(k)
-    const original = est.precioOriginal ?? precioActual
-
-    const nuevoPCT = {
-      ...(p.precioPorColorTalla ?? {}),
-      [color]: { ...(p.precioPorColorTalla?.[color] ?? {}), [talla]: original },
+    const nuevoPOCT = {
+      ...(p.precioOriginalPorColorTalla ?? {}),
+      [color]: { ...(p.precioOriginalPorColorTalla?.[color] ?? {}), [talla]: precioLista },
     }
     const todos = Object.values(nuevoPCT).flatMap(t => Object.values(t))
 
     actualizarMut.mutate({
       id: p.id,
-      upd: { precioPorColorTalla: nuevoPCT, precio: Math.min(...todos) },
+      upd: {
+        precioPorColorTalla: nuevoPCT,
+        precioOriginalPorColorTalla: nuevoPOCT,
+        precio: Math.min(...todos),
+      },
     })
-    setCeldas(prev => { const n = { ...prev }; delete n[k]; return n })
+    patchCelda(k, { descuento: '' })
   }
 
-  // Producto simple
+  const quitarCelda = (p: Producto, color: string, talla: string) => {
+    const original = getPrecioOriginalCelda(p, color, talla)
+    if (original === undefined) return
+
+    const nuevoPCT = {
+      ...(p.precioPorColorTalla ?? {}),
+      [color]: { ...(p.precioPorColorTalla?.[color] ?? {}), [talla]: original },
+    }
+    const nuevoPOCT = { ...(p.precioOriginalPorColorTalla ?? {}) }
+    if (nuevoPOCT[color]) {
+      const copia = { ...nuevoPOCT[color] }
+      delete copia[talla]
+      if (Object.keys(copia).length === 0) delete nuevoPOCT[color]
+      else nuevoPOCT[color] = copia
+    }
+    const todos = Object.values(nuevoPCT).flatMap(t => Object.values(t))
+
+    actualizarMut.mutate({
+      id: p.id,
+      upd: {
+        precioPorColorTalla: nuevoPCT,
+        precioOriginalPorColorTalla: nuevoPOCT,
+        precio: Math.min(...todos),
+      },
+    })
+  }
+
   const aplicarSimple = (p: Producto) => {
     const pct = Number(simples[p.id] ?? '')
     if (!pct || pct <= 0 || pct >= 100) return
     const lista = p.precioOriginal && p.precioOriginal > (p.precio ?? 0) ? p.precioOriginal : (p.precio ?? 0)
     actualizarMut.mutate({ id: p.id, upd: { precio: parseFloat((lista * (1 - pct / 100)).toFixed(2)), precioOriginal: lista } })
-    setAbiertos(prev => ({ ...prev, [p.id]: false }))
+    setSimples(prev => ({ ...prev, [p.id]: '' }))
   }
   const quitarSimple = (p: Producto) => {
     actualizarMut.mutate({ id: p.id, upd: { precio: p.precioOriginal ?? p.precio, precioOriginal: 0 } })
-    setSimples(prev => { const n = { ...prev }; delete n[p.id]; return n })
+  }
+
+  // ── Componente celda de descuento reutilizable (para color+talla y talla-sin-color) ──
+  const CeldaDescuento = ({ p, color, talla }: { p: Producto; color: string; talla: string }) => {
+    const precioActual = p.precioPorColorTalla?.[color]?.[talla]
+    if (precioActual === undefined) return <span className="text-gray-300 text-xs">—</span>
+
+    const k = celdaKey(p.id, color, talla)
+    const est = getCelda(k)
+    const precioLista = getPrecioOriginalCelda(p, color, talla)
+    const conDesc = precioLista !== undefined && precioLista > precioActual
+    const pctActual = conDesc ? Math.round((1 - precioActual / precioLista!) * 100) : 0
+    const nuevo = est.descuento && Number(est.descuento) > 0 && Number(est.descuento) < 100
+      ? parseFloat(((precioLista ?? precioActual) * (1 - Number(est.descuento) / 100)).toFixed(2))
+      : null
+
+    return (
+      <div className="flex flex-col items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap justify-center">
+          {conDesc ? (
+            <>
+              <span className="text-red-500 font-bold text-xs sm:text-sm">${precioActual.toFixed(2)}</span>
+              <span className="text-gray-400 line-through text-[10px]">${precioLista!.toFixed(2)}</span>
+              <span className="bg-red-100 text-red-600 text-[10px] font-bold px-1 py-0.5 rounded">-{pctActual}%</span>
+            </>
+          ) : (
+            <span className="text-gray-700 font-semibold text-xs sm:text-sm">${precioActual.toFixed(2)}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="relative">
+            <input
+              type="number" min="1" max="99" value={est.descuento}
+              onChange={e => patchCelda(k, { descuento: e.target.value })}
+              onKeyDown={e => e.key === 'Enter' && aplicarCelda(p, color, talla)}
+              placeholder="%"
+              className="w-14 border border-gray-200 rounded-lg px-2 py-1 text-xs pr-5 focus:outline-none focus:ring-1 focus:ring-[#7d5c48]/40 text-center"
+            />
+            <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">%</span>
+          </div>
+          <button
+            onClick={() => aplicarCelda(p, color, talla)}
+            disabled={guardando(p.id) || !est.descuento}
+            className="text-[10px] bg-[#4a3728] text-white px-1.5 py-1 rounded-lg hover:bg-[#3a2a1e] disabled:opacity-40 font-semibold"
+          >OK</button>
+        </div>
+        {nuevo !== null && (
+          <span className="text-[10px] text-green-600 font-semibold">→ ${nuevo.toFixed(2)}</span>
+        )}
+        {conDesc && (
+          <button onClick={() => quitarCelda(p, color, talla)}
+            className="text-[10px] text-red-400 hover:text-red-600 underline">Quitar</button>
+        )}
+      </div>
+    )
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-gray-800">Descuentos en productos</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Aplica descuentos por producto, color o talla individual</p>
+    <div className="px-3 py-4 sm:p-6 md:p-8 max-w-5xl mx-auto">
+      <div className="mb-5 md:mb-6">
+        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">Descuentos en productos</h1>
+        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Aplica descuentos por producto, color o talla individual</p>
       </div>
 
-      <div className="mb-5">
+      <div className="mb-4 sm:mb-5">
         <input
           value={inputBusqueda}
           onChange={e => handleBusqueda(e.target.value)}
           placeholder="Buscar producto..."
-          className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30 shadow-sm"
+          className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm w-full sm:max-w-sm focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30 shadow-sm"
         />
       </div>
 
@@ -135,7 +202,7 @@ export default function AdminDescuentos() {
           {[1,2,3,4].map(i => <div key={i} className="h-20 bg-gray-100 rounded-2xl animate-pulse" />)}
         </div>
       ) : productos.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">
+        <div className="text-center py-16 sm:py-20 text-gray-400">
           <p className="text-4xl mb-3">🏷️</p>
           <p className="font-medium">No se encontraron productos</p>
         </div>
@@ -144,27 +211,26 @@ export default function AdminDescuentos() {
           {productos.map(p => {
             const pct = p.precioPorColorTalla
             const coloresPCT = pct ? Object.keys(pct).filter(k => k !== '_') : []
-            // "_" = precios por talla sin colores
             const esPorTallaSinColor = !!pct?.['_'] && coloresPCT.length === 0
             const esPorColor = coloresPCT.length > 0
             const abierto = abiertos[p.id] ?? false
             const imagen = getImagen(p)
 
-            // ── Producto simple (sin tallas ni colores con precio) ─────
+            // ── Producto simple ────────────────────────────────────────
             if (!esPorColor && !esPorTallaSinColor) {
               const actual = p.precio ?? 0
               const lista = p.precioOriginal && p.precioOriginal > actual ? p.precioOriginal : actual
               const conDesc = lista > actual
               const descPct = conDesc ? Math.round((1 - actual / lista) * 100) : 0
-              const descInput = simples[p.id] ?? (descPct > 0 ? String(descPct) : '')
+              const descInput = simples[p.id] ?? ''
 
               return (
                 <div key={p.id} className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all ${abierto ? 'border-[#7d5c48] ring-2 ring-[#7d5c48]/20' : 'border-gray-200 hover:border-gray-300'}`}>
-                  <button className="w-full flex items-center gap-3 p-4 text-left" onClick={() => setAbiertos(prev => ({ ...prev, [p.id]: !prev[p.id] }))}>
-                    {imagen ? <img src={imagen} alt={p.nombre} className="w-12 h-14 object-cover rounded-xl flex-shrink-0" /> : <div className="w-12 h-14 bg-[#f5ede6] rounded-xl flex-shrink-0" />}
+                  <button className="w-full flex items-center gap-3 p-3 sm:p-4 text-left" onClick={() => setAbiertos(prev => ({ ...prev, [p.id]: !prev[p.id] }))}>
+                    {imagen ? <img src={imagen} alt={p.nombre} className="w-12 h-14 sm:w-14 sm:h-16 object-cover rounded-xl flex-shrink-0" /> : <div className="w-12 h-14 sm:w-14 sm:h-16 bg-[#f5ede6] rounded-xl flex-shrink-0" />}
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-800 text-sm line-clamp-1">{p.nombre}</p>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-1.5 sm:gap-2 mt-1 flex-wrap">
                         {conDesc ? (
                           <>
                             <span className="text-red-500 font-bold text-sm">${actual.toFixed(2)}</span>
@@ -181,8 +247,8 @@ export default function AdminDescuentos() {
                     </svg>
                   </button>
                   {abierto && (
-                    <div className="border-t border-gray-100 px-4 py-4 bg-[#fafaf9]">
-                      <div className="flex items-center gap-3">
+                    <div className="border-t border-gray-100 px-3 sm:px-4 py-3 sm:py-4 bg-[#fafaf9]">
+                      <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                         <div className="relative">
                           <input type="number" min="1" max="99" value={descInput}
                             onChange={e => setSimples(prev => ({ ...prev, [p.id]: e.target.value }))}
@@ -209,7 +275,7 @@ export default function AdminDescuentos() {
               )
             }
 
-            // ── Producto con tallas sin color ─────────────────────────
+            // ── Producto con tallas SIN color ───────────────────────────
             if (esPorTallaSinColor) {
               const preciosPorTalla = pct!['_']
               const tallas = Object.keys(preciosPorTalla).sort((a, b) => {
@@ -218,8 +284,8 @@ export default function AdminDescuentos() {
               })
               return (
                 <div key={p.id} className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all ${abierto ? 'border-[#7d5c48] ring-2 ring-[#7d5c48]/20' : 'border-gray-200 hover:border-gray-300'}`}>
-                  <button className="w-full flex items-center gap-3 p-4 text-left" onClick={() => setAbiertos(prev => ({ ...prev, [p.id]: !prev[p.id] }))}>
-                    {imagen ? <img src={imagen} alt={p.nombre} className="w-12 h-14 object-cover rounded-xl flex-shrink-0" /> : <div className="w-12 h-14 bg-[#f5ede6] rounded-xl flex-shrink-0" />}
+                  <button className="w-full flex items-center gap-3 p-3 sm:p-4 text-left" onClick={() => setAbiertos(prev => ({ ...prev, [p.id]: !prev[p.id] }))}>
+                    {imagen ? <img src={imagen} alt={p.nombre} className="w-12 h-14 sm:w-14 sm:h-16 object-cover rounded-xl flex-shrink-0" /> : <div className="w-12 h-14 sm:w-14 sm:h-16 bg-[#f5ede6] rounded-xl flex-shrink-0" />}
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-800 text-sm line-clamp-1">{p.nombre}</p>
                       <span className="text-xs text-[#7d5c48] bg-[#f5f0e8] px-2 py-0.5 rounded font-medium mt-1 inline-block">
@@ -231,73 +297,24 @@ export default function AdminDescuentos() {
                     </svg>
                   </button>
                   {abierto && (
-                    <div className="border-t border-gray-100 overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="bg-[#f5f0e8]">
-                            {tallas.map(t => (
-                              <th key={t} className="px-3 py-2.5 text-xs font-semibold text-[#4a3728] text-center min-w-[130px]">Talla {t}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            {tallas.map(talla => {
-                              const precioActual = preciosPorTalla[talla]
-                              const k = celdaKey(p.id, '_', talla)
-                              const est = getCelda(k)
-                              const conDesc = !!est.precioOriginal && est.precioOriginal > precioActual
-                              const pctActual = conDesc ? Math.round((1 - precioActual / est.precioOriginal!) * 100) : 0
-                              const nuevo = est.descuento && Number(est.descuento) > 0 && Number(est.descuento) < 100
-                                ? parseFloat(((est.precioOriginal ?? precioActual) * (1 - Number(est.descuento) / 100)).toFixed(2))
-                                : null
-                              return (
-                                <td key={talla} className="px-3 py-3 border-r border-gray-100 last:border-0">
-                                  <div className="flex flex-col items-center gap-1.5">
-                                    <div className="flex items-center gap-1.5">
-                                      {conDesc ? (
-                                        <>
-                                          <span className="text-red-500 font-bold text-xs">${precioActual.toFixed(2)}</span>
-                                          <span className="bg-red-100 text-red-600 text-[10px] font-bold px-1 py-0.5 rounded">-{pctActual}%</span>
-                                        </>
-                                      ) : (
-                                        <span className="text-gray-700 font-semibold text-xs">${precioActual.toFixed(2)}</span>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <div className="relative">
-                                        <input type="number" min="1" max="99" value={est.descuento}
-                                          onChange={e => patchCelda(k, { descuento: e.target.value })}
-                                          onKeyDown={e => e.key === 'Enter' && aplicarCelda(p, '_', talla, precioActual)}
-                                          placeholder={conDesc ? String(pctActual) : '%'}
-                                          className="w-16 border border-gray-200 rounded-lg px-2 py-1 text-xs pr-5 focus:outline-none focus:ring-1 focus:ring-[#7d5c48]/40 text-center" />
-                                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">%</span>
-                                      </div>
-                                      <button onClick={() => aplicarCelda(p, '_', talla, precioActual)}
-                                        disabled={guardando(p.id) || !est.descuento}
-                                        className="text-[10px] bg-[#4a3728] text-white px-1.5 py-1 rounded-lg hover:bg-[#3a2a1e] disabled:opacity-40">OK</button>
-                                    </div>
-                                    {nuevo !== null && <span className="text-[10px] text-green-600 font-semibold">${nuevo.toFixed(2)}</span>}
-                                    {conDesc && (
-                                      <button onClick={() => quitarCelda(p, '_', talla, precioActual)}
-                                        className="text-[10px] text-red-400 hover:text-red-600">Quitar</button>
-                                    )}
-                                  </div>
-                                </td>
-                              )
-                            })}
-                          </tr>
-                        </tbody>
-                      </table>
+                    <div className="border-t border-gray-100 p-3 sm:p-4 bg-[#fafaf9]">
+                      {/* Mobile: cards por talla · Desktop: grid horizontal */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+                        {tallas.map(talla => (
+                          <div key={talla} className="bg-white border border-gray-100 rounded-xl px-3 py-3">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 text-center mb-2">Talla {talla}</p>
+                            <CeldaDescuento p={p} color="_" talla={talla} />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
               )
             }
 
-            // ── Producto con colores: tabla color × talla ──────────────
+            // ── Producto con colores + tallas ──────────────────────────
             const colores = coloresPCT
-            // Unión de todas las tallas que aparecen en algún color
             const tallasSet = new Set<string>()
             for (const [k, ts] of Object.entries(pct!)) { if (k !== '_') Object.keys(ts).forEach(t => tallasSet.add(t)) }
             const tallas = Array.from(tallasSet).sort((a, b) => {
@@ -307,131 +324,93 @@ export default function AdminDescuentos() {
 
             return (
               <div key={p.id} className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all ${abierto ? 'border-[#7d5c48] ring-2 ring-[#7d5c48]/20' : 'border-gray-200 hover:border-gray-300'}`}>
-                {/* Cabecera */}
-                <button className="w-full flex items-center gap-3 p-4 text-left" onClick={() => setAbiertos(prev => ({ ...prev, [p.id]: !prev[p.id] }))}>
-                  {imagen ? <img src={imagen} alt={p.nombre} className="w-12 h-14 object-cover rounded-xl flex-shrink-0" /> : <div className="w-12 h-14 bg-[#f5ede6] rounded-xl flex-shrink-0" />}
+                <button className="w-full flex items-center gap-3 p-3 sm:p-4 text-left" onClick={() => setAbiertos(prev => ({ ...prev, [p.id]: !prev[p.id] }))}>
+                  {imagen ? <img src={imagen} alt={p.nombre} className="w-12 h-14 sm:w-14 sm:h-16 object-cover rounded-xl flex-shrink-0" /> : <div className="w-12 h-14 sm:w-14 sm:h-16 bg-[#f5ede6] rounded-xl flex-shrink-0" />}
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-800 text-sm line-clamp-1">{p.nombre}</p>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className="text-xs text-[#7d5c48] bg-[#f5f0e8] px-2 py-0.5 rounded font-medium">
-                        {colores.length} color{colores.length !== 1 ? 'es' : ''} · {tallas.length} talla{tallas.length !== 1 ? 's' : ''}
-                      </span>
-                    </div>
+                    <span className="text-xs text-[#7d5c48] bg-[#f5f0e8] px-2 py-0.5 rounded font-medium mt-1 inline-block">
+                      {colores.length} color{colores.length !== 1 ? 'es' : ''} · {tallas.length} talla{tallas.length !== 1 ? 's' : ''}
+                    </span>
                   </div>
                   <svg className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${abierto ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
 
-                {/* Tabla color × talla */}
                 {abierto && (
-                  <div className="border-t border-gray-100 overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-[#f5f0e8]">
-                          <th className="text-left px-4 py-2.5 text-xs font-semibold text-[#4a3728] min-w-[100px]">Color</th>
-                          {tallas.map(t => (
-                            <th key={t} className="px-3 py-2.5 text-xs font-semibold text-[#4a3728] text-center min-w-[130px]">
-                              Talla {t}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {colores.map(color => {
-                          const imgColor = getImagen(p, color)
-                          return (
-                            <tr key={color} className="hover:bg-gray-50/50">
-                              {/* Columna de color */}
-                              <td className="px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                  {imgColor
-                                    ? <img src={imgColor} alt={color} className="w-7 h-8 object-cover rounded-lg flex-shrink-0" />
-                                    : <div className="w-7 h-8 bg-[#f0ebe3] rounded-lg flex-shrink-0" />}
-                                  <div className="flex items-center gap-1.5">
+                  <div className="border-t border-gray-100 bg-[#fafaf9]">
+                    {/* MOBILE: acordeón por color */}
+                    <div className="lg:hidden divide-y divide-gray-100">
+                      {colores.map(color => {
+                        const imgColor = getImagen(p, color)
+                        return (
+                          <div key={color} className="p-3 sm:p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              {imgColor
+                                ? <img src={imgColor} alt={color} className="w-8 h-10 object-cover rounded-lg flex-shrink-0" />
+                                : <div className="w-8 h-10 bg-[#f0ebe3] rounded-lg flex-shrink-0" />}
+                              <span
+                                className="w-4 h-4 rounded-full flex-shrink-0 border border-black/10"
+                                style={{ backgroundColor: color }}
+                              />
+                              <span className="text-sm font-semibold text-gray-800">{getNombreColor(color)}</span>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {tallas.map(talla => (
+                                pct[color]?.[talla] !== undefined ? (
+                                  <div key={talla} className="bg-white border border-gray-100 rounded-xl px-2 py-2">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 text-center mb-1.5">Talla {talla}</p>
+                                    <CeldaDescuento p={p} color={color} talla={talla} />
+                                  </div>
+                                ) : null
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* DESKTOP: tabla color × talla */}
+                    <div className="hidden lg:block overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-[#f5f0e8]">
+                            <th className="text-left px-4 py-2.5 text-xs font-semibold text-[#4a3728] min-w-[140px]">Color</th>
+                            {tallas.map(t => (
+                              <th key={t} className="px-3 py-2.5 text-xs font-semibold text-[#4a3728] text-center min-w-[130px]">
+                                Talla {t}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {colores.map(color => {
+                            const imgColor = getImagen(p, color)
+                            return (
+                              <tr key={color} className="hover:bg-gray-50/50">
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-2">
+                                    {imgColor
+                                      ? <img src={imgColor} alt={color} className="w-7 h-8 object-cover rounded-lg flex-shrink-0" />
+                                      : <div className="w-7 h-8 bg-[#f0ebe3] rounded-lg flex-shrink-0" />}
                                     <span
                                       className="w-3.5 h-3.5 rounded-full flex-shrink-0 border border-black/10"
                                       style={{ backgroundColor: color }}
                                     />
-                                    <span className="text-xs font-semibold text-gray-700 leading-tight">{getNombreColor(color)}</span>
+                                    <span className="text-xs font-semibold text-gray-700">{getNombreColor(color)}</span>
                                   </div>
-                                </div>
-                              </td>
-
-                              {/* Celdas por talla */}
-                              {tallas.map(talla => {
-                                const precioActual = pct[color]?.[talla]
-                                if (precioActual === undefined) {
-                                  return (
-                                    <td key={talla} className="px-3 py-3 text-center">
-                                      <span className="text-gray-300 text-xs">—</span>
-                                    </td>
-                                  )
-                                }
-                                const k = celdaKey(p.id, color, talla)
-                                const est = getCelda(k)
-                                const conDesc = !!est.precioOriginal && est.precioOriginal > precioActual
-                                const pctActual = conDesc ? Math.round((1 - precioActual / est.precioOriginal!) * 100) : 0
-                                const nuevo = est.descuento && Number(est.descuento) > 0 && Number(est.descuento) < 100
-                                  ? parseFloat(((est.precioOriginal ?? precioActual) * (1 - Number(est.descuento) / 100)).toFixed(2))
-                                  : null
-
-                                return (
+                                </td>
+                                {tallas.map(talla => (
                                   <td key={talla} className="px-3 py-3">
-                                    <div className="flex flex-col items-center gap-1.5">
-                                      {/* Precio actual */}
-                                      <div className="flex items-center gap-1.5">
-                                        {conDesc ? (
-                                          <>
-                                            <span className="text-red-500 font-bold text-xs">${precioActual.toFixed(2)}</span>
-                                            <span className="bg-red-100 text-red-600 text-[10px] font-bold px-1 py-0.5 rounded">-{pctActual}%</span>
-                                          </>
-                                        ) : (
-                                          <span className="text-gray-700 font-semibold text-xs">${precioActual.toFixed(2)}</span>
-                                        )}
-                                      </div>
-
-                                      {/* Input de descuento */}
-                                      <div className="flex items-center gap-1">
-                                        <div className="relative">
-                                          <input
-                                            type="number" min="1" max="99"
-                                            value={est.descuento}
-                                            onChange={e => patchCelda(k, { descuento: e.target.value })}
-                                            onKeyDown={e => e.key === 'Enter' && aplicarCelda(p, color, talla, precioActual)}
-                                            placeholder={conDesc ? String(pctActual) : '%'}
-                                            className="w-16 border border-gray-200 rounded-lg px-2 py-1 text-xs pr-5 focus:outline-none focus:ring-1 focus:ring-[#7d5c48]/40 text-center"
-                                          />
-                                          <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">%</span>
-                                        </div>
-                                        <button
-                                          onClick={() => aplicarCelda(p, color, talla, precioActual)}
-                                          disabled={guardando(p.id) || !est.descuento}
-                                          className="text-[10px] bg-[#4a3728] text-white px-1.5 py-1 rounded-lg hover:bg-[#3a2a1e] disabled:opacity-40"
-                                        >OK</button>
-                                      </div>
-
-                                      {/* Previsualización */}
-                                      {nuevo !== null && (
-                                        <span className="text-[10px] text-green-600 font-semibold">${nuevo.toFixed(2)}</span>
-                                      )}
-
-                                      {/* Quitar */}
-                                      {conDesc && (
-                                        <button onClick={() => quitarCelda(p, color, talla, precioActual)}
-                                          className="text-[10px] text-red-400 hover:text-red-600">
-                                          Quitar
-                                        </button>
-                                      )}
-                                    </div>
+                                    <CeldaDescuento p={p} color={color} talla={talla} />
                                   </td>
-                                )
-                              })}
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
+                                ))}
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </div>
@@ -441,10 +420,10 @@ export default function AdminDescuentos() {
       )}
 
       {totalPaginas > 1 && (
-        <div className="mt-6 flex items-center justify-between">
+        <div className="mt-6 flex items-center justify-between gap-3">
           <button disabled={pagina === 0} onClick={() => setPagina(p => p - 1)}
             className="text-sm text-[#7d5c48] disabled:opacity-40 hover:underline font-medium">← Anterior</button>
-          <span className="text-sm text-gray-500">Página {pagina + 1} de {totalPaginas}</span>
+          <span className="text-sm text-gray-500">Pág. {pagina + 1} / {totalPaginas}</span>
           <button disabled={pagina >= totalPaginas - 1} onClick={() => setPagina(p => p + 1)}
             className="text-sm text-[#7d5c48] disabled:opacity-40 hover:underline font-medium">Siguiente →</button>
         </div>

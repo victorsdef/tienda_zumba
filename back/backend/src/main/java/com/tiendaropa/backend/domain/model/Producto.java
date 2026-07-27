@@ -20,6 +20,7 @@ public class Producto {
     private String stockPorColorTallaJson;
     private String imagenesPorColorJson;
     private String precioPorColorTallaJson;
+    private String precioOriginalPorColorTallaJson;
     private String caracteristicaTitulo;
     private String caracteristicaDescripcion;
 
@@ -76,6 +77,9 @@ public class Producto {
 
     public String getPrecioPorColorTallaJson() { return precioPorColorTallaJson; }
     public void setPrecioPorColorTallaJson(String precioPorColorTallaJson) { this.precioPorColorTallaJson = precioPorColorTallaJson; }
+
+    public String getPrecioOriginalPorColorTallaJson() { return precioOriginalPorColorTallaJson; }
+    public void setPrecioOriginalPorColorTallaJson(String precioOriginalPorColorTallaJson) { this.precioOriginalPorColorTallaJson = precioOriginalPorColorTallaJson; }
 
     public String getCaracteristicaTitulo() { return caracteristicaTitulo; }
     public void setCaracteristicaTitulo(String caracteristicaTitulo) { this.caracteristicaTitulo = caracteristicaTitulo; }

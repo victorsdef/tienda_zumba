@@ -80,6 +80,9 @@ public class ProductoEntity {
     @Column(columnDefinition = "TEXT")
     private String precioPorColorTallaJson;
 
+    @Column(columnDefinition = "TEXT")
+    private String precioOriginalPorColorTallaJson;
+
     private String caracteristicaTitulo;
 
     @Column(columnDefinition = "TEXT")

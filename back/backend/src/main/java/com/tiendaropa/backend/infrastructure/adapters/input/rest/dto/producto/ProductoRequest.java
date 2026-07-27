@@ -29,6 +29,7 @@ public class ProductoRequest {
     private Map<String, Map<String, Integer>> stockPorColorTalla;
     private Map<String, List<String>> imagenesPorColor;
     private Map<String, Map<String, java.math.BigDecimal>> precioPorColorTalla;
+    private Map<String, Map<String, java.math.BigDecimal>> precioOriginalPorColorTalla;
     private String caracteristicaTitulo;
     private String caracteristicaDescripcion;
 }

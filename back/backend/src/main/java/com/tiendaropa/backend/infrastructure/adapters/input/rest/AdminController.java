@@ -205,6 +205,7 @@ public class AdminController {
         producto.setStockPorColorTallaJson(writeStockPorColorTalla(request.getStockPorColorTalla()));
         producto.setImagenesPorColorJson(writeImagenesPorColor(request.getImagenesPorColor()));
         producto.setPrecioPorColorTallaJson(writePrecioPorColorTalla(request.getPrecioPorColorTalla()));
+        producto.setPrecioOriginalPorColorTallaJson(writePrecioPorColorTalla(request.getPrecioOriginalPorColorTalla()));
         return ResponseEntity.ok(toProductoDto(productoUseCase.crear(producto)));
     }
 
@@ -215,6 +216,7 @@ public class AdminController {
         producto.setStockPorColorTallaJson(writeStockPorColorTalla(request.getStockPorColorTalla()));
         producto.setImagenesPorColorJson(writeImagenesPorColor(request.getImagenesPorColor()));
         producto.setPrecioPorColorTallaJson(writePrecioPorColorTalla(request.getPrecioPorColorTalla()));
+        producto.setPrecioOriginalPorColorTallaJson(writePrecioPorColorTalla(request.getPrecioOriginalPorColorTalla()));
         return ResponseEntity.ok(toProductoDto(productoUseCase.actualizar(id, producto)));
     }
 
