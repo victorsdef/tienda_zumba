@@ -65,9 +65,29 @@ export default function ProductCard({ producto, compact = false }: Props) {
   const imagen = getImagen(colorActual)
   const precioMostrado = getPrecio(colorActual)
 
-  const descuento = producto.precioOriginal && producto.precioOriginal > producto.precio
-    ? Math.round((1 - producto.precio / producto.precioOriginal) * 100)
-    : producto.descuentoPorcentaje ?? null
+  // Descuento máximo: primero de precioOriginal global, si no del map por variante
+  const descuento = (() => {
+    if (producto.precioOriginal && producto.precioOriginal > producto.precio) {
+      return Math.round((1 - producto.precio / producto.precioOriginal) * 100)
+    }
+    const originales = producto.precioOriginalPorColorTalla
+    const actuales = producto.precioPorColorTalla
+    if (originales && actuales) {
+      let maxPct = 0
+      for (const col of Object.keys(originales)) {
+        for (const talla of Object.keys(originales[col] ?? {})) {
+          const orig = originales[col][talla]
+          const act = actuales[col]?.[talla]
+          if (orig && act && orig > act) {
+            const pct = Math.round((1 - act / orig) * 100)
+            if (pct > maxPct) maxPct = pct
+          }
+        }
+      }
+      if (maxPct > 0) return maxPct
+    }
+    return producto.descuentoPorcentaje ?? null
+  })()
 
   const prev = (e: React.MouseEvent) => {
     e.preventDefault()
