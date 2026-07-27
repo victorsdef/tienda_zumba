@@ -62,10 +62,10 @@ public class ProductoUseCaseImpl implements ProductoUseCase {
         if (producto.getPrecioOriginal() != null) p.setPrecioOriginal(producto.getPrecioOriginal());
         p.setActivo(producto.isActivo());
         if (producto.getAplicaIva() != null) p.setAplicaIva(producto.getAplicaIva());
-        if (producto.getImagenes() != null) p.setImagenes(producto.getImagenes());
-        if (producto.getTallas() != null) p.setTallas(producto.getTallas());
-        if (producto.getColores() != null) p.setColores(producto.getColores());
-        if (producto.getStockPorColor() != null) p.setStockPorColor(producto.getStockPorColor());
+        if (producto.getImagenes() != null && !producto.getImagenes().isEmpty()) p.setImagenes(producto.getImagenes());
+        if (producto.getTallas() != null && !producto.getTallas().isEmpty()) p.setTallas(producto.getTallas());
+        if (producto.getColores() != null && !producto.getColores().isEmpty()) p.setColores(producto.getColores());
+        if (producto.getStockPorColor() != null && !producto.getStockPorColor().isEmpty()) p.setStockPorColor(producto.getStockPorColor());
         if (producto.getStockPorColorTallaJson() != null) p.setStockPorColorTallaJson(producto.getStockPorColorTallaJson());
         if (producto.getImagenesPorColorJson() != null) p.setImagenesPorColorJson(producto.getImagenesPorColorJson());
         if (producto.getPrecioPorColorTallaJson() != null) p.setPrecioPorColorTallaJson(producto.getPrecioPorColorTallaJson());
