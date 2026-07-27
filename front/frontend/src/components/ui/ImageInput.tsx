@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import api from '../../api/axios'
+import { convertImageForUpload } from '../../utils/imageConversion'
 
 interface Props {
   value: string        // URL actual (puede ser vacío)
@@ -14,19 +15,21 @@ export default function ImageInput({ value, onChange, label = 'Imagen' }: Props)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const selectedFile = e.target.files?.[0]
+    if (!selectedFile) return
+    e.target.value = ''
     setError('')
     setUploading(true)
     try {
+      const file = await convertImageForUpload(selectedFile)
       const form = new FormData()
       form.append('file', file)
       const res = await api.post<{ url: string }>('/files/upload', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       onChange(res.data.url)
-    } catch {
-      setError('Error al subir imagen')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al subir imagen')
     } finally {
       setUploading(false)
     }
@@ -67,7 +70,7 @@ export default function ImageInput({ value, onChange, label = 'Imagen' }: Props)
           ) : (
             <>
               <p className="text-sm text-gray-500">Haz click para seleccionar una imagen</p>
-              <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP · máx 10MB</p>
+              <p className="text-xs text-gray-400 mt-1">Se convierte a PNG · GIF conserva su animación</p>
             </>
           )}
           {error && <p className="text-xs text-red-500 mt-1">{error}</p>}

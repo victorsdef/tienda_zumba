@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getProductos, getProductosTrending } from '@api/productos'
 import { getBannersPublic, type Banner } from '@api/banners'
 import { getCategorias } from '../api/categorias'
-import { getConfiguracion } from '../api/configuracion'
+import { getHomeLayout } from '../api/configuracion'
 import HeroBannerPreview from '@widgets/banners/HeroBannerPreview'
 import ProductCard from '@entities/product/ProductCard'
 import { ProductGridSkeleton } from '@shared/LoadingSkeleton'
@@ -19,6 +19,8 @@ import {
   IconLipstick,
 } from '@shared/Icon'
 import styles from './Home.module.scss'
+import HomeBuilderRenderer from '../widgets/homeBuilder/HomeBuilderRenderer'
+import type { HomeLayout } from '../types/homeBuilder'
 
 const BANNERS_DEFAULT: Banner[] = [
   {
@@ -169,6 +171,11 @@ function EditorialHero({
 }
 
 export default function Home() {
+  const { data: publishedLayoutRaw = '' } = useQuery({
+    queryKey: ['home-layout'],
+    queryFn: getHomeLayout,
+    staleTime: 60_000,
+  })
   const { data: banners = [] } = useQuery({
     queryKey: ['banners-public'],
     queryFn: getBannersPublic,
@@ -196,12 +203,10 @@ export default function Home() {
     queryFn: () => getProductos({ size: 8, sort: 'precio,asc' }),
   })
 
-  const { data: config = [] } = useQuery({ queryKey: ['configuracion'], queryFn: getConfiguracion, staleTime: 60_000 })
-  const cfg = (clave: string, fallback: string) => config.find(c => c.clave === clave)?.valor ?? fallback
-  const editorialTitulo    = cfg('home_editorial_titulo',    'Moda que te hace sentir única en cada ocasión.')
-  const editorialSubtitulo = cfg('home_editorial_subtitulo', 'Descubrí piezas pensadas para resaltar tu estilo. Envíos a todo Ecuador, atención personalizada y los mejores precios de la temporada.')
-  const editorialBoton     = cfg('home_editorial_boton',     'Ver catálogo completo')
-  const editorialLink      = cfg('home_editorial_link',      '/catalogo')
+  const editorialTitulo = 'Moda que te hace sentir única en cada ocasión.'
+  const editorialSubtitulo = 'Descubrí piezas pensadas para resaltar tu estilo. Envíos a todo Ecuador, atención personalizada y los mejores precios de la temporada.'
+  const editorialBoton = 'Ver catálogo completo'
+  const editorialLink = '/catalogo'
 
   const coleccion = coleccionData?.content ?? []
   const ofertas = ofertasData?.content ?? []
@@ -213,6 +218,20 @@ export default function Home() {
     () => (banners.length > 0 ? [...banners].sort((a, b) => a.orden - b.orden) : BANNERS_DEFAULT),
     [banners]
   )
+
+  const publishedLayout = useMemo(() => {
+    if (!publishedLayoutRaw) return null
+    try {
+      const parsed = JSON.parse(publishedLayoutRaw) as HomeLayout
+      return parsed.version === 1 && Array.isArray(parsed.blocks) ? parsed : null
+    } catch {
+      return null
+    }
+  }, [publishedLayoutRaw])
+
+  if (publishedLayout) {
+    return <HomeBuilderRenderer layout={publishedLayout} />
+  }
 
   return (
     <div className={styles.page}>

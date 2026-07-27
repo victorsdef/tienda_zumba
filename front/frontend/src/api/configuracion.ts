@@ -22,3 +22,6 @@ export interface RetiroInfo {
 
 export const getRetiroInfo = () =>
   api.get<RetiroInfo>('/configuracion/retiro').then(r => r.data)
+
+export const getHomeLayout = () =>
+  api.get<{ layout: string }>('/configuracion/home-layout').then(r => r.data.layout)

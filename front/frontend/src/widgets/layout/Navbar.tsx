@@ -71,7 +71,7 @@ export default function Navbar() {
             <IconMenu size={22} />
           </button>
 
-          <Link to="/" className={styles.desktopLogo}>sofia couture ec</Link>
+          <Link to="/" className={styles.desktopLogo}>SOFIA COUTURE EC</Link>
 
           <form onSubmit={handleSearch} className={styles.searchForm}>
             <div className={styles.searchBox}>

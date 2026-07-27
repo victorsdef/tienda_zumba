@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getOrdenesAdmin } from '../../api/admin'
 import { actualizarGuiaOrden, cambiarEstadoOrden } from '../../api/ordenes'
 import api from '../../api/axios'
+import { convertImageForUpload } from '../../utils/imageConversion'
 import { IconChevronDown, IconChevronRight, IconSearch } from '@shared/Icon'
 import type { EstadoOrden, Orden, ItemOrden } from '../../types'
 import { hexToNombre } from '../../components/ui/colores'
@@ -467,8 +468,9 @@ export default function AdminOrdenes() {
     setSubiendoGuia(true)
     setErrorGuia('')
     try {
+      const convertedFile = await convertImageForUpload(file)
       const form = new FormData()
-      form.append('file', file)
+      form.append('file', convertedFile)
       const res = await api.post<{ url: string }>('/files/upload', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
@@ -836,7 +838,7 @@ export default function AdminOrdenes() {
                   ) : (
                     <>
                       <p className="text-sm text-gray-700">Haz clic para subir la foto de la guía</p>
-                      <p className="text-xs text-gray-400 mt-1">JPG, PNG o WEBP</p>
+                      <p className="text-xs text-gray-400 mt-1">Se convierte a PNG · GIF conserva su animación</p>
                     </>
                   )}
                 </label>

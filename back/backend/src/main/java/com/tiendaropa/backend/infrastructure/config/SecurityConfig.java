@@ -63,6 +63,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/resenas/producto/**", "/api/nueva-arquitectura/resenas/producto/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/resenas/admin/stats/**", "/api/nueva-arquitectura/resenas/admin/stats/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/configuracion/retiro", "/api/nueva-arquitectura/configuracion/retiro").permitAll()
+                .requestMatchers(HttpMethod.GET,
+                    "/api/configuracion/home-layout",
+                    "/api/nueva-arquitectura/configuracion/home-layout"
+                ).permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/ordenes/invitado", "/api/nueva-arquitectura/orden/invitado", "/api/nueva-arquitectura/ordenes/invitado").permitAll()
                 .requestMatchers("/api/ordenes/invitado", "/api/nueva-arquitectura/orden/invitado", "/api/nueva-arquitectura/ordenes/invitado").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/ordenes/codigo/*/pdf", "/api/nueva-arquitectura/ordenes/codigo/*/pdf", "/api/nueva-arquitectura/orden/codigo/*/pdf").permitAll()

@@ -27,6 +27,15 @@ public class ConfiguracionController {
     private final ConfiguracionUseCase configUseCase;
     private final ConfiguracionRestMapper configuracionRestMapper;
 
+    @GetMapping("/home-layout")
+    public Map<String, String> getHomeLayout() {
+        try {
+            return Map.of("layout", configUseCase.get("home_builder_publicado").getValor());
+        } catch (Exception ignored) {
+            return Map.of("layout", "");
+        }
+    }
+
     @GetMapping("/retiro")
     public RetiroInfoDTO getRetiro() {
         Map<String, String> valores = new LinkedHashMap<>();

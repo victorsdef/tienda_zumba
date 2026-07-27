@@ -3,6 +3,7 @@ import ReactCrop, { type Crop, type PixelCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import api from '../../api/axios'
 import { IconTrash, IconX, IconEdit } from './Icon'
+import { convertImageForUpload, isGif } from '../../utils/imageConversion'
 
 interface Props {
   value: string[]
@@ -21,7 +22,9 @@ async function cropToBlob(img: HTMLImageElement, crop: PixelCrop): Promise<Blob>
   canvas.height = crop.height
   const ctx = canvas.getContext('2d')!
   ctx.drawImage(img, crop.x * scaleX, crop.y * scaleY, crop.width * scaleX, crop.height * scaleY, 0, 0, crop.width, crop.height)
-  return new Promise(res => canvas.toBlob(b => res(b!), 'image/jpeg', 0.92))
+  return new Promise((resolve, reject) =>
+    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('No se pudo generar el PNG')), 'image/png')
+  )
 }
 
 function initCrop(): Crop {
@@ -120,7 +123,7 @@ function CropModal({ src, filename, onConfirm, onClose, renderCropPreview }: Cro
       canvas.height = px.height
       const ctx = canvas.getContext('2d')!
       ctx.drawImage(img, px.x * scaleX, px.y * scaleY, px.width * scaleX, px.height * scaleY, 0, 0, px.width, px.height)
-      setPreviewUrl(canvas.toDataURL('image/jpeg', 0.85))
+      setPreviewUrl(canvas.toDataURL('image/png'))
     } catch {
       // imagen cross-origin no permite canvas export — preview no disponible
     }
@@ -245,46 +248,14 @@ export default function ImageManager({ value, onChange, renderCropPreview, label
   const [uploadError, setUploadError] = useState('')
   const [editIdx, setEditIdx] = useState<number | null>(null)
 
-  // Detecta HEIC/HEIF por MIME o extensión (iOS a veces no envía MIME correcto)
-  const esHeic = (file: File) => {
-    const t = file.type.toLowerCase()
-    const n = file.name.toLowerCase()
-    return t === 'image/heic' || t === 'image/heif' || n.endsWith('.heic') || n.endsWith('.heif')
-  }
-
-  // Convierte HEIC/HEIF a JPEG usando heic2any (lazy import)
-  const convertirHeic = async (file: File): Promise<File> => {
-    try {
-      const heic2any = (await import('heic2any')).default
-      const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 })
-      const jpegBlob = Array.isArray(blob) ? blob[0] : blob
-      const nombreJpeg = file.name.replace(/\.(heic|heif)$/i, '.jpg')
-      return new File([jpegBlob], nombreJpeg, { type: 'image/jpeg' })
-    } catch (err) {
-      throw new Error('No se pudo convertir la imagen HEIC. Prueba enviándola como JPG desde tu iPhone.')
-    }
-  }
-
   // ── Selección de archivo → abre modal de crop (GIF sube directo) ──
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    let file = e.target.files?.[0]
+    const selectedFile = e.target.files?.[0]
+    let file = selectedFile
     if (!file) return
     e.target.value = ''
 
-    // iPhone HEIC/HEIF: convertir a JPEG antes de procesar
-    if (esHeic(file)) {
-      setUploading(true)
-      try {
-        file = await convertirHeic(file)
-      } catch (err: any) {
-        setUploadError(err?.message ?? 'Error al convertir HEIC')
-        setUploading(false)
-        return
-      }
-      setUploading(false)
-    }
-
-    if (file.type === 'image/gif') {
+    if (isGif(file)) {
       // GIF: mostrar preview antes de subir
       const reader = new FileReader()
       reader.onload = ev => setGifPreview({ src: ev.target?.result as string, blob: file, filename: file.name })
@@ -292,7 +263,18 @@ export default function ImageManager({ value, onChange, renderCropPreview, label
       return
     }
 
-    setCropFilename(file.name)
+    setUploading(true)
+    setUploadError('')
+    try {
+      file = await convertImageForUpload(file)
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'No se pudo convertir la imagen a PNG.')
+      setUploading(false)
+      return
+    }
+    setUploading(false)
+
+    setCropFilename(file.name.replace(/\.[^.]+$/, '') + '.png')
     const reader = new FileReader()
     reader.onload = ev => setCropSrc(ev.target?.result as string)
     reader.readAsDataURL(file)
@@ -410,7 +392,7 @@ export default function ImageManager({ value, onChange, renderCropPreview, label
                   )}
                   <div className="flex gap-1">
                     <button type="button"
-                      onClick={() => { setEditIdx(idx); setCropSrc(url); setCropFilename(`imagen-${idx}.jpg`) }}
+                      onClick={() => { setEditIdx(idx); setCropSrc(url); setCropFilename(`imagen-${idx}.png`) }}
                       className="text-white bg-blue-500/80 rounded p-1 hover:bg-blue-600" title="Recortar">
                       <IconEdit size={14} />
                     </button>
@@ -464,7 +446,7 @@ export default function ImageManager({ value, onChange, renderCropPreview, label
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   <p className="text-sm text-gray-500">Hacé click para seleccionar</p>
-                  <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP, GIF, HEIC (iPhone) · Máx 10MB · GIF se sube sin recortar</p>
+                  <p className="text-xs text-gray-400 mt-1">Las imágenes se convierten a PNG · GIF conserva su animación</p>
                 </>
               )}
             </div>

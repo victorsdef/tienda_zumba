@@ -1,0 +1,31 @@
+export type HomeBlockType = 'hero' | 'categories' | 'products' | 'promo' | 'textImage' | 'spacer'
+
+export interface HomeBlock {
+  id: string
+  type: HomeBlockType
+  visible: boolean
+  title: string
+  subtitle: string
+  buttonText: string
+  link: string
+  image: string
+  background: string
+  textColor: string
+  accentColor: string
+  productMode: 'new' | 'trending' | 'offers'
+  productCount: number
+  height: number
+  imagePosition: 'left' | 'right'
+}
+
+export interface HomeLayout {
+  version: 1
+  name: string
+  templateId: string
+  pageBackground: string
+  fontFamily: 'elegant' | 'modern' | 'classic'
+  announcement: string
+  announcementBackground: string
+  announcementColor: string
+  blocks: HomeBlock[]
+}
