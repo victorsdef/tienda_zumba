@@ -108,10 +108,6 @@ function CropModal({ src, filename, onConfirm, onClose, renderCropPreview }: Cro
   const [aspect, setAspect] = useState<number | undefined>(undefined)
   const [previewUrl, setPreviewUrl] = useState('')
 
-  const onLoad = useCallback(() => {
-    setCrop(initCrop())
-  }, [])
-
   const updatePreview = useCallback((px: PixelCrop) => {
     if (!imgRef.current || !renderCropPreview) return
     try {
@@ -128,6 +124,20 @@ function CropModal({ src, filename, onConfirm, onClose, renderCropPreview }: Cro
       // imagen cross-origin no permite canvas export — preview no disponible
     }
   }, [renderCropPreview])
+
+  const onLoad = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
+    const image = event.currentTarget
+    const fullImageCrop: PixelCrop = {
+      unit: 'px',
+      x: 0,
+      y: 0,
+      width: image.width,
+      height: image.height,
+    }
+    setCrop(initCrop())
+    setCompletedCrop(fullImageCrop)
+    updatePreview(fullImageCrop)
+  }, [updatePreview])
 
   const handleConfirm = async () => {
     if (!imgRef.current || !completedCrop) return

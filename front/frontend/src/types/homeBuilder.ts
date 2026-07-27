@@ -56,5 +56,19 @@ export interface HomeLayout {
   announcement: string
   announcementBackground: string
   announcementColor: string
+  globalTheme: {
+    enabled: boolean
+    primary: string
+    secondary: string
+    accent: string
+    background: string
+    surface: string
+    text: string
+    mutedText: string
+    border: string
+    buttonText: string
+    radius: number
+    decoration: 'none' | 'snow' | 'hearts' | 'confetti' | 'sparkles'
+  }
   blocks: HomeBlock[]
 }

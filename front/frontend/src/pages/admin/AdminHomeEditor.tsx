@@ -6,6 +6,7 @@ import { HOME_TEMPLATES, cloneTemplate, createBlock } from '../../data/homeTempl
 import type { HomeBlock, HomeBlockType, HomeLayout } from '../../types/homeBuilder'
 import HomeBuilderRenderer from '../../widgets/homeBuilder/HomeBuilderRenderer'
 import { getProductos } from '../../api/productos'
+import StorefrontTheme from '../../app/StorefrontTheme'
 
 type Tab = 'templates' | 'editor' | 'preview'
 
@@ -47,7 +48,24 @@ function parseLayout(raw: string | undefined): HomeLayout | null {
   if (!raw) return null
   try {
     const parsed = JSON.parse(raw) as HomeLayout
-    return parsed.version === 1 && Array.isArray(parsed.blocks) ? parsed : null
+    if (parsed.version !== 1 || !Array.isArray(parsed.blocks)) return null
+    if (!parsed.globalTheme) {
+      parsed.globalTheme = {
+        enabled: true,
+        primary: parsed.announcementBackground || '#4a3728',
+        secondary: '#7d5c48',
+        accent: '#b78b72',
+        background: parsed.pageBackground || '#faf7f3',
+        surface: '#ffffff',
+        text: '#2c1a10',
+        mutedText: '#7d6c61',
+        border: '#e4d9cf',
+        buttonText: '#ffffff',
+        radius: 12,
+        decoration: 'none',
+      }
+    }
+    return parsed
   } catch {
     return null
   }
@@ -57,7 +75,10 @@ function parseCustomTemplates(raw: string | undefined): HomeLayout[] {
   if (!raw) return []
   try {
     const parsed = JSON.parse(raw) as HomeLayout[]
-    return Array.isArray(parsed) ? parsed.filter(item => item.version === 1 && Array.isArray(item.blocks)) : []
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .map(item => parseLayout(JSON.stringify(item)))
+      .filter((item): item is HomeLayout => item !== null)
   } catch {
     return []
   }
@@ -164,6 +185,9 @@ export default function AdminHomeEditor() {
   )
 
   const patchLayout = (values: Partial<HomeLayout>) => setLayout(current => ({ ...current, ...values }))
+  const patchTheme = (values: Partial<HomeLayout['globalTheme']>) => {
+    setLayout(current => ({ ...current, globalTheme: { ...current.globalTheme, ...values } }))
+  }
   const patchBlock = (id: string, values: Partial<HomeBlock>) => {
     setLayout(current => ({
       ...current,
@@ -383,6 +407,43 @@ export default function AdminHomeEditor() {
                   <ColorField label="Fondo anuncio" value={layout.announcementBackground} onChange={announcementBackground => patchLayout({ announcementBackground })} />
                   <ColorField label="Texto anuncio" value={layout.announcementColor} onChange={announcementColor => patchLayout({ announcementColor })} />
                 </div>
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-bold text-gray-900">Tema global</h2>
+                    <p className="text-[11px] text-gray-500">Se aplica a toda la tienda pública.</p>
+                  </div>
+                  <label className="flex items-center gap-2 text-xs font-semibold text-gray-600">
+                    Activar
+                    <input type="checkbox" checked={layout.globalTheme.enabled} onChange={event => patchTheme({ enabled: event.target.checked })} />
+                  </label>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <ColorField label="Principal" value={layout.globalTheme.primary} onChange={primary => patchTheme({ primary })} />
+                  <ColorField label="Secundario" value={layout.globalTheme.secondary} onChange={secondary => patchTheme({ secondary })} />
+                  <ColorField label="Destacado" value={layout.globalTheme.accent} onChange={accent => patchTheme({ accent })} />
+                  <ColorField label="Fondo" value={layout.globalTheme.background} onChange={background => patchTheme({ background })} />
+                  <ColorField label="Superficies" value={layout.globalTheme.surface} onChange={surface => patchTheme({ surface })} />
+                  <ColorField label="Texto" value={layout.globalTheme.text} onChange={text => patchTheme({ text })} />
+                  <ColorField label="Texto suave" value={layout.globalTheme.mutedText} onChange={mutedText => patchTheme({ mutedText })} />
+                  <ColorField label="Bordes" value={layout.globalTheme.border} onChange={border => patchTheme({ border })} />
+                </div>
+                <label className="mt-3 block">
+                  <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Redondeado global: {layout.globalTheme.radius}px</span>
+                  <input type="range" min={0} max={28} value={layout.globalTheme.radius} onChange={event => patchTheme({ radius: Number(event.target.value) })} className="w-full" />
+                </label>
+                <label className="mt-3 block">
+                  <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Decoración estacional</span>
+                  <select value={layout.globalTheme.decoration} onChange={event => patchTheme({ decoration: event.target.value as HomeLayout['globalTheme']['decoration'] })} className="input-field">
+                    <option value="none">Sin decoración</option>
+                    <option value="snow">Copos de nieve</option>
+                    <option value="hearts">Corazones</option>
+                    <option value="confetti">Confeti</option>
+                    <option value="sparkles">Destellos</option>
+                  </select>
+                </label>
               </div>
 
               <div className="rounded-2xl border border-gray-200 bg-white p-4">
@@ -676,7 +737,9 @@ export default function AdminHomeEditor() {
               </div>
               <button onClick={() => setTab('editor')} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold">Volver a editar</button>
             </div>
-            <HomeBuilderRenderer layout={layout} preview />
+            <StorefrontTheme themeOverride={layout.globalTheme}>
+              <HomeBuilderRenderer layout={layout} preview />
+            </StorefrontTheme>
           </div>
         )}
       </div>

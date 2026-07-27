@@ -38,16 +38,43 @@ export function createBlock(type: HomeBlockType, values: Partial<HomeBlock> = {}
   return { ...defaults, ...values, id: id() }
 }
 
-const layout = (values: Partial<HomeLayout> & Pick<HomeLayout, 'name' | 'templateId'>): HomeLayout => ({
-  version: 1,
-  pageBackground: '#ffffff',
-  fontFamily: 'elegant',
-  announcement: '',
-  announcementBackground: '#4a3728',
-  announcementColor: '#ffffff',
-  blocks: [],
-  ...values,
-})
+const layout = (values: Partial<HomeLayout> & Pick<HomeLayout, 'name' | 'templateId'>): HomeLayout => {
+  const hero = values.blocks?.find(block => block.type === 'hero')
+  const primary = values.announcementBackground ?? '#4a3728'
+  const background = values.pageBackground ?? '#ffffff'
+  return {
+    version: 1,
+    pageBackground: background,
+    fontFamily: 'elegant',
+    announcement: '',
+    announcementBackground: primary,
+    announcementColor: '#ffffff',
+    blocks: [],
+    ...values,
+    globalTheme: values.globalTheme ?? {
+      enabled: true,
+      primary,
+      secondary: hero?.background ?? '#7d5c48',
+      accent: hero?.accentColor ?? '#b78b72',
+      background,
+      surface: '#ffffff',
+      text: hero?.textColor === '#ffffff' ? '#2c1a10' : (hero?.textColor ?? '#2c1a10'),
+      mutedText: '#7d6c61',
+      border: '#e4d9cf',
+      buttonText: '#ffffff',
+      radius: 12,
+      decoration: values.templateId === 'christmas' || values.templateId === 'cuenca-pase-nino'
+        ? 'snow'
+        : values.templateId === 'valentine'
+          ? 'hearts'
+          : values.templateId.includes('carnival')
+            ? 'confetti'
+            : values.templateId === 'new-year'
+              ? 'sparkles'
+              : 'none',
+    },
+  }
+}
 
 export const HOME_TEMPLATES: HomeLayout[] = [
   layout({

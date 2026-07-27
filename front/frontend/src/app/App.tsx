@@ -36,6 +36,7 @@ import PagarOrden from '@pages/PagarOrden'
 import OlvidePassword from '@pages/OlvidePassword'
 import ResetPassword from '@pages/ResetPassword'
 import shellStyles from './AppShell.module.scss'
+import StorefrontTheme from './StorefrontTheme'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -65,14 +66,20 @@ function WhatsAppButton() {
 
 function MainLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={shellStyles.mainLayout}>
-      <Navbar />
-      <CartDrawer />
-      <main className={shellStyles.mainContent}>{children}</main>
-      <Footer />
-      <WhatsAppButton />
-    </div>
+    <StorefrontTheme>
+      <div className={shellStyles.mainLayout}>
+        <Navbar />
+        <CartDrawer />
+        <main className={shellStyles.mainContent}>{children}</main>
+        <Footer />
+        <WhatsAppButton />
+      </div>
+    </StorefrontTheme>
   )
+}
+
+function PublicPage({ children }: { children: React.ReactNode }) {
+  return <StorefrontTheme>{children}</StorefrontTheme>
 }
 
 export default function App() {
@@ -98,11 +105,11 @@ export default function App() {
           </Route>
 
           {/* Auth */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/registro" element={<Registro />} />
-          <Route path="/verificar-email" element={<VerificarEmail />} />
-          <Route path="/olvide-password" element={<OlvidePassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/login" element={<PublicPage><Login /></PublicPage>} />
+          <Route path="/registro" element={<PublicPage><Registro /></PublicPage>} />
+          <Route path="/verificar-email" element={<PublicPage><VerificarEmail /></PublicPage>} />
+          <Route path="/olvide-password" element={<PublicPage><OlvidePassword /></PublicPage>} />
+          <Route path="/reset-password" element={<PublicPage><ResetPassword /></PublicPage>} />
 
           {/* Main */}
           <Route path="/" element={<MainLayout><Home /></MainLayout>} />
@@ -116,7 +123,7 @@ export default function App() {
           <Route path="/orden-confirmada/:id" element={<MainLayout><OrdenConfirmada /></MainLayout>} />
           <Route path="/mis-direcciones" element={<MainLayout><MisDirecciones /></MainLayout>} />
           <Route path="/pago-confirmado" element={<MainLayout><PagoConfirmado /></MainLayout>} />
-          <Route path="/pagar" element={<PagarOrden />} />
+          <Route path="/pagar" element={<PublicPage><PagarOrden /></PublicPage>} />
           <Route path="/wishlist" element={<MainLayout><WishlistPage /></MainLayout>} />
         </Routes>
       </BrowserRouter>
