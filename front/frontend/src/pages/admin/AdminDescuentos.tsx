@@ -20,6 +20,90 @@ function getPrecioOriginalCelda(p: Producto, color: string, talla: string): numb
   return p.precioOriginalPorColorTalla?.[color]?.[talla]
 }
 
+// ── Celda de descuento (fuera del padre para preservar focus) ──
+interface CeldaDescuentoProps {
+  p: Producto
+  color: string
+  talla: string
+  descuentoInput: string
+  onDescuentoChange: (v: string) => void
+  onAplicar: () => void
+  onQuitar: () => void
+  guardando: boolean
+}
+
+function CeldaDescuento({ p, color, talla, descuentoInput, onDescuentoChange, onAplicar, onQuitar, guardando }: CeldaDescuentoProps) {
+  const precioActual = p.precioPorColorTalla?.[color]?.[talla]
+  if (precioActual === undefined) return <span className="text-gray-300 text-xs">—</span>
+
+  const precioLista = getPrecioOriginalCelda(p, color, talla)
+  const conDesc = precioLista !== undefined && precioLista > precioActual
+  const pctActual = conDesc ? Math.round((1 - precioActual / precioLista!) * 100) : 0
+
+  const pctNum = Number(descuentoInput)
+  const inputValido = descuentoInput !== '' && !isNaN(pctNum) && pctNum >= 1 && pctNum <= 99
+  const inputInvalido = descuentoInput !== '' && !inputValido
+  const nuevo = inputValido ? parseFloat(((precioLista ?? precioActual) * (1 - pctNum / 100)).toFixed(2)) : null
+
+  // Limita el input a 1-99: si el user escribe > 99 lo cortamos, si es 0 o negativo tampoco
+  const handleChange = (raw: string) => {
+    if (raw === '') { onDescuentoChange(''); return }
+    // solo permite dígitos (evita "." "e" "-")
+    if (!/^\d+$/.test(raw)) return
+    const n = Number(raw)
+    if (n > 99) { onDescuentoChange('99'); return }
+    onDescuentoChange(raw)
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <div className="flex items-center gap-1.5 flex-wrap justify-center">
+        {conDesc ? (
+          <>
+            <span className="text-red-500 font-bold text-xs sm:text-sm">${precioActual.toFixed(2)}</span>
+            <span className="text-gray-400 line-through text-[10px]">${precioLista!.toFixed(2)}</span>
+            <span className="bg-red-100 text-red-600 text-[10px] font-bold px-1 py-0.5 rounded">-{pctActual}%</span>
+          </>
+        ) : (
+          <span className="text-gray-700 font-semibold text-xs sm:text-sm">${precioActual.toFixed(2)}</span>
+        )}
+      </div>
+
+      {conDesc ? (
+        <button onClick={onQuitar} disabled={guardando}
+          className="text-[11px] bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 px-2 py-1 rounded-lg disabled:opacity-40 font-medium">
+          Quitar descuento
+        </button>
+      ) : (
+        <>
+          <div className="flex items-center gap-1">
+            <div className="relative">
+              <input
+                type="text" inputMode="numeric" maxLength={2}
+                value={descuentoInput}
+                onChange={e => handleChange(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && inputValido) onAplicar() }}
+                placeholder="%"
+                className={`w-14 border rounded-lg px-2 py-1 text-xs pr-5 focus:outline-none focus:ring-1 text-center transition-colors ${
+                  inputInvalido ? 'border-red-300 focus:ring-red-300 bg-red-50' : 'border-gray-200 focus:ring-[#7d5c48]/40'
+                }`}
+              />
+              <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">%</span>
+            </div>
+            <button
+              onClick={onAplicar}
+              disabled={guardando || !inputValido}
+              className="text-[10px] bg-[#4a3728] text-white px-1.5 py-1 rounded-lg hover:bg-[#3a2a1e] disabled:opacity-40 font-semibold"
+            >OK</button>
+          </div>
+          {inputInvalido && <span className="text-[10px] text-red-500">Debe ser 1–99</span>}
+          {nuevo !== null && <span className="text-[10px] text-green-600 font-semibold">→ ${nuevo.toFixed(2)}</span>}
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function AdminDescuentos() {
   const qc = useQueryClient()
   const [pagina, setPagina] = useState(0)
@@ -126,60 +210,6 @@ export default function AdminDescuentos() {
     actualizarMut.mutate({ id: p.id, upd: { precio: p.precioOriginal ?? p.precio, precioOriginal: 0 } })
   }
 
-  // ── Componente celda de descuento reutilizable (para color+talla y talla-sin-color) ──
-  const CeldaDescuento = ({ p, color, talla }: { p: Producto; color: string; talla: string }) => {
-    const precioActual = p.precioPorColorTalla?.[color]?.[talla]
-    if (precioActual === undefined) return <span className="text-gray-300 text-xs">—</span>
-
-    const k = celdaKey(p.id, color, talla)
-    const est = getCelda(k)
-    const precioLista = getPrecioOriginalCelda(p, color, talla)
-    const conDesc = precioLista !== undefined && precioLista > precioActual
-    const pctActual = conDesc ? Math.round((1 - precioActual / precioLista!) * 100) : 0
-    const nuevo = est.descuento && Number(est.descuento) > 0 && Number(est.descuento) < 100
-      ? parseFloat(((precioLista ?? precioActual) * (1 - Number(est.descuento) / 100)).toFixed(2))
-      : null
-
-    return (
-      <div className="flex flex-col items-center gap-1.5">
-        <div className="flex items-center gap-1.5 flex-wrap justify-center">
-          {conDesc ? (
-            <>
-              <span className="text-red-500 font-bold text-xs sm:text-sm">${precioActual.toFixed(2)}</span>
-              <span className="text-gray-400 line-through text-[10px]">${precioLista!.toFixed(2)}</span>
-              <span className="bg-red-100 text-red-600 text-[10px] font-bold px-1 py-0.5 rounded">-{pctActual}%</span>
-            </>
-          ) : (
-            <span className="text-gray-700 font-semibold text-xs sm:text-sm">${precioActual.toFixed(2)}</span>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="relative">
-            <input
-              type="number" min="1" max="99" value={est.descuento}
-              onChange={e => patchCelda(k, { descuento: e.target.value })}
-              onKeyDown={e => e.key === 'Enter' && aplicarCelda(p, color, talla)}
-              placeholder="%"
-              className="w-14 border border-gray-200 rounded-lg px-2 py-1 text-xs pr-5 focus:outline-none focus:ring-1 focus:ring-[#7d5c48]/40 text-center"
-            />
-            <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">%</span>
-          </div>
-          <button
-            onClick={() => aplicarCelda(p, color, talla)}
-            disabled={guardando(p.id) || !est.descuento}
-            className="text-[10px] bg-[#4a3728] text-white px-1.5 py-1 rounded-lg hover:bg-[#3a2a1e] disabled:opacity-40 font-semibold"
-          >OK</button>
-        </div>
-        {nuevo !== null && (
-          <span className="text-[10px] text-green-600 font-semibold">→ ${nuevo.toFixed(2)}</span>
-        )}
-        {conDesc && (
-          <button onClick={() => quitarCelda(p, color, talla)}
-            className="text-[10px] text-red-400 hover:text-red-600 underline">Quitar</button>
-        )}
-      </div>
-    )
-  }
 
   return (
     <div className="px-3 py-4 sm:p-6 md:p-8 max-w-5xl mx-auto">
@@ -303,7 +333,14 @@ export default function AdminDescuentos() {
                         {tallas.map(talla => (
                           <div key={talla} className="bg-white border border-gray-100 rounded-xl px-3 py-3">
                             <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 text-center mb-2">Talla {talla}</p>
-                            <CeldaDescuento p={p} color="_" talla={talla} />
+                            <CeldaDescuento
+                              p={p} color="_" talla={talla}
+                              descuentoInput={getCelda(celdaKey(p.id, '_', talla)).descuento}
+                              onDescuentoChange={v => patchCelda(celdaKey(p.id, '_', talla), { descuento: v })}
+                              onAplicar={() => aplicarCelda(p, '_', talla)}
+                              onQuitar={() => quitarCelda(p, '_', talla)}
+                              guardando={guardando(p.id)}
+                            />
                           </div>
                         ))}
                       </div>
@@ -360,7 +397,14 @@ export default function AdminDescuentos() {
                                 pct[color]?.[talla] !== undefined ? (
                                   <div key={talla} className="bg-white border border-gray-100 rounded-xl px-2 py-2">
                                     <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 text-center mb-1.5">Talla {talla}</p>
-                                    <CeldaDescuento p={p} color={color} talla={talla} />
+                                    <CeldaDescuento
+                                      p={p} color={color} talla={talla}
+                                      descuentoInput={getCelda(celdaKey(p.id, color, talla)).descuento}
+                                      onDescuentoChange={v => patchCelda(celdaKey(p.id, color, talla), { descuento: v })}
+                                      onAplicar={() => aplicarCelda(p, color, talla)}
+                                      onQuitar={() => quitarCelda(p, color, talla)}
+                                      guardando={guardando(p.id)}
+                                    />
                                   </div>
                                 ) : null
                               ))}
@@ -402,7 +446,14 @@ export default function AdminDescuentos() {
                                 </td>
                                 {tallas.map(talla => (
                                   <td key={talla} className="px-3 py-3">
-                                    <CeldaDescuento p={p} color={color} talla={talla} />
+                                    <CeldaDescuento
+                                      p={p} color={color} talla={talla}
+                                      descuentoInput={getCelda(celdaKey(p.id, color, talla)).descuento}
+                                      onDescuentoChange={v => patchCelda(celdaKey(p.id, color, talla), { descuento: v })}
+                                      onAplicar={() => aplicarCelda(p, color, talla)}
+                                      onQuitar={() => quitarCelda(p, color, talla)}
+                                      guardando={guardando(p.id)}
+                                    />
                                   </td>
                                 ))}
                               </tr>
