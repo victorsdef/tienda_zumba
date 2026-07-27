@@ -36,6 +36,16 @@ function parseLayout(raw: string | undefined): HomeLayout | null {
   }
 }
 
+function parseCustomTemplates(raw: string | undefined): HomeLayout[] {
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw) as HomeLayout[]
+    return Array.isArray(parsed) ? parsed.filter(item => item.version === 1 && Array.isArray(item.blocks)) : []
+  } catch {
+    return []
+  }
+}
+
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="space-y-1">
@@ -60,6 +70,11 @@ export default function AdminHomeEditor() {
     queryKey: ['configuracion'],
     queryFn: getConfiguracion,
   })
+  const customTemplates = useMemo(
+    () => parseCustomTemplates(config.find(item => item.clave === 'home_builder_plantillas')?.valor),
+    [config]
+  )
+  const allTemplates = useMemo(() => [...HOME_TEMPLATES, ...customTemplates], [customTemplates])
 
   useEffect(() => {
     if (initialized || config.length === 0) return
@@ -94,6 +109,13 @@ export default function AdminHomeEditor() {
     },
   })
 
+  const customTemplatesMutation = useMutation({
+    mutationFn: (templates: HomeLayout[]) => updateConfiguracion('home_builder_plantillas', JSON.stringify(templates)),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['configuracion'] })
+    },
+  })
+
   const selected = useMemo(
     () => layout.blocks.find(block => block.id === selectedId) ?? null,
     [layout.blocks, selectedId]
@@ -114,6 +136,25 @@ export default function AdminHomeEditor() {
     setTab('editor')
     setMessage(`Plantilla “${template.name}” aplicada al borrador`)
     window.setTimeout(() => setMessage(''), 2500)
+  }
+
+  const saveAsTemplate = () => {
+    const name = layout.name.trim() || 'Mi plantilla'
+    const saved: HomeLayout = {
+      ...cloneTemplate(layout),
+      name,
+      templateId: `custom-${Date.now()}`,
+    }
+    customTemplatesMutation.mutate([...customTemplates, saved], {
+      onSuccess: () => {
+        setMessage(`Plantilla “${name}” guardada`)
+        window.setTimeout(() => setMessage(''), 2500)
+      },
+    })
+  }
+
+  const deleteCustomTemplate = (templateId: string) => {
+    customTemplatesMutation.mutate(customTemplates.filter(template => template.templateId !== templateId))
   }
 
   const addBlock = (type: HomeBlockType) => {
@@ -175,6 +216,9 @@ export default function AdminHomeEditor() {
             <button onClick={() => saveMutation.mutate(layout)} disabled={saveMutation.isPending} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
               {saveMutation.isPending ? 'Guardando…' : 'Guardar borrador'}
             </button>
+            <button onClick={saveAsTemplate} disabled={customTemplatesMutation.isPending} className="rounded-lg border border-[#7d5c48] bg-[#faf7f2] px-4 py-2 text-sm font-semibold text-[#4a3728] hover:bg-[#f2e9df] disabled:opacity-50">
+              Guardar como plantilla
+            </button>
             <button onClick={() => publishMutation.mutate(layout)} disabled={publishMutation.isPending} className="rounded-lg bg-[#4a3728] px-4 py-2 text-sm font-semibold text-white hover:bg-[#35271d] disabled:opacity-50">
               {publishMutation.isPending ? 'Publicando…' : 'Publicar'}
             </button>
@@ -202,15 +246,17 @@ export default function AdminHomeEditor() {
               <p className="mt-1 text-sm text-gray-500">Aplicar una plantilla reemplaza el borrador actual. La tienda no cambia hasta presionar Publicar.</p>
             </div>
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {HOME_TEMPLATES.map(template => {
+              {allTemplates.map(template => {
                 const hero = template.blocks.find(block => block.type === 'hero')
+                const isCustom = template.templateId.startsWith('custom-')
+                const isBlank = template.templateId === 'blank'
                 return (
                   <article key={template.templateId} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                    <div style={{ background: hero?.background, color: hero?.textColor }} className="relative flex h-48 flex-col justify-end overflow-hidden p-6">
+                    <div style={{ background: hero?.background ?? '#ffffff', color: hero?.textColor ?? '#4a3728' }} className="relative flex h-48 flex-col justify-end overflow-hidden border-b border-gray-100 p-6">
                       {hero?.image && <img src={hero.image} alt="" className="absolute inset-0 h-full w-full object-cover opacity-60" />}
                       <div className="relative">
-                        <p className="text-xs font-bold uppercase tracking-[0.25em] opacity-70">{template.name}</p>
-                        <h3 className="mt-2 text-3xl font-bold">{hero?.title}</h3>
+                        <p className="text-xs font-bold uppercase tracking-[0.25em] opacity-70">{isCustom ? 'Mi plantilla' : isBlank ? 'Comenzar desde cero' : template.name}</p>
+                        <h3 className="mt-2 text-3xl font-bold">{hero?.title ?? 'Lienzo en blanco'}</h3>
                       </div>
                     </div>
                     <div className="flex items-center justify-between gap-3 p-4">
@@ -218,7 +264,10 @@ export default function AdminHomeEditor() {
                         <p className="font-bold text-gray-900">{template.name}</p>
                         <p className="text-xs text-gray-500">{template.blocks.length} bloques editables</p>
                       </div>
-                      <button onClick={() => selectTemplate(template)} className="rounded-lg bg-[#4a3728] px-4 py-2 text-sm font-semibold text-white">Usar plantilla</button>
+                      <div className="flex items-center gap-2">
+                        {isCustom && <button onClick={() => deleteCustomTemplate(template.templateId)} className="rounded-lg border border-red-200 px-2.5 py-2 text-sm text-red-500" title="Eliminar plantilla">×</button>}
+                        <button onClick={() => selectTemplate(template)} className="rounded-lg bg-[#4a3728] px-4 py-2 text-sm font-semibold text-white">Usar plantilla</button>
+                      </div>
                     </div>
                   </article>
                 )
@@ -381,6 +430,40 @@ export default function AdminHomeEditor() {
                       <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Altura: {selected.height}px</span>
                       <input type="range" min={8} max={200} value={selected.height} onChange={event => patchBlock(selected.id, { height: Number(event.target.value) })} className="w-full" />
                     </label>
+                  )}
+
+                  {selected.type !== 'spacer' && (
+                    <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-gray-500">Diseño avanzado</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <label>
+                          <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Alineación</span>
+                          <select value={selected.textAlign ?? 'left'} onChange={event => patchBlock(selected.id, { textAlign: event.target.value as HomeBlock['textAlign'] })} className="input-field">
+                            <option value="left">Izquierda</option>
+                            <option value="center">Centro</option>
+                            <option value="right">Derecha</option>
+                          </select>
+                        </label>
+                        <label>
+                          <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Ancho</span>
+                          <select value={selected.contentWidth ?? 'normal'} onChange={event => patchBlock(selected.id, { contentWidth: event.target.value as HomeBlock['contentWidth'] })} className="input-field">
+                            <option value="normal">Normal</option>
+                            <option value="wide">Amplio</option>
+                            <option value="full">Completo</option>
+                          </select>
+                        </label>
+                      </div>
+                      <label className="block">
+                        <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Esquinas: {selected.borderRadius ?? 0}px</span>
+                        <input type="range" min={0} max={48} value={selected.borderRadius ?? 0} onChange={event => patchBlock(selected.id, { borderRadius: Number(event.target.value) })} className="w-full" />
+                      </label>
+                      {selected.type === 'hero' && (
+                        <label className="block">
+                          <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Oscurecer imagen: {selected.overlayOpacity ?? 35}%</span>
+                          <input type="range" min={0} max={80} value={selected.overlayOpacity ?? 35} onChange={event => patchBlock(selected.id, { overlayOpacity: Number(event.target.value) })} className="w-full" />
+                        </label>
+                      )}
+                    </div>
                   )}
 
                   <div className="grid grid-cols-2 gap-2">

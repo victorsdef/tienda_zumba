@@ -16,6 +16,10 @@ export interface HomeBlock {
   productCount: number
   height: number
   imagePosition: 'left' | 'right'
+  textAlign: 'left' | 'center' | 'right'
+  contentWidth: 'normal' | 'wide' | 'full'
+  borderRadius: number
+  overlayOpacity: number
 }
 
 export interface HomeLayout {
