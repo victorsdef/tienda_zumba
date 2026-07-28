@@ -127,10 +127,10 @@ export default function AdminConfiguracion() {
 
   return (
     <div className="p-3 sm:p-6 md:p-8 max-w-4xl mx-auto space-y-6">
-      {/* Encabezado */}
-      <div>
-        <h1 className="text-xl md:text-2xl font-bold text-gray-800">Configuración de la tienda</h1>
-        <p className="text-xs sm:text-sm text-gray-500 mt-1">Los cambios se reflejan al instante en la tienda pública.</p>
+      {/* Encabezado (sticky) */}
+      <div className="sticky top-2 z-30 bg-white border border-gray-200 rounded-2xl shadow-sm px-4 sm:px-5 py-4">
+        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 leading-tight">Configuración de la tienda</h1>
+        <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5">Los cambios se reflejan al instante en la tienda pública.</p>
       </div>
 
       {/* Secciones */}

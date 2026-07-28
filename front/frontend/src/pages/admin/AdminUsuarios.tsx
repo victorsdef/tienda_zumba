@@ -31,6 +31,7 @@ export default function AdminUsuarios() {
   const qc = useQueryClient()
   const [page, setPage] = useState(0)
   const [busqueda, setBusqueda] = useState('')
+  const [filtroRol, setFiltroRol] = useState<'TODOS' | 'ADMIN' | 'VENDEDOR' | 'BODEGUERO' | 'CLIENTE'>('TODOS')
   const [modal, setModal] = useState(false)
   const [form, setForm] = useState<FormData>({ nombre: '', email: '', password: '', rol: 'VENDEDOR' })
   const [formError, setFormError] = useState('')
@@ -58,27 +59,56 @@ export default function AdminUsuarios() {
     onError: (e: any) => setFormError(e?.response?.data?.message ?? 'Error al crear el usuario'),
   })
 
-  const usuarios: UsuarioAdmin[] = (data?.content ?? []).filter((u: UsuarioAdmin) =>
-    !busqueda || u.nombre.toLowerCase().includes(busqueda.toLowerCase()) || u.email.toLowerCase().includes(busqueda.toLowerCase())
-  )
+  const todos: UsuarioAdmin[] = data?.content ?? []
+  const usuarios: UsuarioAdmin[] = todos.filter((u: UsuarioAdmin) => {
+    const okBusqueda = !busqueda || u.nombre.toLowerCase().includes(busqueda.toLowerCase()) || u.email.toLowerCase().includes(busqueda.toLowerCase())
+    const okRol = filtroRol === 'TODOS' || u.rol === filtroRol
+    return okBusqueda && okRol
+  })
+  const cuenta = (r: string) => todos.filter(u => u.rol === r).length
 
   return (
-    <div className="p-4 md:p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Usuarios</h1>
-        <button
-          onClick={() => setModal(true)}
-          className="btn-primary text-sm px-4 py-2"
-        >
-          + Crear usuario
-        </button>
-      </div>
+    <div className="p-3 sm:p-4 md:p-6 space-y-4">
+      {/* Encabezado unificado (sticky) */}
+      <div className="sticky top-2 z-30 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-4 border-b border-gray-100 flex-wrap">
+          <div>
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-tight">Usuarios</h1>
+            <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">
+              {data?.totalElements ?? 0} en total · {usuarios.length} visibles
+            </p>
+          </div>
+          <button
+            onClick={() => setModal(true)}
+            className="bg-[#4a3728] hover:bg-[#3a2a1e] text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors">
+            <span className="text-base leading-none">+</span> <span className="hidden sm:inline">Crear usuario</span><span className="sm:hidden">Crear</span>
+          </button>
+        </div>
 
-      <div className="bg-white border rounded-lg px-3 md:px-4 py-3 flex items-center gap-3">
-        <IconSearch size={16} className="text-gray-400 flex-shrink-0" />
-        <input value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Buscar por nombre o email..."
-          className="flex-1 outline-none text-sm min-w-0" />
-        <span className="text-xs text-gray-400 flex-shrink-0">{data?.totalElements ?? 0} usuarios</span>
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
+          <div className="relative">
+            <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input value={busqueda} onChange={e => setBusqueda(e.target.value)}
+              placeholder="Buscar por nombre o email..."
+              className="w-full pl-10 pr-9 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30" />
+            {busqueda && <button onClick={() => setBusqueda('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-sm">✕</button>}
+          </div>
+        </div>
+
+        <div className="px-4 sm:px-5 py-3 flex items-center gap-2 overflow-x-auto">
+          {([
+            ['TODOS', 'Todos', todos.length],
+            ['ADMIN', 'Admins', cuenta('ADMIN')],
+            ['VENDEDOR', 'Vendedores', cuenta('VENDEDOR')],
+            ['BODEGUERO', 'Bodega', cuenta('BODEGUERO')],
+            ['CLIENTE', 'Clientes', cuenta('CLIENTE')],
+          ] as const).map(([v, l, c]) => (
+            <button key={v} onClick={() => setFiltroRol(v)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-xs font-semibold transition-all ${filtroRol === v ? 'bg-[#4a3728] text-white border-[#4a3728] shadow-sm' : 'border-gray-200 text-gray-600 hover:border-gray-400 bg-white'}`}>
+              {l} <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${filtroRol === v ? 'bg-white/20' : 'bg-gray-100 text-gray-500'}`}>{c}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {isLoading ? (

@@ -601,28 +601,32 @@ export default function AdminBanners() {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Banners</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Administrá el carrusel de la página principal</p>
+    <div className="p-3 sm:p-4 md:p-6 space-y-4">
+      {/* Encabezado unificado (sticky) */}
+      <div className="sticky top-2 z-30 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-4 border-b border-gray-100 flex-wrap">
+          <div>
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-tight">Banners</h1>
+            <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">
+              {banners.length} en total · {bannersFiltrados.length} visibles · Carrusel de la página principal
+            </p>
+          </div>
+          <button onClick={() => abrir()} className="bg-[#4a3728] hover:bg-[#3a2a1e] text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors">
+            <span className="text-base leading-none">+</span> <span className="hidden sm:inline">Nuevo banner</span><span className="sm:hidden">Nuevo</span>
+          </button>
         </div>
-        <button onClick={() => abrir()} className="btn-primary flex items-center gap-1.5">
-          <span className="text-lg leading-none">+</span> Nuevo banner
-        </button>
-      </div>
-
-      {/* Buscador */}
-      <div className="bg-white border border-[#ede8df] rounded-lg p-3 flex items-center gap-3">
-        <IconSearch size={16} className="text-gray-400 flex-shrink-0" />
-        <input
-          value={busqueda}
-          onChange={e => setBusqueda(e.target.value)}
-          className="flex-1 outline-none text-sm"
-          placeholder="Buscar por título, etiqueta, destino o estado"
-        />
-        <span className="text-xs text-gray-400">{bannersFiltrados.length} de {banners.length}</span>
+        <div className="px-4 sm:px-5 py-3">
+          <div className="relative">
+            <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+              className="w-full pl-10 pr-9 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30"
+              placeholder="Buscar por título, etiqueta, destino o estado..."
+            />
+            {busqueda && <button onClick={() => setBusqueda('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-sm">✕</button>}
+          </div>
+        </div>
       </div>
 
       {/* ── MODAL DE 5 PASOS ────────────────────────────────────────────── */}

@@ -108,16 +108,51 @@ export default function AdminCategorias() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#9a7a63]">Catálogo</p>
-          <h1 className="mt-1 text-2xl md:text-3xl font-bold text-gray-900">Categorías</h1>
-          <p className="text-sm text-gray-500 mt-1">Organiza tus productos y controla qué categorías ven tus clientes.</p>
+    <div className="p-3 sm:p-4 md:p-8 max-w-[1600px] mx-auto space-y-4">
+      {/* Encabezado unificado (sticky) */}
+      <div className="sticky top-2 z-30 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-4 border-b border-gray-100 flex-wrap">
+          <div>
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-tight">Categorías</h1>
+            <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">
+              {totalCategorias} en total · {totalActivas} activas · {totalInactivas} inactivas
+            </p>
+          </div>
+          <button onClick={() => abrir()} className="bg-[#4a3728] hover:bg-[#3a2a1e] text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors">
+            <span className="text-base leading-none">+</span> <span className="hidden sm:inline">Nueva categoría</span><span className="sm:hidden">Nueva</span>
+          </button>
         </div>
-        <button onClick={() => abrir()} className="btn-primary inline-flex items-center justify-center gap-2 px-5 py-3 text-sm shadow-sm">
-          <span className="text-lg leading-none">+</span> Nueva categoría
-        </button>
+
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
+          <div className="relative">
+            <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+              className="w-full pl-10 pr-9 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30"
+              placeholder="Buscar por nombre o descripción..."
+            />
+            {busqueda && <button onClick={() => setBusqueda('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-sm">✕</button>}
+          </div>
+        </div>
+
+        <div className="px-4 sm:px-5 py-3 flex items-center gap-2 overflow-x-auto">
+          {([
+            ['TODAS', 'Todas', totalCategorias],
+            ['ACTIVAS', 'Activas', totalActivas],
+            ['INACTIVAS', 'Inactivas', totalInactivas],
+          ] as const).map(([value, label, count]) => (
+            <button key={value} type="button" onClick={() => setFiltroEstado(value)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-xs font-semibold transition-all ${filtroEstado === value ? 'bg-[#4a3728] text-white border-[#4a3728] shadow-sm' : 'border-gray-200 text-gray-600 hover:border-gray-400 bg-white'}`}>
+              {label} <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${filtroEstado === value ? 'bg-white/20' : 'bg-gray-100 text-gray-500'}`}>{count}</span>
+            </button>
+          ))}
+          <select value={filtroGenero} onChange={e => setFiltroGenero(e.target.value)}
+            className="flex-shrink-0 border border-gray-200 rounded-full px-3 py-1.5 text-xs text-gray-600 focus:outline-none hover:border-gray-400 bg-white font-semibold">
+            <option value="">Todos los grupos</option>
+            {GENEROS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -140,40 +175,7 @@ export default function AdminCategorias() {
         ))}
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm space-y-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className="relative w-full lg:flex-1">
-            <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              value={busqueda}
-              onChange={e => setBusqueda(e.target.value)}
-              className="input-field w-full pl-9"
-              placeholder="Buscar categorías por nombre o descripción…"
-            />
-          </div>
-          <select value={filtroGenero} onChange={e => setFiltroGenero(e.target.value)} className="input-field w-full lg:w-52">
-            <option value="">Todos los grupos</option>
-            {GENEROS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
-          </select>
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
-          <div className="flex gap-2">
-            {([
-              ['TODAS', 'Todas', totalCategorias],
-              ['ACTIVAS', 'Activas', totalActivas],
-              ['INACTIVAS', 'Inactivas', totalInactivas],
-            ] as const).map(([value, label, count]) => (
-              <button key={value} type="button" onClick={() => setFiltroEstado(value)}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${filtroEstado === value ? 'bg-[#4a3728] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                {label} <span className="ml-1 opacity-70">{count}</span>
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-gray-500">
-            Mostrando <strong className="text-gray-800">{categoriasFiltradas.length}</strong> resultados
-          </p>
-        </div>
-      </div>
+      <p className="text-xs text-gray-500 px-1">Mostrando <strong className="text-gray-800">{categoriasFiltradas.length}</strong> resultados</p>
 
       {mostrarForm && (
         <div className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center sm:p-5">

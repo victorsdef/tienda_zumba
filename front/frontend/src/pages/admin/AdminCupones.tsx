@@ -110,8 +110,8 @@ export default function AdminCupones() {
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
 
-      {/* Encabezado unificado */}
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-5">
+      {/* Encabezado unificado (sticky) */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-5 sticky top-2 z-30">
         <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-4 border-b border-gray-100">
           <div>
             <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 leading-tight">Cupones</h1>

@@ -90,36 +90,37 @@ export default function AdminResenas() {
 
   return (
     <div className="p-3 sm:p-6 md:p-8 max-w-5xl mx-auto">
-      {/* Encabezado */}
-      <div className="mb-5">
-        <h1 className="text-xl md:text-2xl font-bold text-gray-800">Reseñas</h1>
-        <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
-          {resenas.length} en total · {totalPendientes} pendiente{totalPendientes !== 1 ? 's' : ''} · {totalAprobadas} aprobada{totalAprobadas !== 1 ? 's' : ''}
-        </p>
-      </div>
-
-      {/* Barra de búsqueda + pills */}
-      <div className="mb-6 space-y-3">
-        <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
-            placeholder="Buscar por producto, usuario o comentario..."
-            className="w-full border border-gray-200 rounded-xl pl-10 pr-9 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30 shadow-sm"
-          />
-          {busqueda && (
-            <button onClick={() => setBusqueda('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-sm">✕</button>
-          )}
+      {/* Encabezado unificado (sticky) */}
+      <div className="sticky top-2 z-30 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-5">
+        <div className="px-4 sm:px-5 py-4 border-b border-gray-100">
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 leading-tight">Reseñas</h1>
+          <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">
+            {resenas.length} en total · {totalPendientes} pendiente{totalPendientes !== 1 ? 's' : ''} · {totalAprobadas} aprobada{totalAprobadas !== 1 ? 's' : ''}
+          </p>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-3 px-3 sm:mx-0 sm:px-0">
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+              placeholder="Buscar por producto, usuario o comentario..."
+              className="w-full border border-gray-200 rounded-lg pl-10 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30"
+            />
+            {busqueda && (
+              <button onClick={() => setBusqueda('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-sm">✕</button>
+            )}
+          </div>
+        </div>
+
+        <div className="px-4 sm:px-5 py-3 flex gap-2 overflow-x-auto">
           {PILLS.map(p => (
             <button key={p.value} onClick={() => setFiltro(p.value)}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-semibold transition-all ${
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-xs font-semibold transition-all ${
                 filtro === p.value
                   ? 'bg-[#4a3728] text-white border-[#4a3728] shadow-sm'
                   : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
