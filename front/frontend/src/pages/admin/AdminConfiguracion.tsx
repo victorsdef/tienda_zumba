@@ -5,7 +5,7 @@ import { getConfiguracion, updateConfiguracion } from '../../api/configuracion'
 type ConfigMeta = { label: string; hint: string; tipo: 'numero'; prefix?: string; suffix?: string; seccion: SeccionId }
                 | { label: string; hint: string; tipo: 'texto'; placeholder?: string; seccion: SeccionId }
 
-type SeccionId = 'finanzas' | 'contacto' | 'retiro' | 'home'
+type SeccionId = 'finanzas' | 'contacto' | 'retiro' | 'redes' | 'home'
 
 const LABELS: Record<string, ConfigMeta> = {
   // ── Finanzas y envío ──
@@ -44,6 +44,31 @@ const LABELS: Record<string, ConfigMeta> = {
     placeholder: 'Ej: Lunes a sábado · 9:00 – 18:00',
     seccion: 'retiro',
   },
+  // ── Redes sociales ──
+  social_instagram: {
+    tipo: 'texto', label: 'Instagram',
+    hint: 'URL completa del perfil. Ej: https://instagram.com/sofia_couture_ec',
+    placeholder: 'https://instagram.com/tu_usuario',
+    seccion: 'redes',
+  },
+  social_tiktok: {
+    tipo: 'texto', label: 'TikTok',
+    hint: 'URL completa del perfil. Ej: https://tiktok.com/@sofia.couture',
+    placeholder: 'https://tiktok.com/@tu_usuario',
+    seccion: 'redes',
+  },
+  social_facebook: {
+    tipo: 'texto', label: 'Facebook',
+    hint: 'URL completa de la página. Ej: https://facebook.com/sofia.couture.ec',
+    placeholder: 'https://facebook.com/tu_pagina',
+    seccion: 'redes',
+  },
+  social_pinterest: {
+    tipo: 'texto', label: 'Pinterest',
+    hint: 'URL completa del perfil. Ej: https://pinterest.com/sofia_couture',
+    placeholder: 'https://pinterest.com/tu_usuario',
+    seccion: 'redes',
+  },
   // ── Contenido del home ──
   home_editorial_titulo: {
     tipo: 'texto', label: 'Título del bloque editorial',
@@ -75,11 +100,13 @@ const IconMoney = () => <svg className="w-6 h-6" fill="none" stroke="currentColo
 const IconChat = () => <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 01-9 9c-1.68 0-3.26-.46-4.6-1.26L3 21l1.26-4.4A8.96 8.96 0 013 12a9 9 0 019-9 9 9 0 019 9z" /></svg>
 const IconPin = () => <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
 const IconHome = () => <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+const IconShare = () => <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
 
 const SECCIONES: { id: SeccionId; titulo: string; descripcion: string; Icon: () => JSX.Element; color: string; iconColor: string }[] = [
   { id: 'finanzas', titulo: 'Comisiones y envíos', descripcion: 'Valores financieros que afectan cada venta.',    Icon: IconMoney, color: 'from-amber-100 to-yellow-50 border-amber-200', iconColor: 'text-amber-600' },
   { id: 'contacto', titulo: 'Contacto WhatsApp',   descripcion: 'El número que ve tu cliente en toda la tienda.', Icon: IconChat,  color: 'from-green-100 to-emerald-50 border-green-200', iconColor: 'text-green-600' },
   { id: 'retiro',   titulo: 'Retiro en tienda',    descripcion: 'Información del punto de retiro en Cuenca.',     Icon: IconPin,   color: 'from-blue-100 to-sky-50 border-blue-200', iconColor: 'text-blue-600' },
+  { id: 'redes',    titulo: 'Redes sociales',      descripcion: 'Enlaces del footer y del botón "Síguenos".',     Icon: IconShare, color: 'from-pink-100 to-rose-50 border-pink-200', iconColor: 'text-pink-600' },
   { id: 'home',     titulo: 'Contenido del home',  descripcion: 'Textos que aparecen en la página principal.',    Icon: IconHome,  color: 'from-purple-100 to-fuchsia-50 border-purple-200', iconColor: 'text-purple-600' },
 ]
 

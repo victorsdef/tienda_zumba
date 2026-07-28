@@ -18,6 +18,10 @@ export interface RetiroInfo {
   retiro_whatsapp: string
   costo_envio: string
   costo_envio_cuenca: string
+  social_instagram?: string
+  social_tiktok?: string
+  social_facebook?: string
+  social_pinterest?: string
 }
 
 export const getRetiroInfo = () =>

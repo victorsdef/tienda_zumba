@@ -139,11 +139,14 @@ export interface Page<T> {
 
 export interface ProductoFilter {
   categoriaId?: number
+  categoriaIds?: number[]
   precioMin?: number
   precioMax?: number
   nombre?: string
   talla?: string
+  tallas?: string[]
   color?: string
+  colores?: string[]
   genero?: string
   page?: number
   size?: number

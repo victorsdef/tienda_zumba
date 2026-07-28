@@ -44,7 +44,11 @@ public class ConfiguracionController {
                 "retiro_horario",
                 "retiro_whatsapp",
                 "costo_envio",
-                "costo_envio_cuenca"
+                "costo_envio_cuenca",
+                "social_instagram",
+                "social_tiktok",
+                "social_facebook",
+                "social_pinterest"
         )) {
             try {
                 ConfiguracionDTO config = configuracionRestMapper.toDto(configUseCase.get(clave));

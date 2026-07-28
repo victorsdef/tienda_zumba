@@ -42,19 +42,20 @@ export default function MisDirecciones() {
   )
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="max-w-5xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 space-y-5">
+      {/* Encabezado tipo card */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm px-4 sm:px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="font-bold text-[#4a3728] text-lg">Mis direcciones</h2>
+          <h2 className="font-bold text-[#4a3728] text-lg sm:text-xl md:text-2xl leading-tight">Mis direcciones</h2>
           <p className="text-xs text-gray-400 mt-0.5">{direcciones.length} dirección{direcciones.length !== 1 ? 'es' : ''} guardada{direcciones.length !== 1 ? 's' : ''}</p>
         </div>
         <button
           onClick={abrirNueva}
-          className="flex items-center gap-1.5 bg-[#4a3728] hover:bg-[#3a2a1e] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+          className="flex items-center gap-1.5 bg-[#4a3728] hover:bg-[#3a2a1e] text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
         >
           <span className="text-base leading-none">+</span>
-          Nueva dirección
+          <span className="hidden sm:inline">Nueva dirección</span>
+          <span className="sm:hidden">Nueva</span>
         </button>
       </div>
 

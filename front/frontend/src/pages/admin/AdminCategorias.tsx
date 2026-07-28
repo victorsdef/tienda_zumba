@@ -78,7 +78,27 @@ export default function AdminCategorias() {
     onError: mutationError,
   })
   const deleteMut = useMutation({ mutationFn: eliminarCategoria, onSuccess: invalidate })
-  const toggleMut = useMutation({ mutationFn: toggleCategoria, onSuccess: invalidate })
+  const toggleMut = useMutation({
+    mutationFn: toggleCategoria,
+    onMutate: async (id: number) => {
+      // Optimistic update: cambia el estado inmediatamente en el cache
+      await qc.cancelQueries({ queryKey: ['categorias-admin'] })
+      const previo = qc.getQueryData<Categoria[]>(['categorias-admin'])
+      qc.setQueryData<Categoria[]>(['categorias-admin'], (viejo = []) =>
+        viejo.map(c => c.id === id ? { ...c, activo: c.activo === false ? true : false } : c)
+      )
+      return { previo }
+    },
+    onError: (_err, _id, ctx) => {
+      // Rollback si falla
+      if (ctx?.previo) qc.setQueryData(['categorias-admin'], ctx.previo)
+    },
+    onSettled: () => {
+      // Refetch para sincronizar con el servidor
+      qc.invalidateQueries({ queryKey: ['categorias-admin'] })
+      qc.invalidateQueries({ queryKey: ['categorias'] })
+    },
+  })
 
   const abrir = (c?: Categoria) => {
     setSaveError('')

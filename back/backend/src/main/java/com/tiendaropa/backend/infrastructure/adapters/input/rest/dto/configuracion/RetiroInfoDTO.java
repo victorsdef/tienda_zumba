@@ -9,4 +9,8 @@ public class RetiroInfoDTO {
     private String retiro_whatsapp;
     private String costo_envio;
     private String costo_envio_cuenca;
+    private String social_instagram;
+    private String social_tiktok;
+    private String social_facebook;
+    private String social_pinterest;
 }

@@ -103,7 +103,27 @@ export default function AdminProductos() {
     onSuccess: () => { invalidate(); cerrar() },
   })
   const deleteMut = useMutation({ mutationFn: eliminarProducto, onSuccess: invalidate })
-  const toggleMut = useMutation({ mutationFn: toggleActivo, onSuccess: invalidate })
+  const toggleMut = useMutation({
+    mutationFn: toggleActivo,
+    onMutate: async (id: number) => {
+      // Optimistic: cambia el estado en el cache antes de la respuesta
+      const keys = qc.getQueriesData<any>({ queryKey: ['admin-productos'] })
+      const snapshots: [any, any][] = []
+      keys.forEach(([key, data]) => {
+        if (!data?.content) return
+        snapshots.push([key, data])
+        qc.setQueryData(key, {
+          ...data,
+          content: data.content.map((p: Producto) => p.id === id ? { ...p, activo: !p.activo } : p),
+        })
+      })
+      return { snapshots }
+    },
+    onError: (_e, _id, ctx) => {
+      ctx?.snapshots.forEach(([key, data]) => qc.setQueryData(key, data))
+    },
+    onSettled: invalidate,
+  })
   const stockMut = useMutation({
     mutationFn: ({ id, stock }: { id: number; stock: number }) => actualizarStock(id, stock),
     onSuccess: () => { invalidate(); setEditStock(null) },

@@ -44,8 +44,22 @@ export default function FilterSidebar({ filter, onChange, cats }: Props) {
   const [precioMin, setPrecioMin] = useState(filter.precioMin?.toString() ?? '')
   const [precioMax, setPrecioMax] = useState(filter.precioMax?.toString() ?? '')
 
-  const set = (key: keyof ProductoFilter, value: unknown) =>
-    onChange({ ...filter, [key]: value || undefined, page: 0 })
+  const categoriaIds = filter.categoriaIds ?? (filter.categoriaId ? [filter.categoriaId] : [])
+  const tallas = filter.tallas ?? (filter.talla ? [filter.talla] : [])
+  const colores = filter.colores ?? (filter.color ? [filter.color] : [])
+
+  // Toggle: agrega/quita del array
+  const toggleItem = <T,>(arr: T[], item: T): T[] =>
+    arr.includes(item) ? arr.filter(x => x !== item) : [...arr, item]
+
+  const setMulti = (key: 'categoriaIds' | 'tallas' | 'colores', arr: any[]) => {
+    // Limpia también el campo singular para evitar duplicados en la URL
+    const clean = { ...filter } as any
+    if (key === 'categoriaIds') clean.categoriaId = undefined
+    if (key === 'tallas') clean.talla = undefined
+    if (key === 'colores') clean.color = undefined
+    onChange({ ...clean, [key]: arr.length > 0 ? arr : undefined, page: 0 })
+  }
 
   const applyPrices = () =>
     onChange({
@@ -55,10 +69,10 @@ export default function FilterSidebar({ filter, onChange, cats }: Props) {
       page: 0,
     })
 
-  // Tallas dinámicas: usa la categoría seleccionada, o todas las activas
-  const catSeleccionada = cats.find(c => c.id === filter.categoriaId)
-  const tallasRaw: string[] = catSeleccionada?.tallasDisponibles?.length
-    ? catSeleccionada.tallasDisponibles
+  // Tallas dinámicas: usa las categorías seleccionadas, o todas las activas
+  const catsSeleccionadas = cats.filter(c => categoriaIds.includes(c.id))
+  const tallasRaw: string[] = catsSeleccionadas.length
+    ? Array.from(new Set(catsSeleccionadas.flatMap(c => c.tallasDisponibles ?? [])))
     : Array.from(new Set(cats.flatMap(c => c.tallasDisponibles ?? [])))
 
   // Categorías filtradas por género si hay uno activo
@@ -66,7 +80,7 @@ export default function FilterSidebar({ filter, onChange, cats }: Props) {
     ? cats.filter(c => c.genero === filter.genero)
     : cats
 
-  const hasFilters = filter.categoriaId || filter.precioMin || filter.precioMax || filter.talla || filter.color
+  const hasFilters = categoriaIds.length > 0 || filter.precioMin || filter.precioMax || tallas.length > 0 || colores.length > 0
 
   return (
     <div className="bg-white rounded-xl border border-[#ede8df] overflow-hidden">
@@ -83,15 +97,15 @@ export default function FilterSidebar({ filter, onChange, cats }: Props) {
       </div>
 
       <div className="px-4 divide-y divide-[#f0ebe4]">
-        {/* ── Categoría ─────────────────────────────────────── */}
+        {/* ── Categoría (multi-select) ─────────────────────── */}
         {categoriasFiltradas.length > 0 && (
-          <Section title="Categoría">
+          <Section title={`Categoría${categoriaIds.length > 0 ? ` · ${categoriaIds.length}` : ''}`}>
             <ul className="space-y-0.5">
               <li>
                 <button
-                  onClick={() => set('categoriaId', undefined)}
+                  onClick={() => setMulti('categoriaIds', [])}
                   className={`text-xs w-full text-left py-1.5 rounded px-2 transition-colors ${
-                    !filter.categoriaId
+                    categoriaIds.length === 0
                       ? 'bg-[#f0ebe4] text-[#4a3728] font-semibold'
                       : 'text-gray-500 hover:text-[#4a3728] hover:bg-[#faf7f2]'
                   }`}
@@ -99,20 +113,26 @@ export default function FilterSidebar({ filter, onChange, cats }: Props) {
                   Todas
                 </button>
               </li>
-              {categoriasFiltradas.map(c => (
-                <li key={c.id}>
-                  <button
-                    onClick={() => set('categoriaId', c.id)}
-                    className={`text-xs w-full text-left py-1.5 rounded px-2 transition-colors ${
-                      filter.categoriaId === c.id
-                        ? 'bg-[#f0ebe4] text-[#4a3728] font-semibold'
-                        : 'text-gray-500 hover:text-[#4a3728] hover:bg-[#faf7f2]'
-                    }`}
-                  >
-                    {c.nombre}
-                  </button>
-                </li>
-              ))}
+              {categoriasFiltradas.map(c => {
+                const activa = categoriaIds.includes(c.id)
+                return (
+                  <li key={c.id}>
+                    <button
+                      onClick={() => setMulti('categoriaIds', toggleItem(categoriaIds, c.id))}
+                      className={`text-xs w-full text-left py-1.5 rounded px-2 transition-colors flex items-center gap-2 ${
+                        activa
+                          ? 'bg-[#f0ebe4] text-[#4a3728] font-semibold'
+                          : 'text-gray-500 hover:text-[#4a3728] hover:bg-[#faf7f2]'
+                      }`}
+                    >
+                      <span className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center ${activa ? 'bg-[#4a3728] border-[#4a3728]' : 'border-[#c9b8a8]'}`}>
+                        {activa && <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                      </span>
+                      {c.nombre}
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
           </Section>
         )}
@@ -144,47 +164,63 @@ export default function FilterSidebar({ filter, onChange, cats }: Props) {
           </button>
         </Section>
 
-        {/* ── Talla ─────────────────────────────────────────── */}
+        {/* ── Talla (multi-select) ─────────────────────────── */}
         {tallasRaw.length > 0 && (
-          <Section title="Talla">
+          <Section title={`Talla${tallas.length > 0 ? ` · ${tallas.length}` : ''}`}>
             <div className="flex flex-wrap gap-1.5">
-              {tallasRaw.map(t => (
-                <button
-                  key={t}
-                  onClick={() => set('talla', filter.talla === t ? undefined : t)}
-                  className={`border rounded-lg text-xs px-2.5 py-1 transition-colors ${
-                    filter.talla === t
-                      ? 'border-[#4a3728] bg-[#4a3728] text-white'
-                      : 'border-[#e2d9ce] text-gray-500 hover:border-[#7d5c48] hover:text-[#4a3728]'
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
+              {tallasRaw.map(t => {
+                const activa = tallas.includes(t)
+                return (
+                  <button
+                    key={t}
+                    onClick={() => setMulti('tallas', toggleItem(tallas, t))}
+                    className={`border rounded-lg text-xs px-2.5 py-1 transition-colors font-semibold ${
+                      activa
+                        ? 'border-[#4a3728] bg-[#4a3728] text-white shadow-sm'
+                        : 'border-[#e2d9ce] text-gray-500 hover:border-[#7d5c48] hover:text-[#4a3728]'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                )
+              })}
             </div>
           </Section>
         )}
 
-        {/* ── Color ─────────────────────────────────────────── */}
-        <Section title="Color">
+        {/* ── Color (multi-select) ─────────────────────────── */}
+        <Section title={`Color${colores.length > 0 ? ` · ${colores.length}` : ''}`}>
           <div className="grid grid-cols-6 gap-2">
-            {COLORES.map(c => (
-              <button
-                key={c.hex}
-                title={c.label}
-                onClick={() => set('color', filter.color === c.hex ? undefined : c.hex)}
-                className={`w-7 h-7 rounded-full border-2 mx-auto transition-all ${
-                  filter.color === c.hex
-                    ? 'border-[#4a3728] scale-110 shadow-md'
-                    : 'border-[#e2d9ce] hover:border-[#7d5c48]'
-                } ${c.hex === '#f5f5f5' ? 'ring-1 ring-[#e2d9ce]' : ''}`}
-                style={{ backgroundColor: c.hex }}
-              />
-            ))}
+            {COLORES.map(c => {
+              const activo = colores.includes(c.hex)
+              return (
+                <button
+                  key={c.hex}
+                  title={c.label}
+                  onClick={() => setMulti('colores', toggleItem(colores, c.hex))}
+                  className={`w-7 h-7 rounded-full border-2 mx-auto transition-all relative ${
+                    activo
+                      ? 'border-[#4a3728] scale-110 shadow-md'
+                      : 'border-[#e2d9ce] hover:border-[#7d5c48]'
+                  } ${c.hex === '#f5f5f5' ? 'ring-1 ring-[#e2d9ce]' : ''}`}
+                  style={{ backgroundColor: c.hex }}
+                >
+                  {activo && (
+                    <svg className="absolute inset-0 m-auto w-4 h-4 text-white drop-shadow" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              )
+            })}
           </div>
-          {filter.color && (
-            <p className="text-[10px] text-[#7d5c48] mt-2">
-              {COLORES.find(c => c.hex === filter.color)?.label ?? 'Color seleccionado'}
+          {colores.length > 0 && (
+            <p className="text-[10px] text-[#7d5c48] mt-2 flex flex-wrap gap-1">
+              {colores.map(hex => (
+                <span key={hex} className="bg-[#f0ebe4] px-1.5 py-0.5 rounded">
+                  {COLORES.find(c => c.hex === hex)?.label ?? hex}
+                </span>
+              ))}
             </p>
           )}
         </Section>

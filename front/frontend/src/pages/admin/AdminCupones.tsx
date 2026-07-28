@@ -77,7 +77,19 @@ export default function AdminCupones() {
   const crearMut = useMutation({ mutationFn: crearCupon, onSuccess: () => { invalidar(); cerrar() } })
   const actualizarMut = useMutation({ mutationFn: ({ id, data }: { id: number; data: Cupon }) => actualizarCupon(id, data), onSuccess: () => { invalidar(); cerrar() } })
   const eliminarMut = useMutation({ mutationFn: eliminarCupon, onSuccess: invalidar })
-  const toggleMut = useMutation({ mutationFn: toggleCupon, onSuccess: invalidar })
+  const toggleMut = useMutation({
+    mutationFn: toggleCupon,
+    onMutate: async (id: number) => {
+      await qc.cancelQueries({ queryKey: ['cupones-admin'] })
+      const previo = qc.getQueryData<Cupon[]>(['cupones-admin'])
+      qc.setQueryData<Cupon[]>(['cupones-admin'], (viejo = []) =>
+        viejo.map(c => c.id === id ? { ...c, activo: !c.activo } : c)
+      )
+      return { previo }
+    },
+    onError: (_e, _id, ctx) => { if (ctx?.previo) qc.setQueryData(['cupones-admin'], ctx.previo) },
+    onSettled: invalidar,
+  })
 
   const cerrar = () => { setShowForm(false); setEditId(null); setForm(EMPTY); setRestriccion('TODAS'); setBusquedaProducto('') }
 

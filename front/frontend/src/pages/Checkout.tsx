@@ -293,7 +293,7 @@ export default function Checkout() {
                     <p className="font-semibold">Punto de retiro - Cuenca</p>
                     <p className="text-gray-600">{retiro?.retiro_direccion ?? '...'}</p>
                     <p className="text-gray-500">{retiro?.retiro_horario ?? ''}</p>
-                    <p className="text-gray-500 mt-1">Una vez confirmado tu pedido te contactaremos por <span className="font-semibold text-green-700">WhatsApp</span> para coordinar el retiro.</p>
+                    <p className="text-gray-500 mt-1">Una vez confirmado tu pedido contactanos por <span className="font-semibold text-green-700">WhatsApp</span> para coordinar el retiro.</p>
                   </div>
                 )}
               </label>

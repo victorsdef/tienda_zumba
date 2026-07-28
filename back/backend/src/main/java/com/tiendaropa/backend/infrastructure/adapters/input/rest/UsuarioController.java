@@ -12,9 +12,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping({
@@ -30,6 +32,7 @@ public class UsuarioController {
     private final UsuarioRestMapper usuarioRestMapper;
     private final DireccionRepositoryPort direccionRepositoryPort;
     private final DireccionRestMapper direccionRestMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @GetMapping
     public List<UsuarioDTO> listar() {

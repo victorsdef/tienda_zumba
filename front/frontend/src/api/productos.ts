@@ -4,7 +4,15 @@ import type { Producto, Page, ProductoFilter } from '../types'
 export const getProductos = (filter: ProductoFilter = {}) => {
   const params = new URLSearchParams()
   Object.entries(filter).forEach(([k, v]) => {
-    if (v !== undefined && v !== null && v !== '') params.set(k, String(v))
+    if (v === undefined || v === null || v === '') return
+    // Arrays: envía cada valor como un parámetro separado (?tallas=XS&tallas=S)
+    if (Array.isArray(v)) {
+      v.forEach(item => {
+        if (item !== undefined && item !== null && item !== '') params.append(k, String(item))
+      })
+      return
+    }
+    params.set(k, String(v))
   })
   return api.get<Page<Producto>>(`/productos?${params}`).then(r => r.data)
 }
