@@ -670,7 +670,7 @@ export default function AdminHomeEditor() {
                         : [...gruposActivos, g]
                       patchBlock(selected.id, { categoryGroups: nuevos, categoryGroup: undefined })
                     }
-                    const GRUPOS = [
+                    const GRUPOS_TODOS = [
                       { v: 'MUJER',      l: 'Mujer' },
                       { v: 'HOMBRE',     l: 'Hombre' },
                       { v: 'NINO',       l: 'Niño/a' },
@@ -678,6 +678,11 @@ export default function AdminHomeEditor() {
                       { v: 'ACCESORIOS', l: 'Accesorios' },
                       { v: 'BELLEZA',    l: 'Belleza' },
                     ]
+                    // Solo mostrar grupos que tienen al menos 1 categoría activa
+                    const gruposConCatsActivas = new Set(
+                      categoryOptions.filter(c => c.activo !== false && c.genero).map(c => c.genero)
+                    )
+                    const GRUPOS = GRUPOS_TODOS.filter(g => gruposConCatsActivas.has(g.v))
 
                     return (
                     <div className="space-y-3">
@@ -721,6 +726,7 @@ export default function AdminHomeEditor() {
                           <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Categorías a mostrar</span>
                           <div className="max-h-56 space-y-1 overflow-y-auto rounded-xl border border-gray-200 p-2">
                             {categoryOptions
+                              .filter(c => c.activo !== false)
                               .filter(c => gruposActivos.length === 0 || (c.genero && gruposActivos.includes(c.genero)))
                               .map(cat => {
                                 const checked = (selected.categoryIds ?? []).includes(cat.id)

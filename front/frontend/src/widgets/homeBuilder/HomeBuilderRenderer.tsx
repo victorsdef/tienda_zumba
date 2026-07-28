@@ -245,9 +245,9 @@ function NewsletterBlock({ block }: { block: HomeBlock }) {
 function CategoriesBlock({ block, preview }: { block: HomeBlock; preview: boolean }) {
   const { data: categories = [] } = useQuery({ queryKey: ['categorias'], queryFn: getCategorias })
 
-  // Filtrado: grupos + modo (auto/manual)
+  // Filtrado: solo activas + grupos + modo (auto/manual)
   const filtradas = (() => {
-    let base = categories
+    let base = categories.filter(c => c.activo !== false)
     // Compatibilidad: si viene solo `categoryGroup` (singular) lo tratamos como array de uno
     const grupos: string[] = block.categoryGroups
       ?? (block.categoryGroup ? [block.categoryGroup] : [])
@@ -261,6 +261,28 @@ function CategoriesBlock({ block, preview }: { block: HomeBlock; preview: boolea
   })()
 
   const cols = block.columns || (preview ? 3 : 6)
+  const filas = 2 // Mostrar 2 filas por página
+  const porPagina = cols * filas
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / porPagina))
+
+  const [pagina, setPagina] = useState(0)
+
+  // Auto-rotación cada 3 segundos si hay más de una página
+  useEffect(() => {
+    if (preview || totalPaginas <= 1) return
+    const id = setInterval(() => setPagina(p => (p + 1) % totalPaginas), 3000)
+    return () => clearInterval(id)
+  }, [preview, totalPaginas])
+
+  // Reset página si cambian los filtros y la actual queda fuera
+  useEffect(() => {
+    if (pagina >= totalPaginas) setPagina(0)
+  }, [totalPaginas, pagina])
+
+  const visibles = preview
+    ? filtradas.slice(0, cols * 2)
+    : filtradas.slice(pagina * porPagina, pagina * porPagina + porPagina)
+
   const gridCols = preview
     ? cols === 2 ? 'grid-cols-2' : cols === 3 ? 'grid-cols-3' : 'grid-cols-4'
     : cols === 2 ? 'grid-cols-2' : cols === 3 ? 'grid-cols-2 sm:grid-cols-3' : cols === 4 ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'
@@ -273,22 +295,40 @@ function CategoriesBlock({ block, preview }: { block: HomeBlock; preview: boolea
         {filtradas.length === 0 ? (
           <p className="mt-6 text-center text-sm opacity-60">No hay categorías para mostrar con estos filtros.</p>
         ) : (
-          <div className={`mt-6 grid gap-3 ${gridCols}`}>
-            {filtradas.slice(0, preview ? cols * 2 : 12).map(category => (
-              <Link
-                key={category.id}
-                to={`/catalogo?categoriaId=${category.id}`}
-                className="overflow-hidden rounded-2xl border border-black/10 bg-white/80 p-3 text-center text-gray-900 transition-transform hover:-translate-y-1"
-              >
-                {category.imagen ? (
-                  <img src={category.imagen} alt="" className="mx-auto mb-2 aspect-square w-full rounded-xl object-cover" />
-                ) : (
-                  <div style={{ background: block.accentColor }} className="mx-auto mb-2 aspect-square w-full rounded-xl opacity-20" />
-                )}
-                <span className="text-sm font-semibold">{category.nombre}</span>
-              </Link>
-            ))}
-          </div>
+          <>
+            <div
+              key={pagina}
+              className={`mt-6 grid gap-3 ${gridCols}`}
+              style={{ animation: 'fadeSlideIn 400ms ease-out' }}
+            >
+              {visibles.map(category => (
+                <Link
+                  key={category.id}
+                  to={`/catalogo?categoriaId=${category.id}`}
+                  className="overflow-hidden rounded-2xl border border-black/10 bg-white/80 p-3 text-center text-gray-900 transition-transform hover:-translate-y-1"
+                >
+                  {category.imagen ? (
+                    <img src={category.imagen} alt="" className="mx-auto mb-2 aspect-square w-full rounded-xl object-cover" />
+                  ) : (
+                    <div style={{ background: block.accentColor }} className="mx-auto mb-2 aspect-square w-full rounded-xl opacity-20" />
+                  )}
+                  <span className="text-sm font-semibold">{category.nombre}</span>
+                </Link>
+              ))}
+            </div>
+            {!preview && totalPaginas > 1 && (
+              <div className="mt-5 flex items-center justify-center gap-1.5">
+                {Array.from({ length: totalPaginas }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setPagina(i)}
+                    aria-label={`Ir a página ${i + 1}`}
+                    className={`h-1.5 rounded-full transition-all ${pagina === i ? 'w-6 bg-current opacity-70' : 'w-1.5 bg-current opacity-25 hover:opacity-40'}`}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </section>
