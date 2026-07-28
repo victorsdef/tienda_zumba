@@ -244,27 +244,47 @@ function NewsletterBlock({ block }: { block: HomeBlock }) {
 
 function CategoriesBlock({ block, preview }: { block: HomeBlock; preview: boolean }) {
   const { data: categories = [] } = useQuery({ queryKey: ['categorias'], queryFn: getCategorias })
+
+  // Filtrado: grupo + modo (auto/manual)
+  const filtradas = (() => {
+    let base = categories
+    if (block.categoryGroup) base = base.filter(c => c.genero === block.categoryGroup)
+    if (block.categoryMode === 'manual' && (block.categoryIds ?? []).length > 0) {
+      base = base.filter(c => (block.categoryIds ?? []).includes(c.id))
+    }
+    return base
+  })()
+
+  const cols = block.columns || (preview ? 3 : 6)
+  const gridCols = preview
+    ? cols === 2 ? 'grid-cols-2' : cols === 3 ? 'grid-cols-3' : 'grid-cols-4'
+    : cols === 2 ? 'grid-cols-2' : cols === 3 ? 'grid-cols-2 sm:grid-cols-3' : cols === 4 ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'
+
   return (
     <section style={{ background: block.background, color: block.textColor }} className={preview ? 'px-4 py-6' : 'px-4 py-12 md:px-8'}>
       <div className={`mx-auto ${blockWidth(block)}`} style={{ borderRadius: block.borderRadius, overflow: block.borderRadius ? 'hidden' : undefined }}>
         <h2 className={`${preview ? 'text-xl' : 'text-3xl'} font-bold ${block.textAlign === 'center' ? 'text-center' : block.textAlign === 'right' ? 'text-right' : ''}`}>{block.title}</h2>
         {block.subtitle && <p className="mt-2 opacity-70">{block.subtitle}</p>}
-        <div className={`mt-6 grid gap-3 ${preview ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'}`}>
-          {categories.slice(0, preview ? 6 : 12).map(category => (
-            <Link
-              key={category.id}
-              to={`/catalogo?categoriaId=${category.id}`}
-              className="overflow-hidden rounded-2xl border border-black/10 bg-white/80 p-3 text-center text-gray-900 transition-transform hover:-translate-y-1"
-            >
-              {category.imagen ? (
-                <img src={category.imagen} alt="" className="mx-auto mb-2 aspect-square w-full rounded-xl object-cover" />
-              ) : (
-                <div style={{ background: block.accentColor }} className="mx-auto mb-2 aspect-square w-full rounded-xl opacity-20" />
-              )}
-              <span className="text-sm font-semibold">{category.nombre}</span>
-            </Link>
-          ))}
-        </div>
+        {filtradas.length === 0 ? (
+          <p className="mt-6 text-center text-sm opacity-60">No hay categorías para mostrar con estos filtros.</p>
+        ) : (
+          <div className={`mt-6 grid gap-3 ${gridCols}`}>
+            {filtradas.slice(0, preview ? cols * 2 : 12).map(category => (
+              <Link
+                key={category.id}
+                to={`/catalogo?categoriaId=${category.id}`}
+                className="overflow-hidden rounded-2xl border border-black/10 bg-white/80 p-3 text-center text-gray-900 transition-transform hover:-translate-y-1"
+              >
+                {category.imagen ? (
+                  <img src={category.imagen} alt="" className="mx-auto mb-2 aspect-square w-full rounded-xl object-cover" />
+                ) : (
+                  <div style={{ background: block.accentColor }} className="mx-auto mb-2 aspect-square w-full rounded-xl opacity-20" />
+                )}
+                <span className="text-sm font-semibold">{category.nombre}</span>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )

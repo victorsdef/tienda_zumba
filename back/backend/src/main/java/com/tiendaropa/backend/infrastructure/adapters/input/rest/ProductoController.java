@@ -1,6 +1,7 @@
 package com.tiendaropa.backend.infrastructure.adapters.input.rest;
 
 import com.tiendaropa.backend.application.ports.input.ProductoUseCase;
+import com.tiendaropa.backend.application.ports.input.CategoriaUseCase;
 import com.tiendaropa.backend.application.ports.output.ProductoRepositoryPort;
 import com.tiendaropa.backend.domain.model.Producto;
 import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.common.PageResponse;
@@ -28,33 +29,65 @@ public class ProductoController {
 
     private final ProductoUseCase productoUseCase;
     private final ProductoRepositoryPort productoRepositoryPort;
+    private final CategoriaUseCase categoriaUseCase;
     private final ProductoRestMapper productoRestMapper;
     private final ObjectMapper objectMapper;
 
     @GetMapping
     public PageResponse<ProductoDTO> listar(
         @RequestParam(required = false) Long categoriaId,
+        @RequestParam(required = false) List<Long> categoriaIds,
         @RequestParam(required = false) String nombre,
         @RequestParam(required = false) String talla,
+        @RequestParam(required = false) List<String> tallas,
         @RequestParam(required = false) String color,
+        @RequestParam(required = false) List<String> colores,
         @RequestParam(required = false) String genero,
+        @RequestParam(required = false) java.math.BigDecimal precioMin,
+        @RequestParam(required = false) java.math.BigDecimal precioMax,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "20") int size,
         @RequestParam(defaultValue = "id,desc") String sort
     ) {
+        // Normaliza: si viene el singular, lo suma al array
+        final List<Long> catIdsIniciales = new java.util.ArrayList<>();
+        if (categoriaIds != null) catIdsIniciales.addAll(categoriaIds);
+        if (categoriaId != null && !catIdsIniciales.contains(categoriaId)) catIdsIniciales.add(categoriaId);
+
+        // Si se filtra por una categoría padre, incluir también los productos de sus subcategorías
+        final java.util.Set<Long> catIds = new java.util.HashSet<>(catIdsIniciales);
+        if (!catIdsIniciales.isEmpty()) {
+            var todasCats = categoriaUseCase.listarTodas();
+            for (Long id : catIdsIniciales) {
+                todasCats.stream()
+                    .filter(c -> id.equals(c.getCategoriaPadreId()))
+                    .forEach(sub -> catIds.add(sub.getId()));
+            }
+        }
+
+        final List<String> tallasList = new java.util.ArrayList<>();
+        if (tallas != null) tallasList.addAll(tallas);
+        if (talla != null && !talla.isBlank() && !tallasList.contains(talla)) tallasList.add(talla);
+
+        final List<String> coloresList = new java.util.ArrayList<>();
+        if (colores != null) coloresList.addAll(colores);
+        if (color != null && !color.isBlank() && !coloresList.contains(color)) coloresList.add(color);
+
         List<Producto> filtrados = productoUseCase.listarTodos().stream()
             .filter(Producto::isActivo)
-            .filter(producto -> categoriaId == null || (producto.getCategoria() != null && categoriaId.equals(producto.getCategoria().getId())))
+            .filter(producto -> catIds.isEmpty() || (producto.getCategoria() != null && catIds.contains(producto.getCategoria().getId())))
             .filter(producto -> nombre == null || nombre.isBlank() || producto.getNombre().toLowerCase(Locale.ROOT).contains(nombre.toLowerCase(Locale.ROOT)))
             .filter(producto -> genero == null || genero.isBlank() || (producto.getCategoria() != null
                 && producto.getCategoria().getGenero() != null
                 && producto.getCategoria().getGenero().equalsIgnoreCase(genero)))
-            .filter(producto -> talla == null || talla.isBlank() || (producto.getTallas() != null && producto.getTallas().contains(talla)))
-            .filter(producto -> color == null || color.isBlank() || (
-                (producto.getColores() != null && producto.getColores().contains(color))
-                    || (producto.getStockPorColor() != null && producto.getStockPorColor().containsKey(color))
-                    || parseStockPorColorTalla(producto).containsKey(color)
+            .filter(producto -> tallasList.isEmpty() || (producto.getTallas() != null && producto.getTallas().stream().anyMatch(tallasList::contains)))
+            .filter(producto -> coloresList.isEmpty() || coloresList.stream().anyMatch(col ->
+                (producto.getColores() != null && producto.getColores().contains(col))
+                    || (producto.getStockPorColor() != null && producto.getStockPorColor().containsKey(col))
+                    || parseStockPorColorTalla(producto).containsKey(col)
             ))
+            .filter(producto -> precioMin == null || (producto.getPrecio() != null && producto.getPrecio().compareTo(precioMin) >= 0))
+            .filter(producto -> precioMax == null || (producto.getPrecio() != null && producto.getPrecio().compareTo(precioMax) <= 0))
             .sorted(buildComparator(sort))
             .collect(Collectors.toList());
 

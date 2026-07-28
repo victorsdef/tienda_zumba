@@ -10,6 +10,7 @@ public class Categoria {
     private String descripcion;
     private String imagen;
     private String genero;
+    private Long categoriaPadreId;
     private List<String> tallasDisponibles = new ArrayList<>();
     private boolean activo = true;
 
@@ -27,6 +28,9 @@ public class Categoria {
 
     public String getGenero() { return genero; }
     public void setGenero(String genero) { this.genero = genero; }
+
+    public Long getCategoriaPadreId() { return categoriaPadreId; }
+    public void setCategoriaPadreId(Long categoriaPadreId) { this.categoriaPadreId = categoriaPadreId; }
 
     public List<String> getTallasDisponibles() { return tallasDisponibles; }
     public void setTallasDisponibles(List<String> tallasDisponibles) { this.tallasDisponibles = tallasDisponibles; }

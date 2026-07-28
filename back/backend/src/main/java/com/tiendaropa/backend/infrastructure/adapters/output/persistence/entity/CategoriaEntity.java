@@ -26,6 +26,9 @@ public class CategoriaEntity {
     private String imagen;
     private String genero;
 
+    // Auto-referencia: categoría padre (null si es raíz)
+    private Long categoriaPadreId;
+
     @ElementCollection
     @CollectionTable(name = "categoria_tallas", joinColumns = @JoinColumn(name = "categoria_id"))
     @Column(name = "talla")

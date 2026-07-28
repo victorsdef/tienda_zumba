@@ -22,6 +22,76 @@ const COLORES = [
   { label: 'Camel',    hex: '#c49a6c' },
 ]
 
+// ── Árbol jerárquico de categorías (padre → hijas) ──────────
+function CategoriaArbol({ todas, seleccionadas, onToggle, onClear }: {
+  todas: Categoria[]; seleccionadas: number[]; onToggle: (id: number) => void; onClear: () => void
+}) {
+  const raices = todas.filter(c => !c.categoriaPadreId)
+  const hijasDe = (padreId: number) => todas.filter(c => c.categoriaPadreId === padreId)
+  const [expanded, setExpanded] = useState<Set<number>>(() => {
+    // Auto-expandir padres con hijas seleccionadas
+    const s = new Set<number>()
+    seleccionadas.forEach(id => {
+      const cat = todas.find(c => c.id === id)
+      if (cat?.categoriaPadreId) s.add(cat.categoriaPadreId)
+    })
+    return s
+  })
+  const toggleExpand = (id: number) => setExpanded(prev => {
+    const n = new Set(prev)
+    if (n.has(id)) n.delete(id); else n.add(id)
+    return n
+  })
+
+  const Fila = ({ c, nivel }: { c: Categoria; nivel: number }) => {
+    const hijas = hijasDe(c.id)
+    const tieneHijas = hijas.length > 0
+    const activa = seleccionadas.includes(c.id)
+    const abierta = expanded.has(c.id)
+    return (
+      <li>
+        <div className="flex items-center gap-1 group">
+          {tieneHijas ? (
+            <button onClick={() => toggleExpand(c.id)}
+              className="w-4 h-4 flex-shrink-0 flex items-center justify-center text-gray-400 hover:text-[#4a3728]">
+              <svg className={`w-3 h-3 transition-transform ${abierta ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+            </button>
+          ) : <span className="w-4 h-4 flex-shrink-0" />}
+          <button
+            onClick={() => onToggle(c.id)}
+            className={`flex-1 text-xs text-left py-1.5 rounded px-2 transition-colors flex items-center gap-2 ${
+              activa ? 'bg-[#f0ebe4] text-[#4a3728] font-semibold' : 'text-gray-500 hover:text-[#4a3728] hover:bg-[#faf7f2]'
+            }`}
+          >
+            <span className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center ${activa ? 'bg-[#4a3728] border-[#4a3728]' : 'border-[#c9b8a8]'}`}>
+              {activa && <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+            </span>
+            <span className="flex-1 truncate">{c.nombre}</span>
+            {tieneHijas && <span className="text-[10px] text-gray-400">({hijas.length})</span>}
+          </button>
+        </div>
+        {tieneHijas && abierta && (
+          <ul className="ml-4 border-l border-[#ede8df] pl-1 space-y-0.5 mt-0.5">
+            {hijas.map(h => <Fila key={h.id} c={h} nivel={nivel + 1} />)}
+          </ul>
+        )}
+      </li>
+    )
+  }
+
+  return (
+    <ul className="space-y-0.5">
+      <li>
+        <button onClick={onClear}
+          className={`text-xs w-full text-left py-1.5 rounded px-2 ml-5 transition-colors ${
+            seleccionadas.length === 0 ? 'bg-[#f0ebe4] text-[#4a3728] font-semibold' : 'text-gray-500 hover:text-[#4a3728] hover:bg-[#faf7f2]'
+          }`}>Todas</button>
+      </li>
+      {raices.map(c => <Fila key={c.id} c={c} nivel={0} />)}
+    </ul>
+  )
+}
+
 function Section({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
@@ -97,43 +167,15 @@ export default function FilterSidebar({ filter, onChange, cats }: Props) {
       </div>
 
       <div className="px-4 divide-y divide-[#f0ebe4]">
-        {/* ── Categoría (multi-select) ─────────────────────── */}
+        {/* ── Categoría (jerárquica multi-select) ──────────── */}
         {categoriasFiltradas.length > 0 && (
           <Section title={`Categoría${categoriaIds.length > 0 ? ` · ${categoriaIds.length}` : ''}`}>
-            <ul className="space-y-0.5">
-              <li>
-                <button
-                  onClick={() => setMulti('categoriaIds', [])}
-                  className={`text-xs w-full text-left py-1.5 rounded px-2 transition-colors ${
-                    categoriaIds.length === 0
-                      ? 'bg-[#f0ebe4] text-[#4a3728] font-semibold'
-                      : 'text-gray-500 hover:text-[#4a3728] hover:bg-[#faf7f2]'
-                  }`}
-                >
-                  Todas
-                </button>
-              </li>
-              {categoriasFiltradas.map(c => {
-                const activa = categoriaIds.includes(c.id)
-                return (
-                  <li key={c.id}>
-                    <button
-                      onClick={() => setMulti('categoriaIds', toggleItem(categoriaIds, c.id))}
-                      className={`text-xs w-full text-left py-1.5 rounded px-2 transition-colors flex items-center gap-2 ${
-                        activa
-                          ? 'bg-[#f0ebe4] text-[#4a3728] font-semibold'
-                          : 'text-gray-500 hover:text-[#4a3728] hover:bg-[#faf7f2]'
-                      }`}
-                    >
-                      <span className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center ${activa ? 'bg-[#4a3728] border-[#4a3728]' : 'border-[#c9b8a8]'}`}>
-                        {activa && <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                      </span>
-                      {c.nombre}
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
+            <CategoriaArbol
+              todas={categoriasFiltradas}
+              seleccionadas={categoriaIds}
+              onToggle={(id) => setMulti('categoriaIds', toggleItem(categoriaIds, id))}
+              onClear={() => setMulti('categoriaIds', [])}
+            />
           </Section>
         )}
 

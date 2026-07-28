@@ -20,6 +20,7 @@ export interface Categoria {
   descripcion?: string
   imagen?: string
   genero?: string
+  categoriaPadreId?: number | null
   tallasDisponibles?: string[]
   activo?: boolean
 }

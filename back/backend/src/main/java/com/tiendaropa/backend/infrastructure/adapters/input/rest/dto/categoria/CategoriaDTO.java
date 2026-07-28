@@ -11,6 +11,7 @@ public class CategoriaDTO {
     private String descripcion;
     private String imagen;
     private String genero;
+    private Long categoriaPadreId;
     private List<String> tallasDisponibles;
     private boolean activo;
 }

@@ -17,6 +17,7 @@ export default function AdminCategorias() {
   const [tallas, setTallas] = useState<string[]>([])
   const [nombreWatch, setNombreWatch] = useState('')
   const [genero, setGenero] = useState('')
+  const [categoriaPadreId, setCategoriaPadreId] = useState<number | ''>('')
   const [busqueda, setBusqueda] = useState('')
   const [saveError, setSaveError] = useState('')
   const [filtroEstado, setFiltroEstado] = useState<'TODAS' | 'ACTIVAS' | 'INACTIVAS'>('TODAS')
@@ -107,6 +108,7 @@ export default function AdminCategorias() {
     setTallas(c?.tallasDisponibles ?? [])
     setNombreWatch(c?.nombre ?? '')
     setGenero(c?.genero ?? '')
+    setCategoriaPadreId(c?.categoriaPadreId ?? '')
     reset(c ? { nombre: c.nombre, descripcion: c.descripcion ?? '' } : {})
     setMostrarForm(true)
   }
@@ -119,11 +121,12 @@ export default function AdminCategorias() {
     setTallas([])
     setNombreWatch('')
     setGenero('')
+    setCategoriaPadreId('')
     reset({})
   }
 
   const onSubmit = (d: FormData) => {
-    const payload = { ...d, imagen, genero, tallasDisponibles: tallas }
+    const payload = { ...d, imagen, genero, categoriaPadreId: categoriaPadreId === '' ? null : Number(categoriaPadreId), tallasDisponibles: tallas }
     editando ? updateMut.mutate({ id: editando.id, d: payload }) : createMut.mutate(payload)
   }
 
@@ -229,6 +232,22 @@ export default function AdminCategorias() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Categoría padre (opcional) */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-1">Categoría padre (opcional)</label>
+              <p className="mb-2 text-xs text-gray-400">Selecciona una categoría existente si esta es una subcategoría. Ej: "Camisas" bajo "Ropa Hombre".</p>
+              <select value={categoriaPadreId}
+                onChange={e => setCategoriaPadreId(e.target.value === '' ? '' : Number(e.target.value))}
+                className="input-field w-full">
+                <option value="">— Sin padre (categoría principal) —</option>
+                {(categorias ?? [])
+                  .filter(c => c.id !== editando?.id && (!genero || c.genero === genero))
+                  .map(c => (
+                    <option key={c.id} value={c.id}>{c.nombre}</option>
+                  ))}
+              </select>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">

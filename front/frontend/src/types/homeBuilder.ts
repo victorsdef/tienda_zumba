@@ -45,6 +45,10 @@ export interface HomeBlock {
   images: string[]
   endDate: string
   items: string[]
+  // Bloque de categorías: filtro por grupo y selección específica
+  categoryGroup?: string        // MUJER, HOMBRE, NINO, CALZADO, ACCESORIOS, BELLEZA o '' (todas)
+  categoryIds?: number[]        // Categorías específicas a mostrar (si vacío, muestra todas del grupo)
+  categoryMode?: 'auto' | 'manual'  // auto = todas del grupo, manual = solo las seleccionadas
 }
 
 export interface HomeLayout {

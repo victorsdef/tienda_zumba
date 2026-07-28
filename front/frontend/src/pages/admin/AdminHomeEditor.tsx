@@ -660,6 +660,78 @@ export default function AdminHomeEditor() {
                     </>
                   )}
 
+                  {selected.type === 'categories' && (
+                    <div className="space-y-3">
+                      <div>
+                        <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Grupo (opcional)</span>
+                        <select value={selected.categoryGroup ?? ''}
+                          onChange={event => patchBlock(selected.id, { categoryGroup: event.target.value || undefined })}
+                          className="input-field">
+                          <option value="">Todos los grupos</option>
+                          <option value="MUJER">Mujer</option>
+                          <option value="HOMBRE">Hombre</option>
+                          <option value="NINO">Niño/a</option>
+                          <option value="CALZADO">Calzado</option>
+                          <option value="ACCESORIOS">Accesorios</option>
+                          <option value="BELLEZA">Belleza</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Modo</span>
+                        <select value={selected.categoryMode ?? 'auto'}
+                          onChange={event => patchBlock(selected.id, { categoryMode: event.target.value as 'auto' | 'manual' })}
+                          className="input-field">
+                          <option value="auto">Todas las categorías del grupo</option>
+                          <option value="manual">Elegir categorías específicas</option>
+                        </select>
+                      </div>
+
+                      {selected.categoryMode === 'manual' && (
+                        <div>
+                          <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Categorías a mostrar</span>
+                          <div className="max-h-56 space-y-1 overflow-y-auto rounded-xl border border-gray-200 p-2">
+                            {categoryOptions
+                              .filter(c => !selected.categoryGroup || c.genero === selected.categoryGroup)
+                              .map(cat => {
+                                const checked = (selected.categoryIds ?? []).includes(cat.id)
+                                return (
+                                  <label key={cat.id} className="flex cursor-pointer items-center gap-2 rounded-lg p-2 hover:bg-gray-50">
+                                    <input type="checkbox" checked={checked}
+                                      onChange={() => patchBlock(selected.id, {
+                                        categoryIds: checked
+                                          ? (selected.categoryIds ?? []).filter(id => id !== cat.id)
+                                          : [...(selected.categoryIds ?? []), cat.id],
+                                      })}
+                                    />
+                                    <span className="min-w-0 truncate text-xs text-gray-700 flex-1">{cat.nombre}</span>
+                                    {cat.genero && <span className="text-[10px] text-gray-400">{cat.genero}</span>}
+                                  </label>
+                                )
+                              })}
+                          </div>
+                          <p className="mt-1 text-[11px] text-gray-400">
+                            {(selected.categoryIds ?? []).length === 0
+                              ? 'Ninguna seleccionada — se mostrarán todas las del grupo.'
+                              : `${(selected.categoryIds ?? []).length} categoría${(selected.categoryIds ?? []).length !== 1 ? 's' : ''} seleccionada${(selected.categoryIds ?? []).length !== 1 ? 's' : ''}.`}
+                          </p>
+                        </div>
+                      )}
+
+                      <div>
+                        <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Columnas</span>
+                        <select value={selected.columns || 4}
+                          onChange={event => patchBlock(selected.id, { columns: Number(event.target.value) })}
+                          className="input-field">
+                          <option value={2}>2</option>
+                          <option value={3}>3</option>
+                          <option value={4}>4</option>
+                          <option value={6}>6</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
                   {selected.type === 'products' && (
                     <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-2">

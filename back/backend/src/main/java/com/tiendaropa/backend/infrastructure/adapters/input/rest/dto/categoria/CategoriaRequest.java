@@ -12,5 +12,6 @@ public class CategoriaRequest {
     private String descripcion;
     private String imagen;
     private String genero;
+    private Long categoriaPadreId;
     private List<String> tallasDisponibles;
 }
