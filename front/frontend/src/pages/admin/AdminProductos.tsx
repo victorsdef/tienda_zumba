@@ -1035,7 +1035,7 @@ export default function AdminProductos() {
   return (
     <div className="p-3 sm:p-4 md:p-6 space-y-4">
       {/* Encabezado unificado (sticky) */}
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden sticky top-2 z-30">
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden sticky top-14 lg:top-2 z-20">
         {/* Título + acciones */}
         <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-4 border-b border-gray-100 flex-wrap">
           <div>

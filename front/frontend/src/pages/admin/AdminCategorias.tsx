@@ -110,7 +110,7 @@ export default function AdminCategorias() {
   return (
     <div className="p-3 sm:p-4 md:p-8 max-w-[1600px] mx-auto space-y-4">
       {/* Encabezado unificado (sticky) */}
-      <div className="sticky top-2 z-30 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="sticky top-14 lg:top-2 z-20 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-4 border-b border-gray-100 flex-wrap">
           <div>
             <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-tight">Categorías</h1>

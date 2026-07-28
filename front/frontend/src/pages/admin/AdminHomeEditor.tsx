@@ -417,7 +417,7 @@ export default function AdminHomeEditor() {
 
   return (
     <div className="min-h-screen bg-[#f4f1ed]">
-      <header className="sticky top-12 z-40 border-b border-gray-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur md:px-6 lg:top-0">
+      <header className="sticky top-12 z-20 border-b border-gray-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur md:px-6 lg:top-0">
         <div className="mx-auto max-w-[1600px] space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>

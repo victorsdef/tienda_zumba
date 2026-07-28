@@ -91,7 +91,7 @@ export default function AdminResenas() {
   return (
     <div className="p-3 sm:p-6 md:p-8 max-w-5xl mx-auto">
       {/* Encabezado unificado (sticky) */}
-      <div className="sticky top-2 z-30 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-5">
+      <div className="sticky top-14 lg:top-2 z-20 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-5">
         <div className="px-4 sm:px-5 py-4 border-b border-gray-100">
           <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 leading-tight">Reseñas</h1>
           <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">
