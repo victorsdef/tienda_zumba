@@ -660,21 +660,50 @@ export default function AdminHomeEditor() {
                     </>
                   )}
 
-                  {selected.type === 'categories' && (
+                  {selected.type === 'categories' && (() => {
+                    // Grupos activos (compatibilidad con el campo antiguo `categoryGroup`)
+                    const gruposActivos: string[] = selected.categoryGroups
+                      ?? (selected.categoryGroup ? [selected.categoryGroup] : [])
+                    const toggleGrupo = (g: string) => {
+                      const nuevos = gruposActivos.includes(g)
+                        ? gruposActivos.filter(x => x !== g)
+                        : [...gruposActivos, g]
+                      patchBlock(selected.id, { categoryGroups: nuevos, categoryGroup: undefined })
+                    }
+                    const GRUPOS = [
+                      { v: 'MUJER',      l: 'Mujer' },
+                      { v: 'HOMBRE',     l: 'Hombre' },
+                      { v: 'NINO',       l: 'Niño/a' },
+                      { v: 'CALZADO',    l: 'Calzado' },
+                      { v: 'ACCESORIOS', l: 'Accesorios' },
+                      { v: 'BELLEZA',    l: 'Belleza' },
+                    ]
+
+                    return (
                     <div className="space-y-3">
                       <div>
-                        <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Grupo (opcional)</span>
-                        <select value={selected.categoryGroup ?? ''}
-                          onChange={event => patchBlock(selected.id, { categoryGroup: event.target.value || undefined })}
-                          className="input-field">
-                          <option value="">Todos los grupos</option>
-                          <option value="MUJER">Mujer</option>
-                          <option value="HOMBRE">Hombre</option>
-                          <option value="NINO">Niño/a</option>
-                          <option value="CALZADO">Calzado</option>
-                          <option value="ACCESORIOS">Accesorios</option>
-                          <option value="BELLEZA">Belleza</option>
-                        </select>
+                        <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">
+                          Grupos {gruposActivos.length > 0 ? `· ${gruposActivos.length}` : ''}
+                        </span>
+                        <p className="mb-2 text-[11px] text-gray-400">Marca los grupos que se mostrarán. Sin marcar = todos.</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {GRUPOS.map(g => {
+                            const activa = gruposActivos.includes(g.v)
+                            return (
+                              <button key={g.v} type="button" onClick={() => toggleGrupo(g.v)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
+                                  activa
+                                    ? 'bg-[#4a3728] text-white border-[#4a3728] shadow-sm'
+                                    : 'border-gray-200 text-gray-600 hover:border-gray-400 bg-white'
+                                }`}>
+                                <span className={`w-3 h-3 rounded border flex-shrink-0 flex items-center justify-center ${activa ? 'bg-white/20 border-white/30' : 'border-gray-300'}`}>
+                                  {activa && <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                                </span>
+                                {g.l}
+                              </button>
+                            )
+                          })}
+                        </div>
                       </div>
 
                       <div>
@@ -682,7 +711,7 @@ export default function AdminHomeEditor() {
                         <select value={selected.categoryMode ?? 'auto'}
                           onChange={event => patchBlock(selected.id, { categoryMode: event.target.value as 'auto' | 'manual' })}
                           className="input-field">
-                          <option value="auto">Todas las categorías del grupo</option>
+                          <option value="auto">Todas las categorías de los grupos</option>
                           <option value="manual">Elegir categorías específicas</option>
                         </select>
                       </div>
@@ -692,7 +721,7 @@ export default function AdminHomeEditor() {
                           <span className="mb-1 block text-[10px] font-bold uppercase text-gray-500">Categorías a mostrar</span>
                           <div className="max-h-56 space-y-1 overflow-y-auto rounded-xl border border-gray-200 p-2">
                             {categoryOptions
-                              .filter(c => !selected.categoryGroup || c.genero === selected.categoryGroup)
+                              .filter(c => gruposActivos.length === 0 || (c.genero && gruposActivos.includes(c.genero)))
                               .map(cat => {
                                 const checked = (selected.categoryIds ?? []).includes(cat.id)
                                 return (
@@ -712,7 +741,7 @@ export default function AdminHomeEditor() {
                           </div>
                           <p className="mt-1 text-[11px] text-gray-400">
                             {(selected.categoryIds ?? []).length === 0
-                              ? 'Ninguna seleccionada — se mostrarán todas las del grupo.'
+                              ? 'Ninguna seleccionada — se mostrarán todas las de los grupos.'
                               : `${(selected.categoryIds ?? []).length} categoría${(selected.categoryIds ?? []).length !== 1 ? 's' : ''} seleccionada${(selected.categoryIds ?? []).length !== 1 ? 's' : ''}.`}
                           </p>
                         </div>
@@ -730,7 +759,8 @@ export default function AdminHomeEditor() {
                         </select>
                       </div>
                     </div>
-                  )}
+                    )
+                  })()}
 
                   {selected.type === 'products' && (
                     <div className="space-y-3">

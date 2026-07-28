@@ -245,10 +245,15 @@ function NewsletterBlock({ block }: { block: HomeBlock }) {
 function CategoriesBlock({ block, preview }: { block: HomeBlock; preview: boolean }) {
   const { data: categories = [] } = useQuery({ queryKey: ['categorias'], queryFn: getCategorias })
 
-  // Filtrado: grupo + modo (auto/manual)
+  // Filtrado: grupos + modo (auto/manual)
   const filtradas = (() => {
     let base = categories
-    if (block.categoryGroup) base = base.filter(c => c.genero === block.categoryGroup)
+    // Compatibilidad: si viene solo `categoryGroup` (singular) lo tratamos como array de uno
+    const grupos: string[] = block.categoryGroups
+      ?? (block.categoryGroup ? [block.categoryGroup] : [])
+    if (grupos.length > 0) {
+      base = base.filter(c => c.genero && grupos.includes(c.genero))
+    }
     if (block.categoryMode === 'manual' && (block.categoryIds ?? []).length > 0) {
       base = base.filter(c => (block.categoryIds ?? []).includes(c.id))
     }

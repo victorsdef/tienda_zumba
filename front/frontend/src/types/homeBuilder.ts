@@ -45,10 +45,11 @@ export interface HomeBlock {
   images: string[]
   endDate: string
   items: string[]
-  // Bloque de categorías: filtro por grupo y selección específica
-  categoryGroup?: string        // MUJER, HOMBRE, NINO, CALZADO, ACCESORIOS, BELLEZA o '' (todas)
-  categoryIds?: number[]        // Categorías específicas a mostrar (si vacío, muestra todas del grupo)
-  categoryMode?: 'auto' | 'manual'  // auto = todas del grupo, manual = solo las seleccionadas
+  // Bloque de categorías: filtro por grupo(s) y selección específica
+  categoryGroup?: string        // Deprecated — mantener por compatibilidad
+  categoryGroups?: string[]     // Grupos seleccionados: ['MUJER', 'HOMBRE', ...]. Vacío = todos
+  categoryIds?: number[]        // Categorías específicas a mostrar (si vacío, muestra todas de los grupos)
+  categoryMode?: 'auto' | 'manual'  // auto = todas de los grupos, manual = solo las seleccionadas
 }
 
 export interface HomeLayout {
