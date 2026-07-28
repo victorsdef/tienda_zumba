@@ -31,6 +31,8 @@ import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.producto.Pr
 import com.tiendaropa.backend.infrastructure.adapters.input.rest.mapper.OrdenRestMapper;
 import com.tiendaropa.backend.infrastructure.adapters.input.rest.mapper.ProductoRestMapper;
 import com.tiendaropa.backend.infrastructure.adapters.output.persistence.repository.BannerJpaRepository;
+import com.tiendaropa.backend.infrastructure.adapters.output.persistence.repository.CuponJpaRepository;
+import com.tiendaropa.backend.infrastructure.adapters.output.persistence.repository.ConfiguracionJpaRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -77,6 +79,8 @@ public class AdminController {
     private final UsuarioRepositoryPort usuarioRepositoryPort;
     private final PasswordEncoder passwordEncoder;
     private final BannerJpaRepository bannerJpaRepository;
+    private final CuponJpaRepository cuponJpaRepository;
+    private final ConfiguracionJpaRepository configuracionJpaRepository;
     private final EmailUseCase emailUseCase;
     private final ObjectMapper objectMapper;
 
@@ -141,6 +145,22 @@ public class AdminController {
             .map(acc -> new ProductoTopDTO(acc.id, acc.nombre, acc.unidadesVendidas, acc.ingresos))
             .toList();
 
+        // ── Cupones ──
+        var cupones = cuponJpaRepository.findAll();
+        long totalCupones = cupones.size();
+        long totalCuponesActivos = cupones.stream().filter(c -> c.isActivo()).count();
+        long totalUsosCupones = cupones.stream().mapToLong(c -> c.getUsos()).sum();
+        // Estimación del descuento total: por cada cupón MONTO_FIJO, valor * usos; % no se puede sin subtotal por orden
+        BigDecimal descuentoTotalCupones = cupones.stream()
+            .filter(c -> "MONTO_FIJO".equalsIgnoreCase(c.getTipo()) && c.getValor() != null)
+            .map(c -> c.getValor().multiply(BigDecimal.valueOf(c.getUsos())))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // ── Plantilla del home ──
+        String plantillaHome = configuracionJpaRepository.findById("home_layout")
+            .map(c -> c.getValor())
+            .orElse("default");
+
         DashboardStatsDTO stats = DashboardStatsDTO.builder()
             .totalProductos((long) productos.size())
             .totalProductosActivos(productos.stream().filter(Producto::isActivo).count())
@@ -162,6 +182,11 @@ public class AdminController {
             .topProductos(topProductos)
             .totalBanners(bannerJpaRepository.count())
             .totalBannersActivos((long) bannersActivos.size())
+            .totalCupones(totalCupones)
+            .totalCuponesActivos(totalCuponesActivos)
+            .totalUsosCupones(totalUsosCupones)
+            .descuentoTotalCupones(descuentoTotalCupones)
+            .plantillaHomeActiva(plantillaHome)
             .build();
 
         return ResponseEntity.ok(stats);

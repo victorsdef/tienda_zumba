@@ -30,4 +30,11 @@ public class DashboardStatsDTO {
     private Long totalBannersActivos;
     private List<ProductoStockBajoDTO> productosStockBajo;
     private List<ProductoTopDTO> topProductos;
+    // Cupones
+    private Long totalCupones;
+    private Long totalCuponesActivos;
+    private Long totalUsosCupones;
+    private BigDecimal descuentoTotalCupones;
+    // Plantilla del home
+    private String plantillaHomeActiva;
 }

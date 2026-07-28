@@ -37,6 +37,8 @@ import OlvidePassword from '@pages/OlvidePassword'
 import ResetPassword from '@pages/ResetPassword'
 import shellStyles from './AppShell.module.scss'
 import StorefrontTheme from './StorefrontTheme'
+import { useQuery } from '@tanstack/react-query'
+import { getRetiroInfo } from '../api/configuracion'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -49,9 +51,11 @@ function ScrollToTop() {
 }
 
 function WhatsAppButton() {
+  const { data: retiro } = useQuery({ queryKey: ['retiro-info'], queryFn: getRetiroInfo, staleTime: 5 * 60_000 })
+  const numero = (retiro?.retiro_whatsapp ?? '593983934596').replace(/\D/g, '')
   return (
     <a
-      href="https://wa.me/593983934596"
+      href={`https://wa.me/${numero}`}
       target="_blank"
       rel="noopener noreferrer"
       className={shellStyles.whatsAppButton}

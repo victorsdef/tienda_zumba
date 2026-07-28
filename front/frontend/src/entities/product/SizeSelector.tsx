@@ -14,8 +14,10 @@ export default function SizeSelector({ tallas, selected, onSelect }: Props) {
           <button
             key={t}
             onClick={() => onSelect(t)}
-            className={`border-2 rounded px-3 py-1 text-sm font-medium transition-colors ${
-              selected === t ? 'border-black bg-black text-white' : 'border-gray-300 hover:border-gray-500'
+            className={`border rounded-lg px-4 py-2 text-sm font-semibold min-w-[52px] transition-all shadow-sm ${
+              selected === t
+                ? 'border-[#4a3728] bg-[#4a3728] text-white shadow-md scale-[1.02]'
+                : 'border-gray-300 bg-white text-gray-700 hover:border-[#7d5c48] hover:bg-[#faf7f2]'
             }`}
           >{t}</button>
         ))}

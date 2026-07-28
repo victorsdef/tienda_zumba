@@ -105,40 +105,74 @@ export default function AdminCupones() {
 
               {/* Código */}
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Código</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Código del cupón</label>
                 <input
                   required value={form.codigo}
                   onChange={e => setForm(p => ({ ...p, codigo: e.target.value.toUpperCase() }))}
                   placeholder="PROMO20"
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base uppercase font-mono font-bold text-[#4a3728] tracking-widest focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30 focus:border-[#7d5c48]"
                 />
+                <p className="text-[11px] text-gray-400 mt-1">Este es el código que tu cliente escribirá al pagar.</p>
               </div>
 
-              {/* Tipo + Valor */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Tipo</label>
-                  <select value={form.tipo}
-                    onChange={e => setForm(p => ({ ...p, tipo: e.target.value as Cupon['tipo'] }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30">
-                    <option value="PORCENTAJE">Porcentaje (%)</option>
-                    <option value="MONTO_FIJO">Monto fijo ($)</option>
-                  </select>
+              {/* Tipo de descuento — cards visuales */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Tipo de descuento</label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button type="button"
+                    onClick={() => setForm(p => ({ ...p, tipo: 'PORCENTAJE', valor: 10 }))}
+                    className={`text-left border rounded-xl p-3 transition-all ${
+                      form.tipo === 'PORCENTAJE'
+                        ? 'border-[#7d5c48] bg-[#f5f0e8] ring-2 ring-[#7d5c48]/20 shadow-sm'
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm ${
+                        form.tipo === 'PORCENTAJE' ? 'bg-[#4a3728] text-white' : 'bg-gray-100 text-gray-500'
+                      }`}>%</span>
+                      <span className="font-bold text-sm text-gray-800">Porcentaje</span>
+                    </div>
+                    <p className="text-[11px] text-gray-500 leading-tight">Ej: 20% de descuento</p>
+                  </button>
+                  <button type="button"
+                    onClick={() => setForm(p => ({ ...p, tipo: 'MONTO_FIJO', valor: 5 }))}
+                    className={`text-left border rounded-xl p-3 transition-all ${
+                      form.tipo === 'MONTO_FIJO'
+                        ? 'border-[#7d5c48] bg-[#f5f0e8] ring-2 ring-[#7d5c48]/20 shadow-sm'
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm ${
+                        form.tipo === 'MONTO_FIJO' ? 'bg-[#4a3728] text-white' : 'bg-gray-100 text-gray-500'
+                      }`}>$</span>
+                      <span className="font-bold text-sm text-gray-800">Monto fijo</span>
+                    </div>
+                    <p className="text-[11px] text-gray-500 leading-tight">Ej: $5 de descuento</p>
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Valor {form.tipo === 'PORCENTAJE' ? '(%)' : '($)'}
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">
-                      {form.tipo === 'PORCENTAJE' ? '%' : '$'}
-                    </span>
-                    <input required type="number" min="0.01" step="0.01" value={form.valor}
-                      onChange={e => setForm(p => ({ ...p, valor: Number(e.target.value) }))}
-                      className="w-full border border-gray-200 rounded-xl pl-8 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30"
-                    />
-                  </div>
+              </div>
+
+              {/* Valor con contexto */}
+              <div className="bg-[#faf7f2] border border-[#ede8df] rounded-xl p-3.5">
+                <label className="block text-xs font-bold text-[#7d5c48] uppercase tracking-wider mb-2">
+                  {form.tipo === 'PORCENTAJE' ? '¿Qué % de descuento?' : '¿Cuántos dólares de descuento?'}
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7d5c48] text-lg font-bold">
+                    {form.tipo === 'PORCENTAJE' ? '%' : '$'}
+                  </span>
+                  <input required type="number" min="0.01" step="0.01" max={form.tipo === 'PORCENTAJE' ? 100 : undefined}
+                    value={form.valor}
+                    onChange={e => setForm(p => ({ ...p, valor: Number(e.target.value) }))}
+                    placeholder={form.tipo === 'PORCENTAJE' ? '20' : '5.00'}
+                    className="w-full border-2 border-white bg-white rounded-xl pl-10 pr-4 py-3 text-2xl font-black text-[#4a3728] focus:outline-none focus:border-[#7d5c48]"
+                  />
                 </div>
+                <p className="text-[11px] text-gray-500 mt-2 leading-tight">
+                  {form.tipo === 'PORCENTAJE'
+                    ? <>El cliente pagará <strong className="text-[#4a3728]">{Math.max(0, 100 - (form.valor || 0)).toFixed(0)}%</strong> del total (ej: si compra $50, pagará ${(50 * (1 - (form.valor || 0) / 100)).toFixed(2)}).</>
+                    : <>Se restarán <strong className="text-[#4a3728]">${(form.valor || 0).toFixed(2)}</strong> del total del pedido.</>}
+                </p>
               </div>
 
               {/* Mínimo + Usos */}

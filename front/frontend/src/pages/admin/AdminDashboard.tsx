@@ -71,6 +71,11 @@ export default function AdminDashboard() {
       value: `${stats.totalBannersActivos ?? 0}/${stats.totalBanners ?? 0}`,
       Icon: IconImage, link: '/admin/banners', color: 'text-rose-500', permission: 'banners',
     },
+    {
+      label: 'Cupones activos',
+      value: `${stats.totalCuponesActivos ?? 0}/${stats.totalCupones ?? 0}`,
+      Icon: IconGrid, link: '/admin/cupones', color: 'text-fuchsia-500', permission: 'cupones',
+    },
   ] satisfies QuickLink[]
 
   const quickLinks = quickLinksBase.filter(item => hasPermission(item.permission))
@@ -98,6 +103,36 @@ export default function AdminDashboard() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Cupones + plantilla */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+        <div className="bg-white border border-fuchsia-100 rounded-xl p-4 flex items-center gap-3 hover:shadow-md transition-shadow">
+          <span className="text-2xl">🎟️</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-gray-500">Usos de cupones</p>
+            <p className="text-xl font-bold text-gray-800">{stats.totalUsosCupones ?? 0}</p>
+            <p className="text-[11px] text-gray-400 truncate">
+              {stats.totalCuponesActivos ?? 0}/{stats.totalCupones ?? 0} cupones activos
+            </p>
+          </div>
+        </div>
+        <div className="bg-white border border-emerald-100 rounded-xl p-4 flex items-center gap-3 hover:shadow-md transition-shadow">
+          <span className="text-2xl">💸</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-gray-500">Descuento por cupones (est.)</p>
+            <p className="text-xl font-bold text-gray-800">${Number(stats.descuentoTotalCupones ?? 0).toFixed(2)}</p>
+            <p className="text-[11px] text-gray-400">Total descontado con cupones</p>
+          </div>
+        </div>
+        <Link to="/admin/home-editor" className="bg-white border border-purple-100 rounded-xl p-4 flex items-center gap-3 hover:shadow-md transition-shadow">
+          <span className="text-2xl">🏠</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-gray-500">Plantilla del home</p>
+            <p className="text-lg font-bold text-gray-800 capitalize truncate">{stats.plantillaHomeActiva ?? 'default'}</p>
+            <p className="text-[11px] text-purple-600 hover:underline">Editar home →</p>
+          </div>
+        </Link>
       </div>
 
       {/* Count cards */}

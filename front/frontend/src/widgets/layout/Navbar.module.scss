@@ -70,11 +70,13 @@
 .searchBox {
   width: 100%;
   max-width: 42rem;
-  height: 2.25rem;
+  height: 2.5rem;
   display: flex;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .searchInput {
@@ -89,16 +91,18 @@
 
 .searchSubmit {
   flex-shrink: 0;
-  padding: 0 1rem;
+  padding: 0 1.1rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-brand-600);
-  color: #fff;
-  transition: background 160ms ease;
+  background: #f5f0e8;
+  color: #4a3728;
+  border-left: 1px solid #e5dcd0;
+  transition: background 160ms ease, color 160ms ease;
 
   &:hover {
-    background: var(--color-brand-800);
+    background: #4a3728;
+    color: #fff;
   }
 }
 

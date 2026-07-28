@@ -22,6 +22,11 @@ export interface DashboardStats {
   topProductos: { id: number; nombre: string; unidadesVendidas: number; ingresos: number }[]
   totalBanners: number
   totalBannersActivos: number
+  totalCupones?: number
+  totalCuponesActivos?: number
+  totalUsosCupones?: number
+  descuentoTotalCupones?: number
+  plantillaHomeActiva?: string
 }
 
 export interface ExportarReportePayload {

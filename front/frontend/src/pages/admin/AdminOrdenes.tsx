@@ -536,44 +536,59 @@ export default function AdminOrdenes() {
   })
 
   return (
-    <div className="p-4 md:p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Órdenes</h1>
-        <button
-          onClick={() => { setPdfEstado(filtroEstado); setPdfFechaDesde(''); setPdfFechaHasta(''); setPdfModal(true) }}
-          className="flex items-center gap-2 bg-[#4a3728] hover:bg-[#3a2a1e] text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Exportar PDF
-        </button>
-      </div>
-
-      {/* Filtros */}
-      <div className="bg-white border rounded-lg px-3 md:px-4 py-3 flex items-center gap-2 flex-wrap">
-        <button onClick={() => { setFiltroEstado(''); setPage(0) }}
-          className={`px-3 py-1 rounded-full text-xs font-medium border ${!filtroEstado ? 'bg-gray-900 text-white border-gray-900' : 'border-gray-300 text-gray-600 hover:border-gray-400'}`}>
-          Todas
-        </button>
-        {ESTADOS.map(e => (
-          <button key={e} onClick={() => { setFiltroEstado(e); setPage(0) }}
-            className={`px-3 py-1 rounded-full text-xs font-medium border ${filtroEstado === e ? ESTADO_STYLE[e] + ' border-transparent' : 'border-gray-300 text-gray-600 hover:border-gray-400'}`}>
-            {e}
+    <div className="p-3 sm:p-4 md:p-6 space-y-4">
+      {/* Encabezado unificado */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        {/* Título + acción */}
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-4 border-b border-gray-100">
+          <div>
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-tight">Órdenes</h1>
+            <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">
+              {data?.totalElements ?? 0} en total · {ordenesFiltradas.length} visibles
+            </p>
+          </div>
+          <button
+            onClick={() => { setPdfEstado(filtroEstado); setPdfFechaDesde(''); setPdfFechaHasta(''); setPdfModal(true) }}
+            className="flex items-center gap-1.5 sm:gap-2 bg-[#4a3728] hover:bg-[#3a2a1e] text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors flex-shrink-0"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span className="hidden sm:inline">Exportar PDF</span>
+            <span className="sm:hidden">PDF</span>
           </button>
-        ))}
-        <span className="ml-auto text-xs text-gray-400">{data?.totalElements ?? 0} órdenes</span>
-      </div>
+        </div>
 
-      <div className="bg-white border rounded-lg px-3 md:px-4 py-3 flex items-center gap-3">
-        <IconSearch size={16} className="text-gray-400 flex-shrink-0" />
-        <input
-          value={busqueda}
-          onChange={e => setBusqueda(e.target.value)}
-          placeholder="Buscar por código, cliente, ciudad o producto..."
-          className="flex-1 outline-none text-sm"
-        />
-        <span className="text-xs text-gray-400">{ordenesFiltradas.length} visibles</span>
+        {/* Buscador */}
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
+          <div className="relative">
+            <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+              placeholder="Buscar por código, cliente, ciudad o producto..."
+              className="w-full pl-10 pr-9 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30"
+            />
+            {busqueda && (
+              <button onClick={() => setBusqueda('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-sm">✕</button>
+            )}
+          </div>
+        </div>
+
+        {/* Pills de filtro por estado */}
+        <div className="px-4 sm:px-5 py-3 flex items-center gap-2 overflow-x-auto scrollbar-thin">
+          <button onClick={() => { setFiltroEstado(''); setPage(0) }}
+            className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${!filtroEstado ? 'bg-gray-900 text-white border-gray-900 shadow-sm' : 'border-gray-200 text-gray-600 hover:border-gray-400 bg-white'}`}>
+            Todas
+          </button>
+          {ESTADOS.map(e => (
+            <button key={e} onClick={() => { setFiltroEstado(e); setPage(0) }}
+              className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${filtroEstado === e ? ESTADO_STYLE[e] + ' border-transparent shadow-sm' : 'border-gray-200 text-gray-600 hover:border-gray-400 bg-white'}`}>
+              {e}
+            </button>
+          ))}
+        </div>
       </div>
 
       {isLoading ? (

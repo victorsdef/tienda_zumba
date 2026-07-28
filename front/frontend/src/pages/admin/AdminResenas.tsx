@@ -1,5 +1,9 @@
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getResenasAdmin, aprobarResena, eliminarResena, type ResenaAdmin } from '../../api/admin'
+import { getResenasAdmin, aprobarResena, eliminarResena, getProductosAdmin, type ResenaAdmin } from '../../api/admin'
+import type { Producto } from '../../types'
+
+type Filtro = 'TODOS' | 'APROBADOS' | 'PENDIENTES'
 
 function Estrellas({ n }: { n: number }) {
   return (
@@ -13,68 +17,216 @@ function Estrellas({ n }: { n: number }) {
   )
 }
 
+function getImagen(p: Producto): string | null {
+  return p.imagenes?.[0]
+    ?? Object.values(p.imagenesPorColor ?? {}).find(imgs => imgs?.length)?.[0]
+    ?? null
+}
+
 export default function AdminResenas() {
   const qc = useQueryClient()
+  const [filtro, setFiltro] = useState<Filtro>('TODOS')
+  const [busqueda, setBusqueda] = useState('')
+
   const { data: resenas = [], isLoading } = useQuery({ queryKey: ['resenas-admin'], queryFn: getResenasAdmin })
+  const { data: productosPage } = useQuery({ queryKey: ['productos-resenas'], queryFn: () => getProductosAdmin(0, 200) })
+  const productos = productosPage?.content ?? []
+
   const invalidar = () => qc.invalidateQueries({ queryKey: ['resenas-admin'] })
   const aprobarMut = useMutation({ mutationFn: aprobarResena, onSuccess: invalidar })
   const eliminarMut = useMutation({ mutationFn: eliminarResena, onSuccess: invalidar })
 
-  const pendientes = resenas.filter(r => !r.aprobada)
-  const aprobadas = resenas.filter(r => r.aprobada)
+  const productoMap = useMemo(() => {
+    const m = new Map<number, Producto>()
+    productos.forEach(p => m.set(p.id, p))
+    return m
+  }, [productos])
 
-  if (isLoading) return <div className="p-8 animate-pulse space-y-3">{[1,2,3].map(i => <div key={i} className="h-20 bg-gray-100 rounded-xl" />)}</div>
+  const totalPendientes = resenas.filter(r => !r.aprobada).length
+  const totalAprobadas = resenas.filter(r => r.aprobada).length
+
+  // Aplicar filtros: estado + búsqueda (por producto o comentario o usuario)
+  const resenasFiltradas = useMemo(() => {
+    return resenas.filter(r => {
+      if (filtro === 'APROBADOS' && !r.aprobada) return false
+      if (filtro === 'PENDIENTES' && r.aprobada) return false
+      if (busqueda) {
+        const b = busqueda.toLowerCase()
+        const p = productoMap.get(r.productoId)
+        const match =
+          (p?.nombre.toLowerCase().includes(b) ?? false) ||
+          (r.usuarioNombre?.toLowerCase().includes(b) ?? false) ||
+          (r.comentario?.toLowerCase().includes(b) ?? false)
+        if (!match) return false
+      }
+      return true
+    })
+  }, [resenas, filtro, busqueda, productoMap])
+
+  // Agrupar por producto
+  const grupos = useMemo(() => {
+    const g = new Map<number, ResenaAdmin[]>()
+    resenasFiltradas.forEach(r => {
+      const arr = g.get(r.productoId) ?? []
+      arr.push(r)
+      g.set(r.productoId, arr)
+    })
+    return Array.from(g.entries()).sort((a, b) => b[1].length - a[1].length)
+  }, [resenasFiltradas])
+
+  const PILLS: { value: Filtro; label: string; count: number }[] = [
+    { value: 'TODOS', label: 'Todas', count: resenas.length },
+    { value: 'APROBADOS', label: 'Aprobadas', count: totalAprobadas },
+    { value: 'PENDIENTES', label: 'Pendientes', count: totalPendientes },
+  ]
+
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-3">
+        {[1,2,3].map(i => <div key={i} className="h-32 bg-gray-100 rounded-2xl animate-pulse" />)}
+      </div>
+    )
+  }
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-gray-800">Reseñas</h1>
-        <p className="text-sm text-gray-500 mt-0.5">{pendientes.length} pendientes · {aprobadas.length} aprobadas</p>
+    <div className="p-3 sm:p-6 md:p-8 max-w-5xl mx-auto">
+      {/* Encabezado */}
+      <div className="mb-5">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-800">Reseñas</h1>
+        <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
+          {resenas.length} en total · {totalPendientes} pendiente{totalPendientes !== 1 ? 's' : ''} · {totalAprobadas} aprobada{totalAprobadas !== 1 ? 's' : ''}
+        </p>
       </div>
 
-      {pendientes.length > 0 && (
-        <section className="mb-8">
-          <h2 className="text-sm font-bold text-orange-600 uppercase tracking-wider mb-3">Pendientes de aprobación</h2>
-          <div className="space-y-3">
-            {pendientes.map(r => <ResenaCard key={r.id} r={r} onAprobar={() => aprobarMut.mutate(r.id)} onEliminar={() => { if (confirm('¿Eliminar reseña?')) eliminarMut.mutate(r.id) }} />)}
-          </div>
-        </section>
-      )}
+      {/* Barra de búsqueda + pills */}
+      <div className="mb-6 space-y-3">
+        <div className="relative">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            placeholder="Buscar por producto, usuario o comentario..."
+            className="w-full border border-gray-200 rounded-xl pl-10 pr-9 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30 shadow-sm"
+          />
+          {busqueda && (
+            <button onClick={() => setBusqueda('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-sm">✕</button>
+          )}
+        </div>
 
-      <section>
-        <h2 className="text-sm font-bold text-green-600 uppercase tracking-wider mb-3">Aprobadas</h2>
-        {aprobadas.length === 0 ? (
-          <p className="text-gray-400 text-sm">No hay reseñas aprobadas aún.</p>
-        ) : (
-          <div className="space-y-3">
-            {aprobadas.map(r => <ResenaCard key={r.id} r={r} onEliminar={() => { if (confirm('¿Eliminar reseña?')) eliminarMut.mutate(r.id) }} />)}
-          </div>
-        )}
-      </section>
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-3 px-3 sm:mx-0 sm:px-0">
+          {PILLS.map(p => (
+            <button key={p.value} onClick={() => setFiltro(p.value)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-semibold transition-all ${
+                filtro === p.value
+                  ? 'bg-[#4a3728] text-white border-[#4a3728] shadow-sm'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+              }`}>
+              <span>{p.label}</span>
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                filtro === p.value ? 'bg-white/20' : 'bg-gray-100 text-gray-500'
+              }`}>{p.count}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Grupos por producto */}
+      {grupos.length === 0 ? (
+        <div className="text-center py-16 text-gray-400">
+          <p className="text-4xl mb-3">💬</p>
+          <p className="font-medium">
+            {busqueda ? 'Sin resultados para tu búsqueda' : filtro === 'PENDIENTES' ? 'No hay reseñas pendientes' : filtro === 'APROBADOS' ? 'No hay reseñas aprobadas' : 'No hay reseñas aún'}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {grupos.map(([prodId, resenasProd]) => {
+            const p = productoMap.get(prodId)
+            const imagen = p ? getImagen(p) : null
+            const promedio = resenasProd.reduce((s, r) => s + r.calificacion, 0) / resenasProd.length
+            const pendientesProd = resenasProd.filter(r => !r.aprobada).length
+
+            return (
+              <div key={prodId} className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                {/* Cabecera del producto */}
+                <div className="flex items-center gap-3 p-3 sm:p-4 bg-[#faf7f2] border-b border-gray-100">
+                  {imagen
+                    ? <img src={imagen} alt={p?.nombre} className="w-12 h-14 sm:w-14 sm:h-16 object-cover rounded-xl flex-shrink-0" />
+                    : <div className="w-12 h-14 sm:w-14 sm:h-16 bg-[#f0ebe3] rounded-xl flex-shrink-0 flex items-center justify-center text-[#c4a882]">
+                        <svg className="w-6 h-6 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.2}>
+                          <rect x="3" y="3" width="18" height="18" rx="2" />
+                          <circle cx="8.5" cy="8.5" r="1.5" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" />
+                        </svg>
+                      </div>}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-gray-800 text-sm sm:text-base line-clamp-1">
+                      {p?.nombre ?? `Producto ID: ${prodId}`}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <div className="flex items-center gap-1">
+                        <Estrellas n={Math.round(promedio)} />
+                        <span className="text-xs text-gray-500 font-medium">{promedio.toFixed(1)}</span>
+                      </div>
+                      <span className="text-[10px] text-gray-400">
+                        {resenasProd.length} reseña{resenasProd.length !== 1 ? 's' : ''}
+                      </span>
+                      {pendientesProd > 0 && (
+                        <span className="text-[10px] bg-orange-100 text-orange-700 font-bold px-1.5 py-0.5 rounded-full">
+                          {pendientesProd} pendiente{pendientesProd !== 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lista de reseñas */}
+                <div className="divide-y divide-gray-100">
+                  {resenasProd.map(r => (
+                    <ResenaCard key={r.id} r={r}
+                      onAprobar={!r.aprobada ? () => aprobarMut.mutate(r.id) : undefined}
+                      onEliminar={() => { if (confirm('¿Eliminar reseña?')) eliminarMut.mutate(r.id) }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
 
 function ResenaCard({ r, onAprobar, onEliminar }: { r: ResenaAdmin; onAprobar?: () => void; onEliminar: () => void }) {
   return (
-    <div className={`bg-white border rounded-xl p-4 shadow-sm ${!r.aprobada ? 'border-orange-200' : 'border-gray-200'}`}>
-      <div className="flex items-start justify-between gap-3">
+    <div className={`p-3 sm:p-4 ${!r.aprobada ? 'bg-orange-50/40' : ''}`}>
+      <div className="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="font-semibold text-sm text-gray-800">{r.usuarioNombre || 'Anónimo'}</span>
             <Estrellas n={r.calificacion} />
-            <span className="text-xs text-gray-400">{new Date(r.fechaCreacion).toLocaleDateString('es-EC')}</span>
+            <span className="text-[11px] text-gray-400">{new Date(r.fechaCreacion).toLocaleDateString('es-EC')}</span>
+            {!r.aprobada && (
+              <span className="text-[10px] bg-orange-100 text-orange-700 font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide">
+                Pendiente
+              </span>
+            )}
           </div>
-          <p className="text-sm text-gray-600">{r.comentario}</p>
-          <p className="text-xs text-gray-400 mt-1">Producto ID: {r.productoId}</p>
+          <p className="text-sm text-gray-600 whitespace-pre-line break-words">{r.comentario}</p>
         </div>
-        <div className="flex gap-2 flex-shrink-0">
-          {!r.aprobada && onAprobar && (
-            <button onClick={onAprobar} className="text-xs bg-green-100 text-green-700 px-3 py-1.5 rounded-lg font-semibold hover:bg-green-200">
+        <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">
+          {onAprobar && (
+            <button onClick={onAprobar}
+              className="flex-1 sm:flex-none text-xs bg-green-100 text-green-700 px-3 py-1.5 rounded-lg font-semibold hover:bg-green-200 transition-colors">
               Aprobar
             </button>
           )}
-          <button onClick={onEliminar} className="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-lg font-semibold hover:bg-red-100">
+          <button onClick={onEliminar}
+            className="flex-1 sm:flex-none text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-lg font-semibold hover:bg-red-100 transition-colors">
             Eliminar
           </button>
         </div>
