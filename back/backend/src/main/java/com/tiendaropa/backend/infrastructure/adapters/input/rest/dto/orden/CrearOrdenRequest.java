@@ -13,4 +13,5 @@ public class CrearOrdenRequest {
     private String calleEnvio;
     private String tipoEntrega;
     private boolean conEnvio;
+    private String codigoCupon;
 }

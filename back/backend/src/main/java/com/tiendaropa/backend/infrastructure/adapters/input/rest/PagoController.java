@@ -239,6 +239,24 @@ public class PagoController {
         BigDecimal envio = orden.getCostoEnvio() != null ? orden.getCostoEnvio() : BigDecimal.ZERO;
         sinIva = sinIva.add(envio);
 
+        // La orden ya contiene el total definitivo calculado por el servidor,
+        // incluido cualquier cupón. Ajustamos el desglose tributario para que
+        // Payphone cobre exactamente ese total y no vuelva a sumar el precio
+        // original de los artículos.
+        BigDecimal totalAntesDescuento = conIva.add(sinIva).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalOrden = orden.getTotal() != null
+            ? orden.getTotal().setScale(2, RoundingMode.HALF_UP)
+            : totalAntesDescuento;
+        BigDecimal descuento = totalAntesDescuento.subtract(totalOrden).max(BigDecimal.ZERO);
+        if (descuento.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal descuentoConIva = descuento.min(conIva);
+            conIva = conIva.subtract(descuentoConIva);
+            BigDecimal restante = descuento.subtract(descuentoConIva);
+            if (restante.compareTo(BigDecimal.ZERO) > 0) {
+                sinIva = sinIva.subtract(restante).max(BigDecimal.ZERO);
+            }
+        }
+
         BigDecimal amountWithTax = BigDecimal.ZERO;
         BigDecimal tax = BigDecimal.ZERO;
         if (conIva.compareTo(BigDecimal.ZERO) > 0) {

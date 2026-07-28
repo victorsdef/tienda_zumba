@@ -268,12 +268,15 @@ export default function AdminCupones() {
           {cupones.map(c => {
             const prod = c.productoId ? productos.find(p => p.id === c.productoId) : null
             const cat = c.categoriaId ? categorias.find(ct => ct.id === c.categoriaId) : null
+            const agotado = c.maxUsos != null && (c.usos ?? 0) >= c.maxUsos
             const venceProximamente = c.fechaExpiracion
               ? new Date(c.fechaExpiracion).getTime() - Date.now() < 3 * 24 * 60 * 60 * 1000
               : false
 
             return (
-              <div key={c.id} className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all hover:shadow-md ${!c.activo ? 'opacity-60' : ''}`}>
+              <div key={c.id} className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all hover:shadow-md ${
+                agotado ? 'border-red-300 ring-1 ring-red-100' : !c.activo ? 'opacity-60' : ''
+              }`}>
                 {/* Franja superior con código */}
                 <div className="bg-[#4a3728] px-5 py-3 flex items-center justify-between">
                   <div>
@@ -309,7 +312,10 @@ export default function AdminCupones() {
 
                   {/* Meta info */}
                   <div className="flex items-center gap-3 text-xs text-gray-500 flex-wrap">
-                    <span>Usos: <strong className="text-gray-700">{c.usos ?? 0}{c.maxUsos ? `/${c.maxUsos}` : ''}</strong></span>
+                    <span className={agotado ? 'font-semibold text-red-600' : ''}>
+                      Usos: <strong className={agotado ? 'text-red-700' : 'text-gray-700'}>{c.usos ?? 0}{c.maxUsos ? `/${c.maxUsos}` : ''}</strong>
+                      {agotado && ' · Límite alcanzado'}
+                    </span>
                     {c.montoMinimo && <span>Mín: <strong className="text-gray-700">${c.montoMinimo}</strong></span>}
                     {c.fechaExpiracion && (
                       <span className={venceProximamente ? 'text-orange-500 font-semibold' : ''}>
@@ -321,11 +327,14 @@ export default function AdminCupones() {
 
                 {/* Footer con acciones */}
                 <div className="px-5 py-2.5 border-t border-gray-100 flex items-center justify-between bg-gray-50/60">
-                  <button onClick={() => toggleMut.mutate(c.id!)}
+                  <button onClick={() => !agotado && toggleMut.mutate(c.id!)}
+                    disabled={agotado}
                     className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
-                      c.activo ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
+                      agotado
+                        ? 'cursor-not-allowed bg-red-100 text-red-700'
+                        : c.activo ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
                     }`}>
-                    {c.activo ? '● Activo' : '○ Inactivo'}
+                    {agotado ? '● Agotado' : c.activo ? '● Activo' : '○ Inactivo'}
                   </button>
                   <div className="flex gap-1">
                     <button onClick={() => editar(c)}

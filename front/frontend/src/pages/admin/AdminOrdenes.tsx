@@ -621,7 +621,9 @@ export default function AdminOrdenes() {
                         {new Date(o.fechaCreacion).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
                       </td>
                       <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
                         <select value={o.estado}
+                          disabled={cambiarMut.isPending && cambiarMut.variables?.id === o.id}
                           onChange={e => {
                             if (e.target.value === 'ENVIADO') {
                               setGuiaModal({ id: o.id })
@@ -630,9 +632,16 @@ export default function AdminOrdenes() {
                             }
                           }}
                           onClick={e => e.stopPropagation()}
-                          className="border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-400">
+                          className="border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-400 disabled:cursor-wait disabled:opacity-60">
                           {ESTADOS.map(e => <option key={e} value={e}>{e.replace('_', ' ')}</option>)}
                         </select>
+                        {cambiarMut.isPending && cambiarMut.variables?.id === o.id && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#7d5c48]">
+                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#d8c7ba] border-t-[#4a3728]" />
+                            Actualizando
+                          </span>
+                        )}
+                        </div>
                       </td>
                     </tr>
                     {expandida === o.id && (
@@ -704,6 +713,7 @@ export default function AdminOrdenes() {
                     <div>
                       <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Cambiar estado</p>
                       <select value={o.estado}
+                        disabled={cambiarMut.isPending && cambiarMut.variables?.id === o.id}
                         onChange={e => {
                           if (e.target.value === 'ENVIADO') {
                             setGuiaModal({ id: o.id })
@@ -711,9 +721,15 @@ export default function AdminOrdenes() {
                             cambiarMut.mutate({ id: o.id, estado: e.target.value })
                           }
                         }}
-                        className="border border-gray-200 rounded px-3 py-1.5 text-sm w-full focus:outline-none focus:border-red-400">
+                        className="border border-gray-200 rounded px-3 py-1.5 text-sm w-full focus:outline-none focus:border-red-400 disabled:cursor-wait disabled:opacity-60">
                         {ESTADOS.map(e => <option key={e} value={e}>{e.replace('_', ' ')}</option>)}
                       </select>
+                      {cambiarMut.isPending && cambiarMut.variables?.id === o.id && (
+                        <span className="mt-2 inline-flex items-center gap-2 text-xs font-semibold text-[#7d5c48]">
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#d8c7ba] border-t-[#4a3728]" />
+                          Actualizando estado…
+                        </span>
+                      )}
                     </div>
                     {(o.estado === 'ENVIADO' || o.estado === 'ENTREGADO') && (
                       <button onClick={() => abrirModalGuia(o)} className="btn-outline w-full text-sm">

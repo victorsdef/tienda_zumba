@@ -11,6 +11,7 @@ export const crearOrden = (data: {
   calleEnvio?: string
   tipoEntrega?: 'DOMICILIO' | 'CUENCA' | 'RETIRO'
   conEnvio: boolean
+  codigoCupon?: string
 }) => api.post<Orden>('/ordenes', data).then(r => r.data)
 
 export const crearOrdenInvitado = (data: {
@@ -24,6 +25,7 @@ export const crearOrdenInvitado = (data: {
   direccion?: string
   tipoEntrega?: 'DOMICILIO' | 'CUENCA' | 'RETIRO'
   conEnvio: boolean
+  codigoCupon?: string
   items: { productoId: number; cantidad: number; talla?: string; color?: string }[]
 }) => api.post<Orden>('/ordenes/invitado', data).then(r => r.data)
 

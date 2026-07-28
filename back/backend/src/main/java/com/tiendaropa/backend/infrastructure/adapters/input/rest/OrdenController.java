@@ -22,6 +22,9 @@ import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.orden.Crear
 import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.orden.OrdenInvitadoRequest;
 import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.orden.OrdenDTO;
 import com.tiendaropa.backend.infrastructure.adapters.input.rest.mapper.OrdenRestMapper;
+import com.tiendaropa.backend.infrastructure.adapters.output.persistence.entity.CuponEntity;
+import com.tiendaropa.backend.infrastructure.adapters.output.persistence.repository.CuponJpaRepository;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -62,9 +65,11 @@ public class OrdenController {
     private final EmailUseCase emailUseCase;
     private final ObjectMapper objectMapper;
     private final OrdenRestMapper ordenRestMapper;
+    private final CuponJpaRepository cuponRepository;
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
+    @Transactional
     public ResponseEntity<OrdenDTO> crear(@RequestBody CrearOrdenRequest orden) {
         Usuario usuario = getUsuarioActual();
         Carrito carrito = carritoRepositoryPort.findByUsuarioId(usuario.getId())
@@ -121,7 +126,8 @@ public class OrdenController {
             nueva.getItems().add(item);
             total = total.add(item.getSubtotal());
         }
-        total = total.add(nueva.getCostoEnvio() != null ? nueva.getCostoEnvio() : BigDecimal.ZERO);
+        total = aplicarCupon(orden.getCodigoCupon(), total, nueva.getItems())
+            .add(nueva.getCostoEnvio() != null ? nueva.getCostoEnvio() : BigDecimal.ZERO);
         nueva.setTotal(total);
 
         Orden creada = ordenUseCase.crearOrden(nueva);
@@ -132,6 +138,7 @@ public class OrdenController {
     }
 
     @PostMapping("/invitado")
+    @Transactional
     public ResponseEntity<OrdenDTO> crearInvitado(@RequestBody OrdenInvitadoRequest request) {
         if (request.getItems() == null || request.getItems().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El carrito no puede estar vacio");
@@ -175,7 +182,8 @@ public class OrdenController {
             nueva.getItems().add(item);
             total = total.add(item.getSubtotal());
         }
-        total = total.add(nueva.getCostoEnvio() != null ? nueva.getCostoEnvio() : BigDecimal.ZERO);
+        total = aplicarCupon(request.getCodigoCupon(), total, nueva.getItems())
+            .add(nueva.getCostoEnvio() != null ? nueva.getCostoEnvio() : BigDecimal.ZERO);
         nueva.setTotal(total);
 
         Orden creada = ordenUseCase.crearOrden(nueva);
@@ -287,6 +295,47 @@ public class OrdenController {
             case "CUENCA" -> configuracionUseCase.getDecimal("costo_envio_cuenca", new BigDecimal("3.00"));
             default -> BigDecimal.ZERO;
         };
+    }
+
+    private BigDecimal aplicarCupon(String codigo, BigDecimal subtotal, List<OrdenItem> items) {
+        if (codigo == null || codigo.isBlank()) return subtotal;
+
+        CuponEntity cupon = cuponRepository.findByCodigoForUpdate(codigo.trim())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cupón no encontrado"));
+        if (!cupon.isActivo()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El cupón no está activo");
+        }
+        if (cupon.getFechaExpiracion() != null && !cupon.getFechaExpiracion().isAfter(java.time.LocalDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El cupón ha expirado");
+        }
+        if (cupon.getMaxUsos() != null && cupon.getUsos() >= cupon.getMaxUsos()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El cupón ha alcanzado su límite de usos");
+        }
+        if (cupon.getMontoMinimo() != null && subtotal.compareTo(cupon.getMontoMinimo()) < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "El pedido mínimo para este cupón es $" + cupon.getMontoMinimo().toPlainString());
+        }
+        if (cupon.getProductoId() != null && items.stream().noneMatch(item -> Objects.equals(item.getProductoId(), cupon.getProductoId()))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Este cupón no aplica a los productos del carrito");
+        }
+        if (cupon.getCategoriaId() != null && items.stream().noneMatch(item ->
+            productoRepositoryPort.findById(item.getProductoId())
+                .map(producto -> producto.getCategoria() != null
+                    && Objects.equals(producto.getCategoria().getId(), cupon.getCategoriaId()))
+                .orElse(false))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Este cupón no aplica a las categorías del carrito");
+        }
+
+        BigDecimal descuento = "PORCENTAJE".equals(cupon.getTipo())
+            ? subtotal.multiply(cupon.getValor()).divide(BigDecimal.valueOf(100))
+            : cupon.getValor();
+        descuento = descuento.min(subtotal).max(BigDecimal.ZERO);
+        cupon.setUsos(cupon.getUsos() + 1);
+        if (cupon.getMaxUsos() != null && cupon.getUsos() >= cupon.getMaxUsos()) {
+            cupon.setActivo(false);
+        }
+        cuponRepository.save(cupon);
+        return subtotal.subtract(descuento).setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
     private String normalizarTipoEntrega(String tipoEntrega, boolean conEnvio) {
@@ -404,4 +453,3 @@ public class OrdenController {
         return new PageResponse<>(source.subList(fromIndex, toIndex), totalPages, source.size(), safePage, safeSize);
     }
 }
-

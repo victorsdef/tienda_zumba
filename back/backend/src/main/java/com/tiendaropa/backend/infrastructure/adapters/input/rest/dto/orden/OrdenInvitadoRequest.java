@@ -25,6 +25,7 @@ public class OrdenInvitadoRequest {
     private String direccion;
     private String tipoEntrega;
     private boolean conEnvio = true;
+    private String codigoCupon;
 
     @NotEmpty(message = "El carrito no puede estar vacio")
     private List<ItemInvitadoRequest> items;

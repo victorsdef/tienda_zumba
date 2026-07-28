@@ -136,6 +136,7 @@ export default function Checkout() {
           direccionId: requiereDireccion ? direccionId ?? undefined : undefined,
           tipoEntrega,
           conEnvio: requierePago,
+          codigoCupon: cuponAplicado?.codigo,
         })
         if (!requierePago) {
           setOrdenCreada(orden)
@@ -179,6 +180,7 @@ export default function Checkout() {
           ...(guestDirForm ?? {}),
           tipoEntrega,
           conEnvio: requierePago,
+          codigoCupon: cuponAplicado?.codigo,
           items: guestItems.map(gi => ({
             productoId: gi.productoId,
             cantidad: gi.cantidad,
