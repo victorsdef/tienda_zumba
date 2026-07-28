@@ -213,18 +213,26 @@ export default function AdminDescuentos() {
 
   return (
     <div className="px-3 py-4 sm:p-6 md:p-8 max-w-5xl mx-auto">
-      <div className="mb-5 md:mb-6">
-        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">Descuentos en productos</h1>
-        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Aplica descuentos por producto, color o talla individual</p>
-      </div>
-
-      <div className="mb-4 sm:mb-5">
-        <input
-          value={inputBusqueda}
-          onChange={e => handleBusqueda(e.target.value)}
-          placeholder="Buscar producto..."
-          className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm w-full sm:max-w-sm focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30 shadow-sm"
-        />
+      {/* Encabezado unificado */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-5">
+        <div className="px-4 sm:px-5 py-4 border-b border-gray-100">
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 leading-tight">Descuentos en productos</h1>
+          <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">Aplica descuentos por producto, color o talla individual · {productos.length} productos</p>
+        </div>
+        <div className="px-4 sm:px-5 py-3">
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input
+              value={inputBusqueda}
+              onChange={e => handleBusqueda(e.target.value)}
+              placeholder="Buscar producto..."
+              className="w-full pl-10 pr-9 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30"
+            />
+            {inputBusqueda && (
+              <button onClick={() => handleBusqueda('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-sm">✕</button>
+            )}
+          </div>
+        </div>
       </div>
 
       {isLoading ? (

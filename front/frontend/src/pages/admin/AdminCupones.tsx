@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getCupones, crearCupon, actualizarCupon, eliminarCupon, toggleCupon, type Cupon } from '../../api/admin'
 import { getCategorias } from '../../api/categorias'
 import { getProductosAdmin } from '../../api/admin'
+
+type FiltroCupon = 'TODOS' | 'ACTIVOS' | 'INACTIVOS' | 'EXPIRADOS'
 
 const EMPTY: Cupon = { codigo: '', tipo: 'PORCENTAJE', valor: 10, activo: true }
 type Restriccion = 'TODAS' | 'CATEGORIA' | 'PRODUCTO'
@@ -13,10 +15,26 @@ function getRestriccion(c: Cupon): Restriccion {
   return 'TODAS'
 }
 
-const RESTRICCION_OPTS: { value: Restriccion; label: string; icon: string }[] = [
-  { value: 'TODAS',    label: 'Toda la tienda', icon: '🏪' },
-  { value: 'CATEGORIA', label: 'Una categoría',  icon: '🏷️' },
-  { value: 'PRODUCTO',  label: 'Un producto',    icon: '📦' },
+const IconStore = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M5 10V6l2-3h10l2 3v4M5 10v10h14V10M9 20v-6h6v6" />
+  </svg>
+)
+const IconTag = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5a2 2 0 011.41.59l7.59 7.59a2 2 0 010 2.83l-6.58 6.58a2 2 0 01-2.83 0L4 12.99A2 2 0 013.41 11.58V7a4 4 0 014-4z" />
+  </svg>
+)
+const IconBox = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+  </svg>
+)
+
+const RESTRICCION_OPTS: { value: Restriccion; label: string; Icon: () => JSX.Element }[] = [
+  { value: 'TODAS',    label: 'Toda la tienda', Icon: IconStore },
+  { value: 'CATEGORIA', label: 'Una categoría',  Icon: IconTag },
+  { value: 'PRODUCTO',  label: 'Un producto',    Icon: IconBox },
 ]
 
 export default function AdminCupones() {
@@ -31,6 +49,29 @@ export default function AdminCupones() {
   const [editId, setEditId] = useState<number | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [busquedaProducto, setBusquedaProducto] = useState('')
+  const [busqueda, setBusqueda] = useState('')
+  const [filtro, setFiltro] = useState<FiltroCupon>('TODOS')
+
+  const cuponesFiltrados = useMemo(() => {
+    const ahora = Date.now()
+    return cupones.filter(c => {
+      if (filtro === 'ACTIVOS' && !c.activo) return false
+      if (filtro === 'INACTIVOS' && c.activo) return false
+      if (filtro === 'EXPIRADOS') {
+        if (!c.fechaExpiracion) return false
+        if (new Date(c.fechaExpiracion).getTime() >= ahora) return false
+      }
+      if (busqueda) {
+        const b = busqueda.toLowerCase()
+        if (!c.codigo.toLowerCase().includes(b)) return false
+      }
+      return true
+    })
+  }, [cupones, filtro, busqueda])
+
+  const cuentaActivos = cupones.filter(c => c.activo).length
+  const cuentaInactivos = cupones.filter(c => !c.activo).length
+  const cuentaExpirados = cupones.filter(c => c.fechaExpiracion && new Date(c.fechaExpiracion).getTime() < Date.now()).length
 
   const invalidar = () => qc.invalidateQueries({ queryKey: ['cupones-admin'] })
   const crearMut = useMutation({ mutationFn: crearCupon, onSuccess: () => { invalidar(); cerrar() } })
@@ -69,16 +110,54 @@ export default function AdminCupones() {
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-7">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Cupones</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{cupones.length} cupón{cupones.length !== 1 ? 'es' : ''} creado{cupones.length !== 1 ? 's' : ''}</p>
+      {/* Encabezado unificado */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-5">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-4 border-b border-gray-100">
+          <div>
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 leading-tight">Cupones</h1>
+            <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">
+              {cupones.length} en total · {cuponesFiltrados.length} visibles
+            </p>
+          </div>
+          <button onClick={abrirNuevo}
+            className="flex items-center gap-1.5 bg-[#4a3728] text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-[#3a2a1e] transition-colors flex-shrink-0">
+            <span className="text-base leading-none">+</span> <span className="hidden sm:inline">Nuevo cupón</span><span className="sm:hidden">Nuevo</span>
+          </button>
         </div>
-        <button onClick={abrirNuevo}
-          className="flex items-center gap-2 bg-[#4a3728] text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#3a2a1e] transition-colors shadow-sm">
-          <span className="text-base leading-none">+</span> Nuevo cupón
-        </button>
+
+        {/* Buscador */}
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+              placeholder="Buscar por código..."
+              className="w-full pl-10 pr-9 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30"
+            />
+            {busqueda && (
+              <button onClick={() => setBusqueda('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-sm">✕</button>
+            )}
+          </div>
+        </div>
+
+        {/* Pills */}
+        <div className="px-4 sm:px-5 py-3 flex items-center gap-2 overflow-x-auto">
+          {[
+            { v: 'TODOS' as FiltroCupon, l: 'Todos', c: cupones.length },
+            { v: 'ACTIVOS' as FiltroCupon, l: 'Activos', c: cuentaActivos },
+            { v: 'INACTIVOS' as FiltroCupon, l: 'Inactivos', c: cuentaInactivos },
+            { v: 'EXPIRADOS' as FiltroCupon, l: 'Expirados', c: cuentaExpirados },
+          ].map(p => (
+            <button key={p.v} onClick={() => setFiltro(p.v)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-xs font-semibold transition-all ${
+                filtro === p.v ? 'bg-[#4a3728] text-white border-[#4a3728] shadow-sm' : 'border-gray-200 text-gray-600 hover:border-gray-400 bg-white'
+              }`}>
+              {p.l}
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${filtro === p.v ? 'bg-white/20' : 'bg-gray-100 text-gray-500'}`}>{p.c}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Formulario — panel deslizable */}
@@ -219,7 +298,7 @@ export default function AdminCupones() {
                           ? 'border-[#7d5c48] bg-[#f5f0e8] text-[#4a3728]'
                           : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
                       }`}>
-                      <span className="text-lg">{r.icon}</span>
+                      <r.Icon />
                       <span className="leading-tight text-center">{r.label}</span>
                     </button>
                   ))}
@@ -291,15 +370,17 @@ export default function AdminCupones() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[1,2,3].map(i => <div key={i} className="h-28 bg-gray-100 rounded-2xl animate-pulse" />)}
         </div>
-      ) : cupones.length === 0 ? (
+      ) : cuponesFiltrados.length === 0 ? (
         <div className="text-center py-20 text-gray-400">
-          <p className="text-5xl mb-4">🎟️</p>
-          <p className="font-semibold text-gray-500">No hay cupones creados</p>
-          <p className="text-sm mt-1">Crea tu primer cupón con el botón de arriba</p>
+          <svg className="w-16 h-16 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" strokeWidth={1.2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 010 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 010-4V7a2 2 0 00-2-2H5z" />
+          </svg>
+          <p className="font-semibold text-gray-500">{cupones.length === 0 ? 'No hay cupones creados' : 'Sin resultados con esos filtros'}</p>
+          {cupones.length === 0 && <p className="text-sm mt-1">Crea tu primer cupón con el botón de arriba</p>}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {cupones.map(c => {
+          {cuponesFiltrados.map(c => {
             const prod = c.productoId ? productos.find(p => p.id === c.productoId) : null
             const cat = c.categoriaId ? categorias.find(ct => ct.id === c.categoriaId) : null
             const agotado = c.maxUsos != null && (c.usos ?? 0) >= c.maxUsos
@@ -330,16 +411,19 @@ export default function AdminCupones() {
                   {/* Aplica a */}
                   <div className="flex items-center gap-2">
                     {prod ? (
-                      <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full">
-                        📦 {prod.nombre}
+                      <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                        {prod.nombre}
                       </span>
                     ) : cat ? (
-                      <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 text-xs font-medium px-2.5 py-1 rounded-full">
-                        🏷️ {cat.nombre}
+                      <span className="inline-flex items-center gap-1.5 bg-purple-50 text-purple-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5a2 2 0 011.41.59l7.59 7.59a2 2 0 010 2.83l-6.58 6.58a2 2 0 01-2.83 0L4 12.99A2 2 0 013.41 11.58V7a4 4 0 014-4z" /></svg>
+                        {cat.nombre}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-gray-400 text-xs">
-                        🏪 Toda la tienda
+                      <span className="inline-flex items-center gap-1.5 text-gray-400 text-xs">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M5 10V6l2-3h10l2 3v4M5 10v10h14V10" /></svg>
+                        Toda la tienda
                       </span>
                     )}
                   </div>

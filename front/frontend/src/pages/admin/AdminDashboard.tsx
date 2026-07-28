@@ -108,7 +108,7 @@ export default function AdminDashboard() {
       {/* Cupones + plantilla */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
         <div className="bg-white border border-fuchsia-100 rounded-xl p-4 flex items-center gap-3 hover:shadow-md transition-shadow">
-          <span className="text-2xl">🎟️</span>
+          <svg className="w-8 h-8 text-fuchsia-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 010 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 010-4V7a2 2 0 00-2-2H5z" /></svg>
           <div className="min-w-0 flex-1">
             <p className="text-xs text-gray-500">Usos de cupones</p>
             <p className="text-xl font-bold text-gray-800">{stats.totalUsosCupones ?? 0}</p>
@@ -118,7 +118,7 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="bg-white border border-emerald-100 rounded-xl p-4 flex items-center gap-3 hover:shadow-md transition-shadow">
-          <span className="text-2xl">💸</span>
+          <svg className="w-8 h-8 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 10v2m9-7a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           <div className="min-w-0 flex-1">
             <p className="text-xs text-gray-500">Descuento por cupones (est.)</p>
             <p className="text-xl font-bold text-gray-800">${Number(stats.descuentoTotalCupones ?? 0).toFixed(2)}</p>
@@ -126,11 +126,26 @@ export default function AdminDashboard() {
           </div>
         </div>
         <Link to="/admin/home-editor" className="bg-white border border-purple-100 rounded-xl p-4 flex items-center gap-3 hover:shadow-md transition-shadow">
-          <span className="text-2xl">🏠</span>
+          <svg className="w-8 h-8 text-purple-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
           <div className="min-w-0 flex-1">
             <p className="text-xs text-gray-500">Plantilla del home</p>
-            <p className="text-lg font-bold text-gray-800 capitalize truncate">{stats.plantillaHomeActiva ?? 'default'}</p>
-            <p className="text-[11px] text-purple-600 hover:underline">Editar home →</p>
+            {(() => {
+              const plantilla = stats.plantillaHomeActiva ?? 'Default'
+              const esPersonalizada = plantilla.toLowerCase().startsWith('personalizada')
+              return (
+                <>
+                  <p className={`text-base font-bold truncate flex items-center gap-1.5 ${esPersonalizada ? 'text-purple-700' : 'text-gray-500'}`}>
+                    {esPersonalizada && (
+                      <span className="inline-flex items-center w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
+                    )}
+                    {plantilla}
+                  </p>
+                  <p className="text-[11px] text-purple-600 hover:underline">
+                    {esPersonalizada ? 'Ver / editar bloques →' : 'Personalizar home →'}
+                  </p>
+                </>
+              )
+            })()}
           </div>
         </Link>
       </div>

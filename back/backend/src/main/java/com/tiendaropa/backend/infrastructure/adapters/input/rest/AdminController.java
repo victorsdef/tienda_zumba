@@ -157,9 +157,17 @@ public class AdminController {
             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // ── Plantilla del home ──
-        String plantillaHome = configuracionJpaRepository.findById("home_layout")
+        String plantillaHome = configuracionJpaRepository.findById("home_builder_publicado")
             .map(c -> c.getValor())
-            .orElse("default");
+            .filter(v -> v != null && !v.isBlank() && !"[]".equals(v.trim()))
+            .map(v -> {
+                try {
+                    var arr = objectMapper.readTree(v);
+                    if (arr.isArray()) return "Personalizada (" + arr.size() + " bloques)";
+                } catch (Exception ignored) {}
+                return "Personalizada";
+            })
+            .orElse("Default");
 
         DashboardStatsDTO stats = DashboardStatsDTO.builder()
             .totalProductos((long) productos.size())

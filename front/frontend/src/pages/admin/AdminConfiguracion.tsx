@@ -71,11 +71,16 @@ const LABELS: Record<string, ConfigMeta> = {
   },
 }
 
-const SECCIONES: { id: SeccionId; titulo: string; descripcion: string; icono: string; color: string }[] = [
-  { id: 'finanzas', titulo: 'Comisiones y envíos',    descripcion: 'Valores financieros que afectan cada venta.',       icono: '💰', color: 'from-amber-100 to-yellow-50 border-amber-200' },
-  { id: 'contacto', titulo: 'Contacto WhatsApp',      descripcion: 'El número que ve tu cliente en toda la tienda.',    icono: '💬', color: 'from-green-100 to-emerald-50 border-green-200' },
-  { id: 'retiro',   titulo: 'Retiro en tienda',       descripcion: 'Información del punto de retiro en Cuenca.',        icono: '📍', color: 'from-blue-100 to-sky-50 border-blue-200' },
-  { id: 'home',     titulo: 'Contenido del home',     descripcion: 'Textos que aparecen en la página principal.',       icono: '🏠', color: 'from-purple-100 to-fuchsia-50 border-purple-200' },
+const IconMoney = () => <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 10v2m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+const IconChat = () => <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 01-9 9c-1.68 0-3.26-.46-4.6-1.26L3 21l1.26-4.4A8.96 8.96 0 013 12a9 9 0 019-9 9 9 0 019 9z" /></svg>
+const IconPin = () => <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+const IconHome = () => <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+
+const SECCIONES: { id: SeccionId; titulo: string; descripcion: string; Icon: () => JSX.Element; color: string; iconColor: string }[] = [
+  { id: 'finanzas', titulo: 'Comisiones y envíos', descripcion: 'Valores financieros que afectan cada venta.',    Icon: IconMoney, color: 'from-amber-100 to-yellow-50 border-amber-200', iconColor: 'text-amber-600' },
+  { id: 'contacto', titulo: 'Contacto WhatsApp',   descripcion: 'El número que ve tu cliente en toda la tienda.', Icon: IconChat,  color: 'from-green-100 to-emerald-50 border-green-200', iconColor: 'text-green-600' },
+  { id: 'retiro',   titulo: 'Retiro en tienda',    descripcion: 'Información del punto de retiro en Cuenca.',     Icon: IconPin,   color: 'from-blue-100 to-sky-50 border-blue-200', iconColor: 'text-blue-600' },
+  { id: 'home',     titulo: 'Contenido del home',  descripcion: 'Textos que aparecen en la página principal.',    Icon: IconHome,  color: 'from-purple-100 to-fuchsia-50 border-purple-200', iconColor: 'text-purple-600' },
 ]
 
 export default function AdminConfiguracion() {
@@ -136,7 +141,7 @@ export default function AdminConfiguracion() {
             {/* Cabecera de sección */}
             <div className="px-4 sm:px-5 py-4 bg-white/50 border-b border-white">
               <div className="flex items-start gap-3">
-                <span className="text-2xl leading-none">{sec.icono}</span>
+                <span className={`${sec.iconColor}`}><sec.Icon /></span>
                 <div className="flex-1">
                   <h2 className="font-bold text-gray-800 text-base sm:text-lg leading-tight">{sec.titulo}</h2>
                   <p className="text-xs text-gray-600 mt-0.5">{sec.descripcion}</p>
@@ -176,14 +181,20 @@ export default function AdminConfiguracion() {
 
       {/* Simulador */}
       <section className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5">
-        <h2 className="font-bold text-gray-800 mb-1 text-sm sm:text-base">🧮 Simulador de precios</h2>
+        <h2 className="font-bold text-gray-800 mb-1 text-sm sm:text-base flex items-center gap-2">
+          <svg className="w-5 h-5 text-[#7d5c48]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+          Simulador de precios
+        </h2>
         <p className="text-xs text-gray-500 mb-4">Calcula cuánto recibirás realmente por un producto según los valores actuales.</p>
         <SimuladorPrecios comision={comision} costoEnvio={costoEnvio} />
       </section>
 
       {/* Notas */}
       <div className="text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-xl p-4 leading-relaxed">
-        <strong className="text-blue-800">💡 Sobre IVA y comisiones:</strong> El precio de cada producto ya debe incluir el IVA. Payphone no lo suma aparte; lo único que descuenta del cobro es la comisión por transacción.
+        <strong className="text-blue-800 inline-flex items-center gap-1">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          Sobre IVA y comisiones:
+        </strong> El precio de cada producto ya debe incluir el IVA. Payphone no lo suma aparte; lo único que descuenta del cobro es la comisión por transacción.
       </div>
     </div>
   )

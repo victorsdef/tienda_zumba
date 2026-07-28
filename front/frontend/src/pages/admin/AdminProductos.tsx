@@ -1033,34 +1033,86 @@ export default function AdminProductos() {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Productos</h1>
-        <div className="flex items-center gap-3">
-          {/* Toggle secuencias de color */}
-          <button
-            onClick={toggleSecuencias}
-            title={secuenciasActivas ? 'Desactivar secuencias de color en tienda' : 'Activar secuencias de color en tienda'}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-colors ${
-              secuenciasActivas
-                ? 'bg-[#4a3728] text-white border-[#4a3728]'
-                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
-            }`}
-          >
-            <span className={`w-8 h-4 rounded-full relative transition-colors ${secuenciasActivas ? 'bg-white/30' : 'bg-gray-200'}`}>
-              <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ${secuenciasActivas ? 'translate-x-4' : 'translate-x-0.5'}`} />
-            </span>
-            Secuencias de color
-          </button>
-          {isAdmin ? (
-            <button onClick={() => abrir()} className="btn-primary flex items-center gap-1.5">
-              <span className="text-lg leading-none">+</span> Nuevo producto
+    <div className="p-3 sm:p-4 md:p-6 space-y-4">
+      {/* Encabezado unificado */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        {/* Título + acciones */}
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-4 border-b border-gray-100 flex-wrap">
+          <div>
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-tight">Productos</h1>
+            <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">
+              {data?.totalElements ?? 0} en total
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={toggleSecuencias}
+              title={secuenciasActivas ? 'Desactivar secuencias de color' : 'Activar secuencias de color'}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-colors ${
+                secuenciasActivas
+                  ? 'bg-[#4a3728] text-white border-[#4a3728]'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <span className={`w-8 h-4 rounded-full relative transition-colors ${secuenciasActivas ? 'bg-white/30' : 'bg-gray-200'}`}>
+                <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ${secuenciasActivas ? 'translate-x-4' : 'translate-x-0.5'}`} />
+              </span>
+              <span className="hidden sm:inline">Secuencias de color</span>
+              <span className="sm:hidden">Secuencias</span>
             </button>
-          ) : (
-            <span className="text-xs text-gray-500 bg-amber-50 border border-amber-200 rounded-full px-3 py-1.5">
-              Acceso de bodega: solo stock
-            </span>
+            {isAdmin ? (
+              <button onClick={() => abrir()} className="bg-[#4a3728] hover:bg-[#3a2a1e] text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors">
+                <span className="text-base leading-none">+</span> Nuevo producto
+              </button>
+            ) : (
+              <span className="text-xs text-gray-500 bg-amber-50 border border-amber-200 rounded-full px-3 py-1.5">
+                Solo stock
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Buscador */}
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
+          <div className="relative">
+            <IconSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              value={filtroNombre}
+              onChange={e => { setFiltroNombre(e.target.value); setPage(0) }}
+              placeholder="Buscar producto..."
+              className="w-full pl-10 pr-9 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7d5c48]/30"
+            />
+            {filtroNombre && (
+              <button onClick={() => setFiltroNombre('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-sm">✕</button>
+            )}
+          </div>
+        </div>
+
+        {/* Pills de filtro + selector de categoría */}
+        <div className="px-4 sm:px-5 py-3 flex items-center gap-2 overflow-x-auto">
+          <button onClick={() => { setFiltroActivo(undefined); setPage(0) }}
+            className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${filtroActivo === undefined ? 'bg-gray-900 text-white border-gray-900 shadow-sm' : 'border-gray-200 text-gray-600 hover:border-gray-400 bg-white'}`}>
+            Todos
+          </button>
+          <button onClick={() => { setFiltroActivo(true); setPage(0) }}
+            className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${filtroActivo === true ? 'bg-green-100 text-green-800 border-transparent shadow-sm' : 'border-gray-200 text-gray-600 hover:border-gray-400 bg-white'}`}>
+            Activos
+          </button>
+          <button onClick={() => { setFiltroActivo(false); setPage(0) }}
+            className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${filtroActivo === false ? 'bg-gray-100 text-gray-700 border-transparent shadow-sm' : 'border-gray-200 text-gray-600 hover:border-gray-400 bg-white'}`}>
+            Inactivos
+          </button>
+          {cats && cats.length > 0 && (
+            <select
+              value={filtroCategoria ?? ''}
+              onChange={e => { setFiltroCategoria(e.target.value ? Number(e.target.value) : undefined); setPage(0) }}
+              className="flex-shrink-0 border border-gray-200 rounded-full px-3 py-1.5 text-xs text-gray-600 focus:outline-none hover:border-gray-400 bg-white font-semibold"
+            >
+              <option value="">Todas las categorías</option>
+              {cats.filter(c => c.activo).map(c => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+            </select>
           )}
         </div>
       </div>
@@ -1147,50 +1199,6 @@ export default function AdminProductos() {
         </div>
       )}
 
-      {/* ── FILTROS ──────────────────────────────────────────────── */}
-      <div className="space-y-2">
-        {/* Filtros de estado */}
-        <div className="bg-white border rounded-lg px-3 md:px-4 py-3 flex items-center gap-2 flex-wrap">
-          <button onClick={() => { setFiltroActivo(undefined); setPage(0) }}
-            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${filtroActivo === undefined ? 'bg-gray-900 text-white border-gray-900' : 'border-gray-300 text-gray-600 hover:border-gray-400'}`}>
-            Todos
-          </button>
-          <button onClick={() => { setFiltroActivo(true); setPage(0) }}
-            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${filtroActivo === true ? 'bg-green-100 text-green-800 border-transparent' : 'border-gray-300 text-gray-600 hover:border-gray-400'}`}>
-            Activos
-          </button>
-          <button onClick={() => { setFiltroActivo(false); setPage(0) }}
-            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${filtroActivo === false ? 'bg-gray-100 text-gray-600 border-transparent' : 'border-gray-300 text-gray-600 hover:border-gray-400'}`}>
-            Inactivos
-          </button>
-          {cats && cats.length > 0 && (
-            <select
-              value={filtroCategoria ?? ''}
-              onChange={e => { setFiltroCategoria(e.target.value ? Number(e.target.value) : undefined); setPage(0) }}
-              className="ml-1 border border-gray-300 rounded-full px-3 py-1 text-xs text-gray-600 focus:outline-none hover:border-gray-400 bg-white"
-            >
-              <option value="">Todas las categorías</option>
-              {cats.filter(c => c.activo).map(c => (
-                <option key={c.id} value={c.id}>{c.nombre}</option>
-              ))}
-            </select>
-          )}
-          <span className="ml-auto text-xs text-gray-400">{data?.totalElements ?? 0} total</span>
-        </div>
-        {/* Buscador */}
-        <div className="bg-white border rounded-lg px-3 md:px-4 py-2.5 flex items-center gap-3">
-          <IconSearch size={15} className="text-gray-400 flex-shrink-0" />
-          <input
-            value={filtroNombre}
-            onChange={e => { setFiltroNombre(e.target.value); setPage(0) }}
-            placeholder="Buscar producto..."
-            className="flex-1 outline-none text-sm"
-          />
-          {filtroNombre && (
-            <button onClick={() => setFiltroNombre('')} className="text-gray-400 hover:text-gray-600 text-xs">✕</button>
-          )}
-        </div>
-      </div>
 
       {/* ── TABLA / CARDS ────────────────────────────────────────── */}
       <div className="bg-white border rounded-lg overflow-hidden">
