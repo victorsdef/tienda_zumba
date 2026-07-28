@@ -367,9 +367,15 @@ export default function Checkout() {
           {ordenCreada ? (
             <div className="bg-green-50 border border-green-200 rounded-lg p-5 text-center space-y-3">
               <p className="font-bold text-green-800 text-base">¡Pedido {codigoVisible(ordenCreada)} confirmado!</p>
-              <p className="text-sm text-green-700">Te contactaremos por WhatsApp para coordinar el retiro en Cuenca.</p>
+              <p className="text-sm text-green-700">Escríbenos ahora por WhatsApp para confirmar y coordinar el retiro en Cuenca.</p>
+              <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                Tienes 3 horas desde la creación del pedido para comunicarte. Si no lo confirmas, el pedido se cancelará automáticamente.
+              </div>
+              <p className="text-sm font-bold text-green-800">
+                WhatsApp: +{retiro?.retiro_whatsapp ?? '593000000000'}
+              </p>
               <a
-                href={`https://wa.me/${retiro?.retiro_whatsapp ?? '593000000000'}?text=${encodeURIComponent(`Hola, quiero coordinar el retiro de mi pedido ${codigoVisible(ordenCreada)}`)}`}
+                href={`https://wa.me/${(retiro?.retiro_whatsapp ?? '593000000000').replace(/\D/g, '')}?text=${encodeURIComponent(`Hola, quiero confirmar y coordinar el retiro de mi pedido ${codigoVisible(ordenCreada)}`)}`}
                 target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-2.5 rounded-lg text-sm transition-colors"
               >

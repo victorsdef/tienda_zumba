@@ -22,6 +22,7 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -132,6 +133,7 @@ public class PagoController {
     }
 
     @PostMapping("/confirmar")
+    @Transactional
     public ResponseEntity<OrdenDTO> confirmar(
         @RequestParam Integer id,
         @RequestParam String clientTransactionId
@@ -278,22 +280,42 @@ public class PagoController {
                 try {
                     String color = item.getColor();
                     String talla = item.getTalla();
-                    if (color != null && talla != null && prod.getStockPorColorTallaJson() != null) {
+                    if (talla != null && !talla.isBlank() && prod.getStockPorColorTallaJson() != null
+                            && !prod.getStockPorColorTallaJson().isBlank()) {
                         java.util.Map<String, java.util.Map<String, Integer>> mapa = objectMapper.readValue(
                             prod.getStockPorColorTallaJson(),
                             new TypeReference<java.util.Map<String, java.util.Map<String, Integer>>>() {}
                         );
-                        if (mapa.containsKey(color) && mapa.get(color).containsKey(talla)) {
-                            int actual = mapa.get(color).getOrDefault(talla, 0);
-                            mapa.get(color).put(talla, Math.max(0, actual - cantidad));
-                            prod.setStockPorColorTallaJson(objectMapper.writeValueAsString(mapa));
+                        String claveColor = color != null && !color.isBlank() ? color : "_";
+                        java.util.Map<String, Integer> porTalla = mapa.get(claveColor);
+                        if (porTalla == null || !porTalla.containsKey(talla)) {
+                            throw new IllegalStateException("No existe stock para la variante " + claveColor + " / " + talla);
                         }
+                        int actual = porTalla.getOrDefault(talla, 0);
+                        if (actual < cantidad) throw new IllegalStateException("Stock insuficiente al confirmar el pago");
+                        porTalla.put(talla, actual - cantidad);
+                        prod.setStockPorColorTallaJson(objectMapper.writeValueAsString(mapa));
+
+                        java.util.Map<String, Integer> totalesPorColor = new java.util.LinkedHashMap<>();
+                        mapa.forEach((clave, tallas) ->
+                            totalesPorColor.put(clave, tallas.values().stream().mapToInt(Integer::intValue).sum()));
+                        if (!totalesPorColor.containsKey("_")) prod.setStockPorColor(totalesPorColor);
+                        prod.setStock(totalesPorColor.values().stream().mapToInt(Integer::intValue).sum());
+                    } else if (color != null && !color.isBlank() && prod.getStockPorColor() != null
+                            && prod.getStockPorColor().containsKey(color)) {
+                        java.util.Map<String, Integer> porColor = new java.util.LinkedHashMap<>(prod.getStockPorColor());
+                        int actual = porColor.getOrDefault(color, 0);
+                        if (actual < cantidad) throw new IllegalStateException("Stock insuficiente al confirmar el pago");
+                        porColor.put(color, actual - cantidad);
+                        prod.setStockPorColor(porColor);
+                        prod.setStock(porColor.values().stream().mapToInt(Integer::intValue).sum());
                     } else {
-                        prod.setStock(Math.max(0, prod.getStock() - cantidad));
+                        if (prod.getStock() < cantidad) throw new IllegalStateException("Stock insuficiente al confirmar el pago");
+                        prod.setStock(prod.getStock() - cantidad);
                     }
                 } catch (Exception e) {
-                    log.warn("Error descontando stock producto {}: {}", prod.getId(), e.getMessage());
-                    prod.setStock(Math.max(0, prod.getStock() - cantidad));
+                    throw new IllegalStateException(
+                        "No se pudo actualizar el stock del producto " + prod.getId() + ": " + e.getMessage(), e);
                 }
                 productoRepositoryPort.save(prod);
                 log.info("Stock producto {} color={} talla={} reducido en {}", prod.getId(), item.getColor(), item.getTalla(), cantidad);

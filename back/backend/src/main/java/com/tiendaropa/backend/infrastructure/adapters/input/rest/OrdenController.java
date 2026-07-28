@@ -398,16 +398,22 @@ public class OrdenController {
 
     private void validarStock(Producto producto, String color, String talla, int cantidad) {
         int disponible;
-        if (color != null && talla != null && producto.getStockPorColorTallaJson() != null && !producto.getStockPorColorTallaJson().isBlank()) {
+        if (talla != null && !talla.isBlank() && producto.getStockPorColorTallaJson() != null
+                && !producto.getStockPorColorTallaJson().isBlank()) {
             try {
                 Map<String, Map<String, Integer>> mapa = objectMapper.readValue(
                     producto.getStockPorColorTallaJson(),
                     new TypeReference<Map<String, Map<String, Integer>>>() {}
                 );
-                disponible = mapa.getOrDefault(color, Map.of()).getOrDefault(talla, 0);
+                String claveColor = color != null && !color.isBlank() ? color : "_";
+                disponible = mapa.getOrDefault(claveColor, Map.of()).getOrDefault(talla, 0);
             } catch (Exception e) {
-                disponible = producto.getStock();
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "No se pudo verificar el stock de la variante");
             }
+        } else if (color != null && !color.isBlank() && producto.getStockPorColor() != null
+                && producto.getStockPorColor().containsKey(color)) {
+            disponible = producto.getStockPorColor().getOrDefault(color, 0);
         } else {
             disponible = producto.getStock();
         }

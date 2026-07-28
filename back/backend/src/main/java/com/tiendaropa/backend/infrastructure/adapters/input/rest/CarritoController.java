@@ -140,8 +140,9 @@ public class CarritoController {
 
     private int calcularStockDisponible(Producto producto, String color, String talla) {
         Map<String, Map<String, Integer>> stockPorColorTalla = parseStockPorColorTalla(producto.getStockPorColorTallaJson());
-        if (color != null && talla != null && stockPorColorTalla.containsKey(color)) {
-            Integer disponible = stockPorColorTalla.get(color).get(talla);
+        if (talla != null) {
+            String claveColor = color != null && !color.isBlank() ? color : "_";
+            Integer disponible = stockPorColorTalla.getOrDefault(claveColor, Collections.emptyMap()).get(talla);
             if (disponible != null) {
                 return disponible;
             }
@@ -171,9 +172,10 @@ public class CarritoController {
     }
 
     private BigDecimal resolverPrecio(Producto producto, String color, String talla) {
-        if (color != null && talla != null) {
+        if (talla != null) {
             Map<String, Map<String, BigDecimal>> precios = parsePrecioPorColorTalla(producto.getPrecioPorColorTallaJson());
-            Map<String, BigDecimal> porTalla = precios.get(color);
+            String claveColor = color != null && !color.isBlank() ? color : "_";
+            Map<String, BigDecimal> porTalla = precios.get(claveColor);
             if (porTalla != null) {
                 BigDecimal precio = porTalla.get(talla);
                 if (precio != null) return precio;

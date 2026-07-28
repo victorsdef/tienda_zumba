@@ -196,10 +196,29 @@ export default function DetalleOrden() {
 
             {orden.estado === 'PENDIENTE' && (
               <div className="mt-5 border-t border-[#efe9e3] pt-5 space-y-4">
-                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  Tu pago todavía no se ha completado. Puedes retomarlo desde aquí para no perder la orden.
-                </div>
-                <PayphoneWidget ordenId={orden.id} total={Number(orden.total)} />
+                {orden.tipoEntrega === 'RETIRO' ? (
+                  <>
+                    <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                      <p className="font-bold">Confirma tu retiro dentro de las próximas 3 horas.</p>
+                      <p className="mt-1">Si no te comunicas con la tienda dentro de ese plazo, este pedido se cancelará automáticamente.</p>
+                    </div>
+                    <a
+                      href={`https://wa.me/${(retiro?.retiro_whatsapp ?? '593000000000').replace(/\D/g, '')}?text=${encodeURIComponent(`Hola, quiero confirmar y coordinar el retiro de mi pedido ${codigoVisible(orden)}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-green-700"
+                    >
+                      Confirmar retiro por WhatsApp · +{retiro?.retiro_whatsapp ?? '593000000000'}
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                      Tu pago todavía no se ha completado. Puedes retomarlo desde aquí para no perder la orden.
+                    </div>
+                    <PayphoneWidget ordenId={orden.id} total={Number(orden.total)} />
+                  </>
+                )}
 
                 {!confirmCancelar ? (
                   <button
@@ -305,7 +324,15 @@ export default function DetalleOrden() {
                 <p className="text-xs uppercase tracking-wide text-gray-400">Retiro en tienda</p>
                 <p className="text-base font-semibold text-[#4a3728]">{retiro?.retiro_direccion || 'Direccion no configurada'}</p>
                 <p className="text-sm text-gray-500">{retiro?.retiro_horario || 'Horario no configurado'}</p>
-                <p className="text-sm text-gray-500">Te contactaremos por WhatsApp para coordinar la entrega.</p>
+                <p className="text-sm font-semibold text-amber-700">Debes confirmar por WhatsApp dentro de 3 horas o el pedido será cancelado.</p>
+                <a
+                  href={`https://wa.me/${(retiro?.retiro_whatsapp ?? '593000000000').replace(/\D/g, '')}?text=${encodeURIComponent(`Hola, quiero confirmar y coordinar el retiro de mi pedido ${codigoVisible(orden)}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-sm font-bold text-green-700 hover:bg-green-100"
+                >
+                  WhatsApp: +{retiro?.retiro_whatsapp ?? '593000000000'}
+                </a>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
