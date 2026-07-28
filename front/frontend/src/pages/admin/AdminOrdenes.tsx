@@ -5,7 +5,7 @@ import { actualizarGuiaOrden, cambiarEstadoOrden } from '../../api/ordenes'
 import api from '../../api/axios'
 import { convertImageForUpload } from '../../utils/imageConversion'
 import { IconChevronDown, IconChevronRight, IconSearch } from '@shared/Icon'
-import type { EstadoOrden, Orden, ItemOrden } from '../../types'
+import type { EstadoOrden, Orden, ItemOrden, Page } from '../../types'
 import { hexToNombre } from '../../components/ui/colores'
 
 const ESTADOS: EstadoOrden[] = ['PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'ENVIADO', 'ENTREGADO', 'CANCELADO']
@@ -438,7 +438,27 @@ export default function AdminOrdenes() {
   const cambiarMut = useMutation({
     mutationFn: ({ id, estado, guia }: { id: number; estado: string; guia?: string }) =>
       cambiarEstadoOrden(id, estado, guia),
-    onSuccess: () => {
+    onSuccess: (ordenActualizada) => {
+      qc.setQueryData<Page<Orden>>(['admin-ordenes', page, filtroEstado], current => {
+        if (!current) return current
+        const perteneceAlFiltro = !filtroEstado || ordenActualizada.estado === filtroEstado
+        const yaExiste = current.content.some(orden => orden.id === ordenActualizada.id)
+
+        if (!perteneceAlFiltro) {
+          return {
+            ...current,
+            content: current.content.filter(orden => orden.id !== ordenActualizada.id),
+            totalElements: yaExiste ? Math.max(0, current.totalElements - 1) : current.totalElements,
+          }
+        }
+
+        return {
+          ...current,
+          content: current.content.map(orden =>
+            orden.id === ordenActualizada.id ? ordenActualizada : orden
+          ),
+        }
+      })
       qc.invalidateQueries({ queryKey: ['admin-ordenes'] })
       setGuiaModal(null)
       setNumeroGuia('')
