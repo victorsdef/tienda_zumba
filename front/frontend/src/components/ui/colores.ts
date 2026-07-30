@@ -16,6 +16,17 @@ export const COLORES = [
   { nombre: 'Crema',    hex: '#FEF3C7' },
 ]
 
+// Registry global de colores personalizados guardados por el admin.
+// Se actualiza desde ColoresSelector cuando se cargan del backend.
+const coloresPersonalizados: Record<string, string> = {}
+
+export function registrarColoresPersonalizados(items: { hex: string; nombre: string }[]) {
+  for (const item of items) coloresPersonalizados[item.hex.toLowerCase()] = item.nombre
+}
+
 export function hexToNombre(hex: string): string {
-  return COLORES.find(c => c.hex.toLowerCase() === hex.toLowerCase())?.nombre ?? hex
+  const key = hex.toLowerCase()
+  return coloresPersonalizados[key]
+    ?? COLORES.find(c => c.hex.toLowerCase() === key)?.nombre
+    ?? hex
 }
