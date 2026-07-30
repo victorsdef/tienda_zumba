@@ -22,6 +22,7 @@ const NAV: Array<{
   { to: '/admin/descuentos',    label: 'Descuentos',    Icon: IconHanger,   exact: false, permission: 'descuentos' },
   { to: '/admin/resenas',       label: 'Reseñas',       Icon: IconGrid,     exact: false, permission: 'resenas' },
   { to: '/admin/configuracion', label: 'Configuración', Icon: IconSettings, exact: false, permission: 'configuracion' },
+  { to: '/admin/backups',       label: 'Backups',       Icon: IconSettings, exact: false, permission: 'configuracion' },
 ]
 
 const DEFAULT_ROUTE_BY_ROLE = {

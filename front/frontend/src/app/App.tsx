@@ -27,6 +27,7 @@ import AdminReportes from '@pages/admin/AdminReportes'
 import AdminCupones from '@pages/admin/AdminCupones'
 import AdminResenas from '@pages/admin/AdminResenas'
 import AdminDescuentos from '@pages/admin/AdminDescuentos'
+import AdminBackups from '@pages/admin/AdminBackups'
 import WishlistPage from '@pages/WishlistPage'
 import VerificarEmail from '@pages/VerificarEmail'
 import OrdenConfirmada from '@pages/OrdenConfirmada'
@@ -39,6 +40,7 @@ import shellStyles from './AppShell.module.scss'
 import StorefrontTheme from './StorefrontTheme'
 import { useQuery } from '@tanstack/react-query'
 import { getRetiroInfo } from '../api/configuracion'
+import InstallPrompt from '@widgets/pwa/InstallPrompt'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -77,6 +79,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         <main className={shellStyles.mainContent}>{children}</main>
         <Footer />
         <WhatsAppButton />
+        <InstallPrompt />
       </div>
     </StorefrontTheme>
   )
@@ -106,6 +109,7 @@ export default function App() {
             <Route path="cupones" element={<AdminCupones />} />
             <Route path="resenas" element={<AdminResenas />} />
             <Route path="descuentos" element={<AdminDescuentos />} />
+            <Route path="backups" element={<AdminBackups />} />
           </Route>
 
           {/* Auth */}

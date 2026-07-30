@@ -13,6 +13,9 @@ RUN ./mvnw package -DskipTests -q
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
+# pg_dump para los backups automáticos (compatible con Postgres 15/16)
+RUN apk add --no-cache postgresql16-client gzip
+
 COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080

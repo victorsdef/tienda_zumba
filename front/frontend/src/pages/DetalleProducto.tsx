@@ -488,26 +488,54 @@ export default function DetalleProducto() {
                 }
               }}
             />
-                {color && producto.stockPorColorTalla?.[color] && (
+                {color && producto.stockPorColorTalla?.[color] && !talla && (
                   <p className="mt-2 text-xs text-gray-500">
-                    {talla
-                      ? `Disponibles para este color y talla: ${stockDisponible}`
-                      : 'Selecciona una talla para ver el stock exacto de ese color.'}
+                    Selecciona una talla para ver el stock exacto de ese color.
                   </p>
                 )}
               </div>
             )}
-            <ColorSelector
-              colores={producto.colores}
-              selected={color}
-              onSelect={c => { setColor(c); setCantidad(1) }}
-              coloresDisponibles={coloresDisponiblesParaTalla}
-            />
-            {color && producto.imagenesPorColor?.[color]?.length ? (
-              <p className="text-xs text-gray-500">
-                Mostrando fotos de la variante seleccionada.
-              </p>
-            ) : null}
+            {/* Miniaturas por color — solo móvil: se ve la foto arriba de cada círculo */}
+            {(producto.colores?.length ?? 0) > 0 && Object.keys(producto.imagenesPorColor ?? {}).length > 0 && (
+              <div className="md:hidden">
+                <p className="text-sm font-semibold text-gray-700 mb-2">
+                  Color: {color && <span className="font-normal">{
+                    ({'#000000':'Negro','#FFFFFF':'Blanco','#9CA3AF':'Gris','#EF4444':'Rojo','#F9A8D4':'Rosa','#EC4899':'Fucsia','#F97316':'Naranja','#FACC15':'Amarillo','#22C55E':'Verde','#3B82F6':'Azul','#1E3A5F':'Marino','#A855F7':'Morado','#92400E':'Café','#D4B896':'Beige','#FEF3C7':'Crema'} as Record<string,string>)[color] ?? color
+                  }</span>}
+                </p>
+                <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+                  {producto.colores.map(c => {
+                    const img = producto.imagenesPorColor?.[c]?.[0] ?? producto.imagenes?.[0]
+                    const disponible = !coloresDisponiblesParaTalla || coloresDisponiblesParaTalla.includes(c)
+                    const activo = color === c
+                    return (
+                      <button
+                        key={c}
+                        onClick={() => { setColor(c); setCantidad(1) }}
+                        disabled={!disponible}
+                        className={`flex-shrink-0 flex flex-col items-center gap-1 transition-all ${!disponible ? 'opacity-40' : ''}`}
+                      >
+                        <div className={`w-16 h-20 rounded-lg overflow-hidden border-2 transition-all ${activo ? 'border-[#4a3728] shadow-md scale-105' : 'border-gray-200'}`}>
+                          {img
+                            ? <img src={img} alt="" className="w-full h-full object-cover" />
+                            : <div className="w-full h-full" style={{ backgroundColor: c }} />}
+                        </div>
+                        <span className={`w-4 h-4 rounded-full border ${activo ? 'border-[#4a3728] scale-110' : 'border-gray-300'}`} style={{ backgroundColor: c }} />
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+            {/* Selector clásico — desktop */}
+            <div className="hidden md:block">
+              <ColorSelector
+                colores={producto.colores}
+                selected={color}
+                onSelect={c => { setColor(c); setCantidad(1) }}
+                coloresDisponibles={coloresDisponiblesParaTalla}
+              />
+            </div>
           </div>
 
           {/* Cantidad + alerta stock bajo */}
