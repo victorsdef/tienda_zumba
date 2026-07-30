@@ -5,6 +5,7 @@ import type { DireccionRequest } from '../api/direcciones'
 import DireccionForm from '@shared/DireccionForm'
 import type { Direccion } from '../types'
 import { IconEdit, IconTrash, IconX } from '@shared/Icon'
+import { PageLoader } from '@shared/LoadingSkeleton'
 
 export default function MisDirecciones() {
   const qc = useQueryClient()
@@ -35,11 +36,7 @@ export default function MisDirecciones() {
     else await crearMut.mutateAsync(data)
   }
 
-  if (isLoading) return (
-    <div className="py-16 text-center">
-      <div className="inline-block w-6 h-6 border-2 border-[#7d5c48] border-t-transparent rounded-full animate-spin" />
-    </div>
-  )
+  if (isLoading) return <PageLoader message="Cargando tus direcciones…" />
 
   return (
     <div className="max-w-5xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 space-y-5">

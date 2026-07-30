@@ -12,6 +12,7 @@ import {
   IconTruck,
 } from '@shared/Icon'
 import type { EstadoOrden, Orden } from '../types'
+import { TableSkeleton } from '@shared/LoadingSkeleton'
 
 const ESTADOS: Array<{ value: 'TODOS' | EstadoOrden; label: string }> = [
   { value: 'TODOS', label: 'Todos' },
@@ -109,7 +110,7 @@ export default function MisOrdenes() {
   const enCamino = ordenes.filter(orden => orden.estado === 'ENVIADO').length
 
   if (isLoading) {
-    return <div className="max-w-6xl mx-auto px-4 py-10 text-center text-gray-500">Cargando tus órdenes...</div>
+    return <div className="mx-auto max-w-6xl px-4 py-10"><TableSkeleton rows={5} /></div>
   }
 
   return (

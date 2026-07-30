@@ -10,6 +10,7 @@ import { useCartStore } from '../store/useCartStore'
 import { useAuthStore } from '../store/useAuthStore'
 import womanSvg from '../assets/woman.svg'
 import ResenaSection from '@entities/product/ResenaSection'
+import { DetailSkeleton } from '@shared/LoadingSkeleton'
 
 const COLORES_NOMBRES: Record<string, string> = {
   '#000000': 'Negro', '#FFFFFF': 'Blanco', '#9CA3AF': 'Gris', '#EF4444': 'Rojo',
@@ -354,18 +355,7 @@ export default function DetalleProducto() {
   const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
   const shareText = producto ? `Mira este producto en Sofia Couture EC: ${producto.nombre} · $${precioMostrado.toFixed(2)}` : ''
 
-  if (isLoading) return (
-    <div className="max-w-7xl mx-auto px-4 py-8 animate-pulse">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-gray-200 aspect-[3/4] rounded" />
-        <div className="space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-3/4" />
-          <div className="h-6 bg-gray-200 rounded w-1/4" />
-          <div className="h-32 bg-gray-200 rounded" />
-        </div>
-      </div>
-    </div>
-  )
+  if (isLoading) return <DetailSkeleton />
 
   if (!producto) return <div className="text-center py-16 text-gray-500">Producto no encontrado</div>
 

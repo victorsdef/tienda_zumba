@@ -1,46 +1,48 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Navbar from '@widgets/layout/Navbar'
 import Footer from '@widgets/layout/Footer'
 import CartDrawer from '@widgets/cart/CartDrawer'
-import Home from '@pages/Home'
-import Catalogo from '@pages/Catalogo'
-import DetalleProducto from '@pages/DetalleProducto'
-import CarritoPage from '@pages/CarritoPage'
-import Checkout from '@pages/Checkout'
-import Login from '@pages/Login'
-import Registro from '@pages/Registro'
-import MiCuenta from '@pages/MiCuenta'
-import MisOrdenes from '@pages/MisOrdenes'
-import DetalleOrden from '@pages/DetalleOrden'
-import AdminLayout from '@pages/admin/AdminLayout'
-import AdminDashboard from '@pages/admin/AdminDashboard'
-import AdminProductos from '@pages/admin/AdminProductos'
-import AdminCategorias from '@pages/admin/AdminCategorias'
-import AdminOrdenes from '@pages/admin/AdminOrdenes'
-import AdminUsuarios from '@pages/admin/AdminUsuarios'
-import AdminBanners from '@pages/admin/AdminBanners'
-import AdminConfiguracion from '@pages/admin/AdminConfiguracion'
-import AdminHomeEditor from '@pages/admin/AdminHomeEditor'
-import AdminReportes from '@pages/admin/AdminReportes'
-import AdminCupones from '@pages/admin/AdminCupones'
-import AdminResenas from '@pages/admin/AdminResenas'
-import AdminDescuentos from '@pages/admin/AdminDescuentos'
-import AdminBackups from '@pages/admin/AdminBackups'
-import WishlistPage from '@pages/WishlistPage'
-import VerificarEmail from '@pages/VerificarEmail'
-import OrdenConfirmada from '@pages/OrdenConfirmada'
-import MisDirecciones from '@pages/MisDirecciones'
-import PagoConfirmado from '@pages/PagoConfirmado'
-import PagarOrden from '@pages/PagarOrden'
-import OlvidePassword from '@pages/OlvidePassword'
-import ResetPassword from '@pages/ResetPassword'
+import { PageLoader } from '@shared/LoadingSkeleton'
 import shellStyles from './AppShell.module.scss'
 import StorefrontTheme from './StorefrontTheme'
 import { useQuery } from '@tanstack/react-query'
 import { getRetiroInfo } from '../api/configuracion'
 import InstallPrompt from '@widgets/pwa/InstallPrompt'
+
+const Home = lazy(() => import('@pages/Home'))
+const Catalogo = lazy(() => import('@pages/Catalogo'))
+const DetalleProducto = lazy(() => import('@pages/DetalleProducto'))
+const CarritoPage = lazy(() => import('@pages/CarritoPage'))
+const Checkout = lazy(() => import('@pages/Checkout'))
+const Login = lazy(() => import('@pages/Login'))
+const Registro = lazy(() => import('@pages/Registro'))
+const MiCuenta = lazy(() => import('@pages/MiCuenta'))
+const MisOrdenes = lazy(() => import('@pages/MisOrdenes'))
+const DetalleOrden = lazy(() => import('@pages/DetalleOrden'))
+const AdminLayout = lazy(() => import('@pages/admin/AdminLayout'))
+const AdminDashboard = lazy(() => import('@pages/admin/AdminDashboard'))
+const AdminProductos = lazy(() => import('@pages/admin/AdminProductos'))
+const AdminCategorias = lazy(() => import('@pages/admin/AdminCategorias'))
+const AdminOrdenes = lazy(() => import('@pages/admin/AdminOrdenes'))
+const AdminUsuarios = lazy(() => import('@pages/admin/AdminUsuarios'))
+const AdminBanners = lazy(() => import('@pages/admin/AdminBanners'))
+const AdminConfiguracion = lazy(() => import('@pages/admin/AdminConfiguracion'))
+const AdminHomeEditor = lazy(() => import('@pages/admin/AdminHomeEditor'))
+const AdminReportes = lazy(() => import('@pages/admin/AdminReportes'))
+const AdminCupones = lazy(() => import('@pages/admin/AdminCupones'))
+const AdminResenas = lazy(() => import('@pages/admin/AdminResenas'))
+const AdminDescuentos = lazy(() => import('@pages/admin/AdminDescuentos'))
+const AdminBackups = lazy(() => import('@pages/admin/AdminBackups'))
+const WishlistPage = lazy(() => import('@pages/WishlistPage'))
+const VerificarEmail = lazy(() => import('@pages/VerificarEmail'))
+const OrdenConfirmada = lazy(() => import('@pages/OrdenConfirmada'))
+const MisDirecciones = lazy(() => import('@pages/MisDirecciones'))
+const PagoConfirmado = lazy(() => import('@pages/PagoConfirmado'))
+const PagarOrden = lazy(() => import('@pages/PagarOrden'))
+const OlvidePassword = lazy(() => import('@pages/OlvidePassword'))
+const ResetPassword = lazy(() => import('@pages/ResetPassword'))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -94,6 +96,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ScrollToTop />
+        <Suspense fallback={<PageLoader message="Preparando la tienda…" />}>
         <Routes>
           {/* Admin */}
           <Route path="/admin" element={<AdminLayout />}>
@@ -134,6 +137,7 @@ export default function App() {
           <Route path="/pagar" element={<PublicPage><PagarOrden /></PublicPage>} />
           <Route path="/wishlist" element={<MainLayout><WishlistPage /></MainLayout>} />
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </QueryClientProvider>
   )

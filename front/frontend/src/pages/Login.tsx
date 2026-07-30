@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { login } from '../api/auth'
 import { useAuthStore } from '../store/useAuthStore'
 import { useCartStore } from '../store/useCartStore'
+import { ButtonSpinner } from '@shared/LoadingSkeleton'
 
 interface FormData {
   email: string
@@ -66,7 +67,7 @@ export default function Login() {
             </div>
           </div>
           <button type="submit" disabled={isSubmitting} className="btn-primary w-full">
-            {isSubmitting ? 'Ingresando...' : 'Iniciar sesión'}
+            {isSubmitting ? <><ButtonSpinner label="Ingresando" />Ingresando…</> : 'Iniciar sesión'}
           </button>
         </form>
 

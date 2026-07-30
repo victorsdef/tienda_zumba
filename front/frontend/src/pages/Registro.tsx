@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import { ButtonSpinner } from '@shared/LoadingSkeleton'
 import { register as registerApi } from '../api/auth'
 
 interface FormData {
@@ -105,7 +106,7 @@ export default function Registro() {
             {errors.confirmarPassword && <p className="text-red-600 text-xs mt-1">{errors.confirmarPassword.message}</p>}
           </div>
           <button type="submit" disabled={isSubmitting} className="btn-primary w-full">
-            {isSubmitting ? 'Creando cuenta...' : 'Crear cuenta'}
+            {isSubmitting ? <><ButtonSpinner label="Creando cuenta" />Creando cuenta…</> : 'Crear cuenta'}
           </button>
           <p className="text-center text-sm text-gray-600 mt-6">
             ¿Ya tienes cuenta?{' '}

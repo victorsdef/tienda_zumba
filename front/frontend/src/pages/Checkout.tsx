@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { ButtonSpinner } from '@shared/LoadingSkeleton'
 import { crearOrden, crearOrdenInvitado } from '../api/ordenes'
 import { validarCupon } from '../api/admin'
 import { getDirecciones, crearDireccion } from '../api/direcciones'
@@ -389,7 +390,9 @@ export default function Checkout() {
                 disabled={procesando}
                 className="btn-primary w-full text-base py-3"
               >
-                {procesando ? 'Procesando...' : `${requierePago ? 'Confirmar y pagar' : 'Confirmar pedido'} - $${total.toFixed(2)}`}
+                {procesando
+                  ? <><ButtonSpinner label="Procesando pedido" />Procesando…</>
+                  : `${requierePago ? 'Confirmar y pagar' : 'Confirmar pedido'} - $${total.toFixed(2)}`}
               </button>
               {requierePago && (
                 <p className="text-xs text-center text-gray-400">

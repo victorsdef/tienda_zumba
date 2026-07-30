@@ -5,6 +5,7 @@ import { cancelarOrden, descargarPedidoPdf, getOrden, getOrdenPorCodigo } from '
 import { getRetiroInfo } from '../api/configuracion'
 import OrderStatus from '@entities/order/OrderStatus'
 import PayphoneWidget from '@shared/PayphoneWidget'
+import { ButtonSpinner, PageLoader } from '@shared/LoadingSkeleton'
 import {
   IconChevronLeft,
   IconCreditCard,
@@ -124,7 +125,7 @@ export default function DetalleOrden() {
   })
 
   if (isLoading) {
-    return <div className="max-w-6xl mx-auto px-4 py-10 text-center text-gray-500">Cargando detalle de la orden...</div>
+    return <PageLoader message="Cargando detalle de la orden…" />
   }
 
   if (!orden) {
@@ -487,7 +488,7 @@ export default function DetalleOrden() {
               disabled={descargandoPdf}
               className="w-full btn-outline text-sm mb-4"
             >
-              {descargandoPdf ? 'Generando PDF...' : 'Descargar pedido PDF'}
+              {descargandoPdf ? <><ButtonSpinner label="Generando PDF" />Generando PDF…</> : 'Descargar pedido PDF'}
             </button>
 
             <div className="space-y-3 text-sm">
