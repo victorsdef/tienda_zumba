@@ -83,7 +83,7 @@ public class FileUploadController {
 
         @SuppressWarnings("unchecked")
         Map<String, Object> result = cloudinary.search()
-            .expression("folder=sofia-couture AND resource_type:image")
+            .expression("resource_type:image")
             .sortBy("created_at", "desc")
             .maxResults(safeMaxResults)
             .execute();
