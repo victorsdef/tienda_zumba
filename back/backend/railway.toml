@@ -1,0 +1,17 @@
+# ────────────────────────────────────────────────────────────────
+# Railway config — Sofia Couture Backend (Spring Boot)
+# ────────────────────────────────────────────────────────────────
+# Railway detecta el Dockerfile automáticamente. Este archivo solo
+# refina el comportamiento (healthcheck, restart, replicas).
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Spring Boot expone /api/health si tienes actuator; si no, cambia por /
+healthcheckPath = "/api/health"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+numReplicas = 1

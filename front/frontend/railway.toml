@@ -1,0 +1,14 @@
+# ────────────────────────────────────────────────────────────────
+# Railway config — Sofia Couture Frontend (Vite + Nginx)
+# ────────────────────────────────────────────────────────────────
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 60
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+numReplicas = 1
