@@ -24,20 +24,24 @@ const NOMBRES_COLOR: Record<string, string> = {
   '#fef9c3': 'Crema',
 }
 
-function nombreColor(hex: string) {
-  return NOMBRES_COLOR[hex.toLowerCase()] ?? NOMBRES_COLOR[hex] ?? 'Color'
-}
-
 interface Props {
   colores: string[]
   selected?: string
   onSelect: (c: string) => void
   /** Si se pasa, solo estos colores son seleccionables; el resto aparece opaco y sin stock */
   coloresDisponibles?: string[]
+  /** Nombres de color personalizados que vienen con el producto (hex → nombre). Prioridad sobre el map por defecto. */
+  nombresColor?: Record<string, string>
 }
 
-export default function ColorSelector({ colores, selected, onSelect, coloresDisponibles }: Props) {
+export default function ColorSelector({ colores, selected, onSelect, coloresDisponibles, nombresColor }: Props) {
   if (colores.length === 0) return null
+
+  const nombreColor = (hex: string) => {
+    const custom = nombresColor?.[hex] ?? nombresColor?.[hex.toLowerCase()] ?? nombresColor?.[hex.toUpperCase()]
+    if (custom) return custom
+    return NOMBRES_COLOR[hex.toLowerCase()] ?? NOMBRES_COLOR[hex] ?? 'Color'
+  }
 
   const hayFiltro = coloresDisponibles !== undefined
 

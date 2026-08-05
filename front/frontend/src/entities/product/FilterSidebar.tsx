@@ -153,7 +153,7 @@ export default function FilterSidebar({ filter, onChange, cats }: Props) {
   const hasFilters = categoriaIds.length > 0 || filter.precioMin || filter.precioMax || tallas.length > 0 || colores.length > 0
 
   return (
-    <div className="bg-white rounded-xl border border-[#ede8df] overflow-hidden">
+    <div>
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#ede8df] bg-[#faf8f5]">
         <span className="text-xs font-bold text-[#2c1a10] uppercase tracking-widest">Filtros</span>
         {hasFilters && (

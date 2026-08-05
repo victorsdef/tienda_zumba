@@ -9,6 +9,10 @@ import { IconSearch, IconEdit, IconTrash, IconHanger, IconX, IconChevronDown } f
 import ImageManager from '@shared/ImageManager'
 import TallasSelector from '@shared/TallasSelector'
 import ColoresSelector from '@shared/ColoresSelector'
+import CategoriaCombobox from '@shared/CategoriaCombobox'
+import { hexToNombre } from '@shared/colores'
+import { getColoresPersonalizados } from '../../api/coloresPersonalizados'
+import { registrarColoresPersonalizados } from '@shared/colores'
 import PrecioDescuento from '@shared/PrecioDescuento'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useUiStore } from '../../store/useUiStore'
@@ -76,6 +80,15 @@ export default function AdminProductos() {
   const [activo, setActivo] = useState(true)
   const [aplicaIva, setAplicaIva] = useState(true)
 
+  const { data: coloresGuardados = [] } = useQuery({
+    queryKey: ['colores-personalizados'],
+    queryFn: getColoresPersonalizados,
+    staleTime: 60_000,
+  })
+  useEffect(() => {
+    if (coloresGuardados.length > 0) registrarColoresPersonalizados(coloresGuardados)
+  }, [coloresGuardados])
+
   const { data, isLoading } = useQuery({
     queryKey: ['admin-productos', page, filtroNombre, filtroActivo, filtroCategoria],
     queryFn: () => getProductosAdmin(page, 20, { nombre: filtroNombre || undefined, activo: filtroActivo, categoriaId: filtroCategoria }),
@@ -91,7 +104,7 @@ export default function AdminProductos() {
   const { data: config } = useQuery({ queryKey: ['configuracion'], queryFn: getConfiguracion, staleTime: 60_000 })
   const comisionPct = Number(config?.find(c => c.clave === 'comision_payphone')?.valor ?? 5.75)
 
-  const { register, handleSubmit, reset, watch, trigger, formState: { isSubmitting, errors } } = useForm<FormData>()
+  const { register, handleSubmit, reset, watch, trigger, setValue, formState: { isSubmitting, errors } } = useForm<FormData>()
   const precioActual = Number(watch('precio') ?? 0)
   const categoriaIdActual = watch('categoriaId')
 
@@ -263,6 +276,9 @@ export default function AdminProductos() {
         : undefined,
       tallas,
       colores,
+      nombresColor: colores.length > 0
+        ? Object.fromEntries(colores.map(hex => [hex, hexToNombre(hex)]))
+        : undefined,
       stockPorColor: colores.length > 0 ? stockPorColor : undefined,
       stockPorColorTalla: tallas.length > 0
         ? colores.length === 0
@@ -351,19 +367,17 @@ export default function AdminProductos() {
                 Categoría <span className="text-red-500">*</span>
                 <span className="ml-2 normal-case font-normal text-gray-400">({catsFiltradas.length} disponibles)</span>
               </label>
-              <select
-                {...register('categoriaId', {
-                  required: 'Seleccioná una categoría',
-                  onChange: e => {
-                    const cat = cats?.find(c => c.id === Number(e.target.value))
-                    if (cat?.tallasDisponibles?.length) setTallas(cat.tallasDisponibles)
-                  },
-                })}
-                className={`input-field ${errors.categoriaId ? 'border-red-400 bg-red-50' : ''}`}
-              >
-                <option value="">— Seleccionar categoría —</option>
-                {catsFiltradas.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-              </select>
+              <input type="hidden" {...register('categoriaId', { required: 'Seleccioná una categoría', valueAsNumber: true, validate: v => (v && v > 0) || 'Seleccioná una categoría' })} />
+              <CategoriaCombobox
+                categorias={catsFiltradas}
+                value={Number(categoriaIdActual) || undefined}
+                onChange={(id) => {
+                  setValue('categoriaId', id ?? 0, { shouldValidate: true })
+                  const cat = cats?.find(c => c.id === id)
+                  if (cat?.tallasDisponibles?.length) setTallas(cat.tallasDisponibles)
+                }}
+                placeholder="Buscar o escribir categoría…"
+              />
               {errors.categoriaId && <p className="text-xs text-red-500 mt-1">{errors.categoriaId.message}</p>}
             </div>
           </div>
@@ -1438,11 +1452,22 @@ export default function AdminProductos() {
                                           </div>
                                           {tallas.map(t => {
                                             const pr = pct[key]?.[t]
+                                            const st = p.stockPorColorTalla?.[key]?.[t]
+                                            const stockBajo = typeof st === 'number' && st < 10
                                             return (
                                               <div key={t} className="px-2 py-2 text-center border-l border-[#f0ebe3]">
-                                                {pr !== undefined
-                                                  ? <span className="font-semibold text-[#4a3728]">${pr.toFixed(2)}</span>
-                                                  : <span className="text-gray-300">—</span>}
+                                                {pr !== undefined ? (
+                                                  <div className="flex flex-col items-center gap-0.5">
+                                                    <span className="font-semibold text-[#4a3728]">${pr.toFixed(2)}</span>
+                                                    {typeof st === 'number' && (
+                                                      <span className={`text-[10px] font-medium ${stockBajo ? 'text-red-600' : 'text-gray-500'}`}>
+                                                        {st} uds
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                ) : (
+                                                  <span className="text-gray-300">—</span>
+                                                )}
                                               </div>
                                             )
                                           })}

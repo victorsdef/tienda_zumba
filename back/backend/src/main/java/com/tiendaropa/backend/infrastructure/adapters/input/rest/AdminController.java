@@ -31,6 +31,7 @@ import com.tiendaropa.backend.infrastructure.adapters.input.rest.dto.producto.Pr
 import com.tiendaropa.backend.infrastructure.adapters.input.rest.mapper.OrdenRestMapper;
 import com.tiendaropa.backend.infrastructure.adapters.input.rest.mapper.ProductoRestMapper;
 import com.tiendaropa.backend.infrastructure.adapters.output.persistence.repository.BannerJpaRepository;
+import com.tiendaropa.backend.infrastructure.adapters.output.persistence.repository.ColorPersonalizadoJpaRepository;
 import com.tiendaropa.backend.infrastructure.adapters.output.persistence.repository.CuponJpaRepository;
 import com.tiendaropa.backend.infrastructure.adapters.output.persistence.repository.ConfiguracionJpaRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -79,6 +80,7 @@ public class AdminController {
     private final UsuarioRepositoryPort usuarioRepositoryPort;
     private final PasswordEncoder passwordEncoder;
     private final BannerJpaRepository bannerJpaRepository;
+    private final ColorPersonalizadoJpaRepository colorPersonalizadoJpaRepository;
     private final CuponJpaRepository cuponJpaRepository;
     private final ConfiguracionJpaRepository configuracionJpaRepository;
     private final EmailUseCase emailUseCase;
@@ -239,6 +241,7 @@ public class AdminController {
         producto.setImagenesPorColorJson(writeImagenesPorColor(request.getImagenesPorColor()));
         producto.setPrecioPorColorTallaJson(writePrecioPorColorTalla(request.getPrecioPorColorTalla()));
         producto.setPrecioOriginalPorColorTallaJson(writePrecioPorColorTalla(request.getPrecioOriginalPorColorTalla()));
+        resolverNombresColor(producto);
         return ResponseEntity.ok(toProductoDto(productoUseCase.crear(producto)));
     }
 
@@ -250,7 +253,23 @@ public class AdminController {
         producto.setImagenesPorColorJson(writeImagenesPorColor(request.getImagenesPorColor()));
         producto.setPrecioPorColorTallaJson(writePrecioPorColorTalla(request.getPrecioPorColorTalla()));
         producto.setPrecioOriginalPorColorTallaJson(writePrecioPorColorTalla(request.getPrecioOriginalPorColorTalla()));
+        resolverNombresColor(producto);
         return ResponseEntity.ok(toProductoDto(productoUseCase.actualizar(id, producto)));
+    }
+
+    private void resolverNombresColor(Producto producto) {
+        if (producto.getColores() == null || producto.getColores().isEmpty()) return;
+        Map<String, String> nombres = producto.getNombresColor() != null
+            ? new LinkedHashMap<>(producto.getNombresColor())
+            : new LinkedHashMap<>();
+        for (String hex : producto.getColores()) {
+            if (hex == null || hex.isBlank()) continue;
+            String actual = nombres.get(hex);
+            if (actual != null && !actual.isBlank()) continue;
+            colorPersonalizadoJpaRepository.findByHexIgnoreCase(hex)
+                .ifPresent(c -> nombres.put(hex, c.getNombre()));
+        }
+        producto.setNombresColor(nombres);
     }
 
     @PatchMapping("/productos/{id}/toggle")

@@ -71,6 +71,12 @@ public class ProductoEntity {
     @Column(name = "stock")
     private Map<String, Integer> stockPorColor = new LinkedHashMap<>();
 
+    @ElementCollection
+    @CollectionTable(name = "producto_nombres_color", joinColumns = @JoinColumn(name = "producto_id"))
+    @MapKeyColumn(name = "color")
+    @Column(name = "nombre")
+    private Map<String, String> nombresColor = new LinkedHashMap<>();
+
     @Column(columnDefinition = "TEXT")
     private String stockPorColorTallaJson;
 

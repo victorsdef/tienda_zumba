@@ -130,10 +130,12 @@ export default function Catalogo() {
           </div>
         </div>
 
-        <div className="flex gap-5">
+        <div className="flex gap-6 lg:gap-8">
           {/* ── Sidebar desktop (siempre visible) ─────────────── */}
-          <aside className="hidden md:block w-56 flex-shrink-0">
-            <FilterSidebar filter={filter} onChange={f => setFilter({ ...f, page: 0 })} cats={cats} />
+          <aside className="hidden md:block w-60 flex-shrink-0">
+            <div className="sticky top-4 bg-white border border-[#ede8df] rounded-xl shadow-sm overflow-hidden">
+              <FilterSidebar filter={filter} onChange={f => setFilter({ ...f, page: 0 })} cats={cats} />
+            </div>
           </aside>
 
           {/* ── Grid de productos ─────────────────────────────── */}

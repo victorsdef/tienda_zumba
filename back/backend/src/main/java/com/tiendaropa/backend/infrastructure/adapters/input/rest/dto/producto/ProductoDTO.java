@@ -25,6 +25,7 @@ public class ProductoDTO {
     private List<String> tallas;
     private List<String> colores;
     private Map<String, Integer> stockPorColor;
+    private Map<String, String> nombresColor;
     private Map<String, Map<String, Integer>> stockPorColorTalla;
     private Map<String, List<String>> imagenesPorColor;
     private Map<String, Map<String, java.math.BigDecimal>> precioPorColorTalla;

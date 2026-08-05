@@ -206,15 +206,22 @@ export default function ProductCard({ producto, compact = false }: Props) {
         {/* Color dots */}
         {tieneColores && (
           <div className="flex gap-1 mb-1">
-            {colores.slice(0, 4).map((c, idx) => (
-              <span
-                key={c}
-                onMouseEnter={() => { setPaused(true); setColorIndex(idx) }}
-                onMouseLeave={() => setPaused(false)}
-                className={`w-4 h-4 rounded-full border-2 flex-shrink-0 cursor-pointer transition-transform ${colorIndex === idx ? 'scale-125 border-gray-600' : 'border-gray-200'}`}
-                style={{ backgroundColor: c }}
-              />
-            ))}
+            {colores.slice(0, 4).map((c, idx) => {
+              const nombre = producto.nombresColor?.[c]
+                ?? producto.nombresColor?.[c.toLowerCase()]
+                ?? producto.nombresColor?.[c.toUpperCase()]
+                ?? c
+              return (
+                <span
+                  key={c}
+                  title={nombre}
+                  onMouseEnter={() => { setPaused(true); setColorIndex(idx) }}
+                  onMouseLeave={() => setPaused(false)}
+                  className={`w-4 h-4 rounded-full border-2 flex-shrink-0 cursor-pointer transition-transform ${colorIndex === idx ? 'scale-125 border-gray-600' : 'border-gray-200'}`}
+                  style={{ backgroundColor: c }}
+                />
+              )
+            })}
             {colores.length > 4 && (
               <span className="text-[10px] text-gray-400 ml-0.5">+{colores.length - 4}</span>
             )}

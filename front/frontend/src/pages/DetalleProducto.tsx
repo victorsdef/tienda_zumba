@@ -490,7 +490,11 @@ export default function DetalleProducto() {
               <div className="md:hidden">
                 <p className="text-sm font-semibold text-gray-700 mb-2">
                   Color: {color && <span className="font-normal">{
-                    ({'#000000':'Negro','#FFFFFF':'Blanco','#9CA3AF':'Gris','#EF4444':'Rojo','#F9A8D4':'Rosa','#EC4899':'Fucsia','#F97316':'Naranja','#FACC15':'Amarillo','#22C55E':'Verde','#3B82F6':'Azul','#1E3A5F':'Marino','#A855F7':'Morado','#92400E':'Café','#D4B896':'Beige','#FEF3C7':'Crema'} as Record<string,string>)[color] ?? color
+                    producto.nombresColor?.[color]
+                      ?? producto.nombresColor?.[color.toLowerCase()]
+                      ?? producto.nombresColor?.[color.toUpperCase()]
+                      ?? ({'#000000':'Negro','#FFFFFF':'Blanco','#9CA3AF':'Gris','#EF4444':'Rojo','#F9A8D4':'Rosa','#EC4899':'Fucsia','#F97316':'Naranja','#FACC15':'Amarillo','#22C55E':'Verde','#3B82F6':'Azul','#1E3A5F':'Marino','#A855F7':'Morado','#92400E':'Café','#D4B896':'Beige','#FEF3C7':'Crema'} as Record<string,string>)[color]
+                      ?? color
                   }</span>}
                 </p>
                 <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
@@ -524,6 +528,7 @@ export default function DetalleProducto() {
                 selected={color}
                 onSelect={c => { setColor(c); setCantidad(1) }}
                 coloresDisponibles={coloresDisponiblesParaTalla}
+                nombresColor={producto.nombresColor}
               />
             </div>
           </div>

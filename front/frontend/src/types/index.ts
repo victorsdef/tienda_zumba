@@ -42,6 +42,7 @@ export interface Producto {
   tallas: string[]
   colores: string[]
   stockPorColor?: Record<string, number>
+  nombresColor?: Record<string, string>
   stockPorColorTalla?: Record<string, Record<string, number>>
   imagenesPorColor?: Record<string, string[]>
   precioPorColorTalla?: Record<string, Record<string, number>>
